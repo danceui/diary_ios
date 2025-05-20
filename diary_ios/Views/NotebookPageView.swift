@@ -2,7 +2,7 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookPage: UIView, PKCanvasViewDelegate {
+class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - Public Properties
     let pageIndex: Int
@@ -55,7 +55,7 @@ class NotebookPage: UIView, PKCanvasViewDelegate {
         do {
             canvas.drawing = try PKDrawing(data: data)
         } catch {
-            print("NotebookPage: Failed to load drawing: \(error)")
+            print("NotebookPageView: Failed to load drawing: \(error)")
         }
     }
 

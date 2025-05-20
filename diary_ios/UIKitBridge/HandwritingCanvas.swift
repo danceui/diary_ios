@@ -20,7 +20,6 @@ class HandwritingCanvas: PKCanvasView {
         drawingPolicy = .pencilOnly  // 也可以设置为 .anyInput
         alwaysBounceVertical = false
         isOpaque = false
-        allowsFingerDrawing = false // 若需支持手指绘图，可以设置 true
     }
 
     // MARK: - Listening touches

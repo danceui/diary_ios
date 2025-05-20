@@ -1,3 +1,5 @@
+import PencilKit
+
 struct PageSnapshot {
     var drawing: PKDrawing
     // var stickers: [StickerModel] // 你后续自定义的贴纸层模型
