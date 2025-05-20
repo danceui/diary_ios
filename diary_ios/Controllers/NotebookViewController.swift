@@ -2,13 +2,11 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookViewController: UIViewController {
+class NotebookViewController: UIViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
     // MARK: - Properties
-    private var scrollView = UIScrollView()
-    private var stackView = UIStackView()
+    private var pageViewController: UIPageViewController!
     private var pages: [NotebookPageView] = []
-    private let pageSize = CGSize(width: 800, height: 600)  // 可调节大小
     private var currentPageIndex: Int = 0
 
 
@@ -16,56 +14,40 @@ class NotebookViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemGray6
-        setupScrollView()
+        setupPageViewController()
         addNewPage()
     }
 
-    // MARK: - UI Setup
-    private func setupScrollView() {
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.alwaysBounceVertical = true
-        view.addSubview(scrollView)
+    // MARK: - Setup Page View Controller
+    private func setupPageViewController() {
+        pageViewController = UIPageViewController(
+            transitionStyle: .scroll,
+            navigationOrientation: .horizontal,
+            options: nil
+        )
+        pageViewController.dataSource = self
+        pageViewController.delegate = self
+
+        addChild(pageViewController)
+        view.addSubview(pageViewController.view)
+        pageViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pageViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            pageViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            pageViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pageViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        stackView.axis = .vertical
-        stackView.spacing = 40
-        stackView.alignment = .center
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(stackView)
-
-        NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 40),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-        ])
+        pageViewController.didMove(toParent: self)
     }
 
     // MARK: - Page Management
     func addNewPage(initialData: Data? = nil) {
         let index = pages.count
-        let pageFrame = CGRect(origin: .zero, size: pageSize)
-        let page = NotebookPageView(frame: pageFrame, pageIndex: index, initialData: initialData)
-        page.translatesAutoresizingMaskIntoConstraints = false
-        page.layer.cornerRadius = 16
-        page.clipsToBounds = true
-        page.backgroundColor = .white
-
+        let page = NotebookPageView(pageIndex: index, initialData: initialData)
         pages.append(page)
-        stackView.addArrangedSubview(page)
-
-        NSLayoutConstraint.activate([
-            page.heightAnchor.constraint(equalToConstant: pageSize.height),
-            page.widthAnchor.constraint(equalToConstant: pageSize.width),
-        ])
-        scrollToPage(index: index)
+        scrollToPage(index: index, animated: true)
     }
 
     func getPage(at index: Int) -> NotebookPageView? {
@@ -78,21 +60,19 @@ class NotebookViewController: UIViewController {
     }
 
     // MARK: - Page Navigation
-    func scrollToPage(index: Int, animated: Bool = true) {
-        guard let targetPage = getPage(at: index) else { return }
+    func scrollToPage(index: Int, animated: Bool) {
+        guard index >= 0 && index < pages.count else { return }
+        let direction: UIPageViewController.NavigationDirection = index > currentPageIndex ? .forward : .reverse
         currentPageIndex = index
-        let targetFrame = targetPage.convert(targetPage.bounds, to: scrollView)
-        scrollView.scrollRectToVisible(targetFrame, animated: animated)
-    }
-
-    func goToPrevPage() {
-        let newIndex = max(currentPageIndex - 1, 0)
-        scrollToPage(index: newIndex)
+        pageViewController.setViewControllers([pages[index]], direction: direction, animated: animated, completion: nil)
     }
 
     func goToNextPage() {
-        let newIndex = min(currentPageIndex + 1, pages.count - 1)
-        scrollToPage(index: newIndex)
+        scrollToPage(index: min(currentPageIndex + 1, pages.count - 1), animated: true)
+    }
+
+    func goToPrevPage() {
+        scrollToPage(index: max(currentPageIndex - 1, 0), animated: true)
     }
 
     // MARK: - Exports
@@ -107,6 +87,23 @@ class NotebookViewController: UIViewController {
 
     func redo() {
         pages[safe: currentPageIndex]?.redo()
+    }
+
+    // MARK: - Page View Controller Data Source
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllerBefore viewController: UIViewController) -> UIViewController? {
+        guard let current = viewController as? NotebookPageView,
+              let index = pages.firstIndex(of: current),
+              index > 0 else { return nil }
+        return pages[index - 1]
+    }
+
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllerAfter viewController: UIViewController) -> UIViewController? {
+        guard let current = viewController as? NotebookPageView,
+              let index = pages.firstIndex(of: current),
+              index < pages.count - 1 else { return nil }
+        return pages[index + 1]
     }
 }
 extension Array {

@@ -2,7 +2,7 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookPageView: UIView, PKCanvasViewDelegate {
+class NotebookPageView: UIViewController, PKCanvasViewDelegate {
 
     // MARK: - Public Properties
     let pageIndex: Int
@@ -14,10 +14,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let maxSnapshots = 50
 
     // MARK: - Init
-    init(frame: CGRect, pageIndex: Int, initialData: Data? = nil) {
+    init(pageIndex: Int, initialData: Data? = nil) {
         self.pageIndex = pageIndex
-        super.init(frame: frame)
-        setupCanvas()
+        super.init(nibName: nil, bundle: nil)
         if let initialData = initialData {
             loadDrawing(data: initialData)
         }
@@ -27,18 +26,23 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Setup
+    // MARK: - View Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupCanvas()
+    }
+
     private func setupCanvas() {
-        canvas.backgroundColor = .yellow.withAlphaComponent(0.1)
         canvas.delegate = self
+        canvas.backgroundColor = .yellow.withAlphaComponent(0.1)
         canvas.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(canvas)
+        view.addSubview(canvas)
 
         NSLayoutConstraint.activate([
-            canvas.topAnchor.constraint(equalTo: topAnchor),
-            canvas.bottomAnchor.constraint(equalTo: bottomAnchor),
-            canvas.leadingAnchor.constraint(equalTo: leadingAnchor),
-            canvas.trailingAnchor.constraint(equalTo: trailingAnchor)
+            canvas.topAnchor.constraint(equalTo: view.topAnchor),
+            canvas.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            canvas.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            canvas.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
 
@@ -68,14 +72,14 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     func undo() {
         guard snapshotIndex > 0 else { return }
         snapshotIndex -= 1
-        print("Undo: snapshot #\(snapshotIndex)/\(pageSnapshots.count).")
+        print("Undo: snapshot #\(snapshotIndex)/\(pageSnapshots.count) on page \(pageIndex).")
         applySnapshotOfIndex(snapshotIndex)
     }
 
     func redo() {
         guard snapshotIndex < pageSnapshots.count - 1 else { return }
         snapshotIndex += 1
-        print("Redo: snapshot #\(snapshotIndex)/\(pageSnapshots.count).")
+        print("Redo: snapshot #\(snapshotIndex)/\(pageSnapshots.count) on page \(pageIndex).")
         applySnapshotOfIndex(snapshotIndex)
     }
 
@@ -97,18 +101,17 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
         pageSnapshots.append(currentSnapshot)
         snapshotIndex += 1
-        print("Save snapshot #\(snapshotIndex) with \(currentSnapshot.drawing.strokes.count) strokes.")
-
         if pageSnapshots.count > maxSnapshots {
             pageSnapshots.removeFirst()
             snapshotIndex -= 1
         }
+        print("Saved snapshot #\(snapshotIndex) on page \(pageIndex).")
     }
 
     private func applySnapshotOfIndex(_ index: Int) {
         canvas.drawing = pageSnapshots[index].drawing
         canvas.tool = canvas.tool
-        print("iOS: Apply snapshot #\(index) with \(canvas.drawing.strokes.count) strokes.")
+        print("Apply snapshot #\(index) on page \(pageIndex).")
         canvas.setNeedsDisplay()
     }
 }
