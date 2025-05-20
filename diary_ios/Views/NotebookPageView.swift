@@ -77,14 +77,14 @@ class NotebookPageView: UIViewController, PKCanvasViewDelegate {
     func undo() {
         guard snapshotIndex > 0 else { return }
         snapshotIndex -= 1
-        print("Undo: snapshot #\(snapshotIndex)/\(pageSnapshots.count) on page \(pageIndex).")
+        print("Undo.", terminator: " ")
         applySnapshotOfIndex(snapshotIndex)
     }
 
     func redo() {
         guard snapshotIndex < pageSnapshots.count - 1 else { return }
         snapshotIndex += 1
-        print("Redo: snapshot #\(snapshotIndex)/\(pageSnapshots.count) on page \(pageIndex).")
+        print("Redo.", terminator: " ")
         applySnapshotOfIndex(snapshotIndex)
     }
 
@@ -116,7 +116,7 @@ class NotebookPageView: UIViewController, PKCanvasViewDelegate {
     private func applySnapshotOfIndex(_ index: Int) {
         canvas.drawing = pageSnapshots[index].drawing
         canvas.tool = canvas.tool
-        print("Apply snapshot #\(index) on page \(pageIndex).")
+        print("Apply snapshot #\(snapshotIndex)/\(pageSnapshots.count) on page \(pageIndex).")
         canvas.setNeedsDisplay()
     }
 }
