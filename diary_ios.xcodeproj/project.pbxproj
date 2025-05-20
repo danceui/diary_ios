@@ -75,9 +75,9 @@
 		37004CDD2DDC9F0100D1658D = {
 			isa = PBXGroup;
 			children = (
-				37004CE82DDC9F0100D1658D /* diary_ios */,
 				37004CFA2DDC9F0300D1658D /* diary_iosTests */,
 				37004D042DDC9F0300D1658D /* diary_iosUITests */,
+				37004CE82DDC9F0100D1658D /* diary_ios */,
 				37004CE72DDC9F0100D1658D /* Products */,
 			);
 			sourceTree = "<group>";
