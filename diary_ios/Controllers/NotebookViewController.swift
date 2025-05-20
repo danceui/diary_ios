@@ -22,13 +22,17 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
 
     // MARK: - Setup PageViewController
     private func setupPageViewController() {
+        let options: [UIPageViewController.OptionsKey: Any] = [
+            .spineLocation: UIPageViewController.SpineLocation.min.rawValue
+        ]
         pageViewController = UIPageViewController(
             transitionStyle: .pageCurl,
             navigationOrientation: .horizontal,
-            options: [.spineLocation: UIPageViewController.SpineLocation.min.rawValue]
+            options: options
         )
         pageViewController.dataSource = self
         pageViewController.delegate = self
+        pageViewController.view.backgroundColor = .clear
 
         addChild(pageViewController)
         view.addSubview(pageViewController.view)
@@ -130,6 +134,12 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
            let currentIndex = pages.firstIndex(of: currentVC) {
             currentPageIndex = currentIndex
         }
+    }
+
+    // 控制翻页起始点
+    func pageViewController(_ pageViewController: UIPageViewController, 
+                          spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
+        return .min
     }
 }
 
