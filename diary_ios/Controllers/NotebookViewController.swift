@@ -8,14 +8,16 @@ class NotebookViewController: UIViewController {
     private var scrollView = UIScrollView()
     private var stackView = UIStackView()
     private var pages: [NotebookPageView] = []
-    private let pageSize = CGSize(width: 600, height: 800)  // 可调节大小
+    private let pageSize = CGSize(width: 800, height: 600)  // 可调节大小
+    private var currentPageIndex: Int = 0
+
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemGray6
         setupScrollView()
-        addNewPage() // 初始添加一页
+        addNewPage()
     }
 
     // MARK: - UI Setup
@@ -63,19 +65,52 @@ class NotebookViewController: UIViewController {
             page.heightAnchor.constraint(equalToConstant: pageSize.height),
             page.widthAnchor.constraint(equalToConstant: pageSize.width),
         ])
+        scrollToPage(index: index)
     }
 
-    func page(at index: Int) -> NotebookPageView? {
+    func getPage(at index: Int) -> NotebookPageView? {
         guard index >= 0 && index < pages.count else { return nil }
         return pages[index]
     }
 
-    func currentPageCount() -> Int {
+    func getPageCount() -> Int {
         return pages.count
+    }
+
+    // MARK: - Page Navigation
+    func scrollToPage(index: Int, animated: Bool = true) {
+        guard let targetPage = getPage(at: index) else { return }
+        currentPageIndex = index
+        let targetFrame = targetPage.convert(targetPage.bounds, to: scrollView)
+        scrollView.scrollRectToVisible(targetFrame, animated: animated)
+    }
+
+    func goToPrevPage() {
+        let newIndex = max(currentPageIndex - 1, 0)
+        scrollToPage(index: newIndex)
+    }
+
+    func goToNextPage() {
+        let newIndex = min(currentPageIndex + 1, pages.count - 1)
+        scrollToPage(index: newIndex)
     }
 
     // MARK: - Exports
     func exportAllDrawings() -> [Data] {
         return pages.map { $0.exportDrawing() }
+    }
+
+    // MARK: - Undo/Redo
+    func undo() {
+        pages[safe: currentPageIndex]?.undo()
+    }
+
+    func redo() {
+        pages[safe: currentPageIndex]?.redo()
+    }
+}
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 }

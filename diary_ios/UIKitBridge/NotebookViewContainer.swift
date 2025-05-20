@@ -1,13 +1,14 @@
 import SwiftUI
-import UIKit
 
 @available(iOS 16.0, *)
 struct NotebookViewContainer: UIViewControllerRepresentable {
+    let viewController: NotebookViewController
+
     func makeUIViewController(context: Context) -> NotebookViewController {
-        return NotebookViewController()
+        return viewController
     }
 
     func updateUIViewController(_ uiViewController: NotebookViewController, context: Context) {
-        // 可选：在这里响应 SwiftUI 状态变化
+        // 无需更新
     }
 }
