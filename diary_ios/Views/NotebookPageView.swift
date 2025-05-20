@@ -35,14 +35,19 @@ class NotebookPageView: UIViewController, PKCanvasViewDelegate {
     private func setupCanvas() {
         canvas.delegate = self
         canvas.backgroundColor = .yellow.withAlphaComponent(0.1)
+        canvas.layer.cornerRadius = 20
+        canvas.layer.masksToBounds = true
+        canvas.layer.borderColor = UIColor.lightGray.cgColor
+        canvas.layer.borderWidth = 2
+
         canvas.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(canvas)
 
         NSLayoutConstraint.activate([
-            canvas.topAnchor.constraint(equalTo: view.topAnchor),
-            canvas.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            canvas.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            canvas.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            canvas.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            canvas.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            canvas.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.85),
+            canvas.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.85)
         ])
     }
 
