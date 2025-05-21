@@ -26,9 +26,12 @@ class FlipAnimator {
 
         // ✅ 必须将 RiveView 注入 ViewModel
         riveViewModel.setView(riveView)
+        riveView.isHidden = true
+        riveView.isUserInteractionEnabled = false  // 也可避免它拦截事件
     }
 
     func playFlip(direction: String, completion: (() -> Void)? = nil) {
+        riveView.isHidden = false  // 👉 播放前显示
         if direction == "flipLeft" {
             riveViewModel.triggerInput("flipLeft")
         } else if direction == "flipRight" {
@@ -36,6 +39,7 @@ class FlipAnimator {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            self.riveView.isHidden = true  // 👉 播放后隐藏
             completion?()
         }
     }
