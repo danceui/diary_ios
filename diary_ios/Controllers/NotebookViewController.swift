@@ -1,7 +1,7 @@
 import UIKit
 
 @available(iOS 16.0, *)
-class NotebookViewController: UIPageViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
     private var pages: [NotebookPageView] = []
     private var currentIndex: Int = 0

@@ -3,7 +3,7 @@ import SwiftUI
 @available(iOS 16.0, *)
 struct ContentView: View {
     // 保存控制器引用，用于按钮调用
-    private let notebookVC = NotebookViewController()
+    private let notebookVC = NotebookSpreadViewController()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,7 +19,7 @@ struct ContentView: View {
 
 @available(iOS 16.0, *)
 struct ToolBarView: View {
-    let notebookVC: NotebookViewController
+    let notebookVC: NotebookSpreadViewController
 
     var body: some View {
         HStack {
