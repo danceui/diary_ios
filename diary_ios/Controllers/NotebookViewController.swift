@@ -5,7 +5,6 @@ import PencilKit
 class NotebookViewController: UIViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
     // MARK: - Properties
-    private var pageViewController: UIPageViewController!
     private var pages: [NotebookPageView] = []
     private var currentPageIndex: Int = 0
 
@@ -14,38 +13,11 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemGray6
-        setupPageViewController()
         if pages.isEmpty {
             addNewPage()
+        } else {
+            scrollToPage(index: currentPageIndex, animated: false)
         }
-    }
-
-    // MARK: - Setup PageViewController
-    private func setupPageViewController() {
-        let options: [UIPageViewController.OptionsKey: Any] = [
-            .spineLocation: UIPageViewController.SpineLocation.min.rawValue
-        ]
-        pageViewController = UIPageViewController(
-            transitionStyle: .pageCurl,
-            navigationOrientation: .horizontal,
-            options: options
-        )
-        pageViewController.dataSource = self
-        pageViewController.delegate = self
-        pageViewController.view.backgroundColor = .clear
-
-        addChild(pageViewController)
-        view.addSubview(pageViewController.view)
-        pageViewController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            pageViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            pageViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            pageViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            pageViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
-
-        pageViewController.didMove(toParent: self)
     }
 
     // MARK: - Page Management
@@ -68,17 +40,25 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
     // MARK: - Page Navigation
     func scrollToPage(index: Int, animated: Bool) {
         guard index >= 0 && index < pages.count else { return }
-        let direction: UIPageViewController.NavigationDirection = index > currentPageIndex ? .forward : .reverse
-        pageViewController.setViewControllers(
-            [pages[index]],
-            direction: direction,
-            animated: animated
-        ) { [weak self] _ in
-            // 在动画完成后安全更新索引
-            guard let self = self,
-                let currentVC = self.pageViewController.viewControllers?.first as? NotebookPageView,
-                let newIndex = self.pages.firstIndex(of: currentVC) else { return }
-            self.currentPageIndex = newIndex
+        let newPage = pages[index]
+        let oldPage = children.first
+        addChild(newPage)
+        newPage.view.frame = view.bounds
+        if let oldPage = oldPage, animated {
+            let direction: UIView.AnimationOptions = index > currentPageIndex
+                ? .transitionFlipFromRight
+                : .transitionFlipFromLeft
+
+            transition(from: oldPage, to: newPage, duration: 0.5, options: [direction, .showHideTransitionViews]) { 
+                newPage.didMove(toParent: self)
+                oldPage.willMove(toParent: nil)
+                oldPage.removeFromParent()
+                self.currentPageIndex = index
+            }
+        } else {
+            view.addSubview(newPage.view)
+            newPage.didMove(toParent: self)
+            currentPageIndex = index
         }
     }
 
