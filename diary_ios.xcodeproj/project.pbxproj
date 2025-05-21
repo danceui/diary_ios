@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		37004D412DDDCF7200D1658D /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 37004D402DDDCF7200D1658D /* RiveRuntime */; settings = {ATTRIBUTES = (Required, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		37004CF82DDC9F0300D1658D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37004D412DDDCF7200D1658D /* RiveRuntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 				37004CFA2DDC9F0300D1658D /* diary_iosTests */,
 				37004D042DDC9F0300D1658D /* diary_iosUITests */,
 				37004CE82DDC9F0100D1658D /* diary_ios */,
+				37004D422DDDD02B00D1658D /* Frameworks */,
 				37004CE72DDC9F0100D1658D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +96,13 @@
 				37004D012DDC9F0300D1658D /* diary_iosUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		37004D422DDDD02B00D1658D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +125,7 @@
 			);
 			name = diary_ios;
 			packageProductDependencies = (
+				37004D402DDDCF7200D1658D /* RiveRuntime */,
 			);
 			productName = diary_ios;
 			productReference = 37004CE62DDC9F0100D1658D /* diary_ios.app */;
@@ -195,6 +209,9 @@
 			);
 			mainGroup = 37004CDD2DDC9F0100D1658D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				37004D3D2DDDCDC100D1658D /* XCRemoteSwiftPackageReference "rive-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 37004CE72DDC9F0100D1658D /* Products */;
 			projectDirPath = "";
@@ -585,6 +602,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		37004D3D2DDDCDC100D1658D /* XCRemoteSwiftPackageReference "rive-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rive-app/rive-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.8.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		37004D402DDDCF7200D1658D /* RiveRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 37004D3D2DDDCDC100D1658D /* XCRemoteSwiftPackageReference "rive-ios" */;
+			productName = RiveRuntime;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 37004CDE2DDC9F0100D1658D /* Project object */;
 }

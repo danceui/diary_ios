@@ -1,26 +1,28 @@
 import UIKit
 import PencilKit
+import RiveRuntime
 
 @available(iOS 16.0, *)
-class NotebookViewController: UIViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
-
-    // MARK: - Properties
+class NotebookViewController: UIViewController {
+    
+    // MARK: - UI & State
     private var pageViewController: UIPageViewController!
     private var pages: [NotebookPageView] = []
     private var currentPageIndex: Int = 0
-
+    private var animator: FlipAnimator!
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemGray6
         setupPageViewController()
+        animator = FlipAnimator(container: view)
         if pages.isEmpty {
             addNewPage()
         }
     }
 
-    // MARK: - Setup PageViewController
+    // MARK: - Setup
     private func setupPageViewController() {
         let options: [UIPageViewController.OptionsKey: Any] = [
             .spineLocation: UIPageViewController.SpineLocation.min.rawValue
@@ -50,52 +52,60 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
 
     // MARK: - Page Management
     func addNewPage(initialData: Data? = nil) {
-        let index = pages.count
-        let page = NotebookPageView(pageIndex: index, initialData: initialData)
-        pages.append(page)
-        scrollToPage(index: index, animated: pages.count == 1 ? false : true)
+        let newPage = NotebookPageView(pageIndex: pages.count, initialData: initialData)
+        pages.append(newPage)
+        scrollToPage(index: pages.count - 1, animated: pages.count > 1)
     }
 
     func getPage(at index: Int) -> NotebookPageView? {
-        guard index >= 0 && index < pages.count else { return nil }
-        return pages[index]
+        return pages[safe: index]
     }
 
     func getPageCount() -> Int {
         return pages.count
     }
 
-    // MARK: - Page Navigation
+    // MARK: - Navigation
     func scrollToPage(index: Int, animated: Bool) {
-        guard index >= 0 && index < pages.count else { return }
+        guard pages.indices.contains(index) else { return }
+
         let direction: UIPageViewController.NavigationDirection = index > currentPageIndex ? .forward : .reverse
         pageViewController.setViewControllers(
             [pages[index]],
             direction: direction,
             animated: animated
         ) { [weak self] _ in
-            // 在动画完成后安全更新索引
             guard let self = self,
-                let currentVC = self.pageViewController.viewControllers?.first as? NotebookPageView,
-                let newIndex = self.pages.firstIndex(of: currentVC) else { return }
+                  let currentVC = self.pageViewController.viewControllers?.first as? NotebookPageView,
+                  let newIndex = self.pages.firstIndex(of: currentVC) else { return }
             self.currentPageIndex = newIndex
         }
     }
 
     func goToNextPage() {
-        scrollToPage(index: min(currentPageIndex + 1, pages.count - 1), animated: true)
+        let nextIndex = currentPageIndex + 1
+        guard nextIndex < pages.count else { return }
+
+        animator.playFlip(direction: "flipRight") {
+            self.scrollToPage(index: nextIndex, animated: false)
+        }
     }
 
     func goToPrevPage() {
-        scrollToPage(index: max(currentPageIndex - 1, 0), animated: true)
+        let prevIndex = currentPageIndex - 1
+        guard prevIndex >= 0 else { return }
+
+        animator.playFlip(direction: "flipLeft") {
+            self.scrollToPage(index: prevIndex, animated: false)
+        }
     }
 
-    // MARK: - Exports
+    // MARK: - Export
     func exportAllDrawings() -> [Data] {
         return pages.map { $0.exportDrawing() }
     }
 
-    // MARK: - Undo/Redo
+    // MARK: - Undo / Redo
     func undo() {
         pages[safe: currentPageIndex]?.undo()
     }
@@ -103,9 +113,12 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
     func redo() {
         pages[safe: currentPageIndex]?.redo()
     }
+}
 
-    // MARK: - PageViewController Data Source
-    // 获取前一页
+// MARK: - PageViewController Data Source & Delegate
+@available(iOS 16.0, *)
+extension NotebookViewController: UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+    
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerBefore viewController: UIViewController) -> UIViewController? {
         guard let current = viewController as? NotebookPageView,
@@ -114,7 +127,6 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
         return pages[index - 1]
     }
 
-    // 获取后一页
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerAfter viewController: UIViewController) -> UIViewController? {
         guard let current = viewController as? NotebookPageView,
@@ -123,27 +135,25 @@ class NotebookViewController: UIViewController, UIPageViewControllerDataSource, 
         return pages[index + 1]
     }
 
-    // 页面切换动画完成时调用（处理手势滑动的情况）
-    func pageViewController(_ pageViewController: UIPageViewController, 
-                           didFinishAnimating finished: Bool,
-                           previousViewControllers: [UIViewController], 
-                           transitionCompleted completed: Bool) {
-        // 只有真正完成了页面切换才更新索引
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            didFinishAnimating finished: Bool,
+                            previousViewControllers: [UIViewController],
+                            transitionCompleted completed: Bool) {
         if completed,
            let currentVC = pageViewController.viewControllers?.first as? NotebookPageView,
-           let currentIndex = pages.firstIndex(of: currentVC) {
-            currentPageIndex = currentIndex
+           let index = pages.firstIndex(of: currentVC) {
+            currentPageIndex = index
         }
     }
 
-    // 控制翻页起始点
-    func pageViewController(_ pageViewController: UIPageViewController, 
-                          spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
         return .min
     }
 }
 
-extension Array {
+// MARK: - Safe Array Access Extension
+private extension Array {
     subscript(safe index: Int) -> Element? {
         return indices.contains(index) ? self[index] : nil
     }
