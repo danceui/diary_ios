@@ -209,7 +209,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         // 计算新的索引
         let newIndex = index - 2
         guard newIndex >= 0 else { return nil }
-        print("Go to previous page pair #\(newIndex), #\(newIndex + 1).")
         return [pages[newIndex], pages[newIndex + 1]]
     }
 
@@ -225,7 +224,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         // 计算新的索引
         let newIndex = index + 2
         guard newIndex + 1 < pages.count else { return nil }
-        print("Go to next page pair #\(newIndex), #\(newIndex + 1).")
         return [pages[newIndex], pages[newIndex + 1]]
     }
 
@@ -238,6 +236,8 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             let index = pages.firstIndex(of: newLeftPage)
         else { return }
         currentIndex = index
+        print("Go to page pair #\(currentIndex), #\(currentIndex + 1).")
+        updatePageShadows()
     }
 
     // MARK: - 页面翻转动画定制

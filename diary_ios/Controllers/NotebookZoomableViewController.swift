@@ -43,8 +43,26 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
         guard gesture.numberOfTouches >= 2,
               let targetView = notebookSpreadVC.view else { return }
 
+        let locationInView = gesture.location(in: targetView) // 获取缩放中心点
+
         if gesture.state == .began || gesture.state == .changed {
-            targetView.transform = targetView.transform.scaledBy(x: gesture.scale, y: gesture.scale)
+            let currentScale = targetView.transform.a
+            var newScale = currentScale * gesture.scale
+            newScale = max(0.5, min(newScale, 1.5)) // 限制缩放范围
+            let scaleFactor = newScale / currentScale
+
+            let anchor = locationInView
+            let translatedAnchor = CGPoint(x: anchor.x - targetView.bounds.midX,
+                                        y: anchor.y - targetView.bounds.midY)
+            let translation = CGAffineTransform(translationX: translatedAnchor.x, y: translatedAnchor.y)
+            let scale = CGAffineTransform(scaleX: scaleFactor, y: scaleFactor)
+            let back = CGAffineTransform(translationX: -translatedAnchor.x, y: -translatedAnchor.y)
+
+            // 先平移到缩放中心点，再缩放，最后平移回去
+            targetView.transform = targetView.transform.concatenating(translation)
+                                                        .concatenating(scale)
+                                                        .concatenating(back)
+
             gesture.scale = 1.0
         }
     }
@@ -77,7 +95,7 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
             targetView.transform = .identity
         })
     }
-    
+
     // MARK: 手势控制策略
     // 允许多个手势同时识别
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
