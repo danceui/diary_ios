@@ -62,7 +62,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         if pages.isEmpty {
             addNewPagePair()
         }
-        setViewControllersForCurrentIndex(animated: false)
+        setViewControllersSafe(currentIndex, direction: .forward, animated: false)
     }
 
     // MARK: - Setup GestureRecognizers
@@ -112,7 +112,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             pages.append(page)
         }
         currentIndex = pages.count - 2 // 指向新左页的索引
-        setViewControllersForCurrentIndex(animated: true, direction: .forward)
+        setViewControllersSafe(currentIndex, direction: .forward, animated: true)
         print("Add new page #\(currentIndex), #\(currentIndex + 1).")
     }
 
@@ -121,22 +121,39 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     }
 
     func goToNextPage(animated: Bool = true) {
-        guard let nextPair = self.pageViewController(self, viewControllersAfter: self.viewControllers ?? []) else { return }
-        print("Go to next page pair.")
-        setViewControllers(nextPair, direction: .forward, animated: animated)
+        let newIndex = currentIndex + 2
+        print("Go to next page pair #\(newIndex), #\(newIndex + 1).")
+        setViewControllersSafe(newIndex, direction: .forward, animated: animated)
     }
 
     func goToPrevPage(animated: Bool = true) {
-        guard let prevPair = self.pageViewController(self, viewControllersBefore: self.viewControllers ?? []) else { return }
-        print("Go to previous page pair.")
-        setViewControllers(prevPair, direction: .reverse, animated: animated)
+        let newIndex = currentIndex - 2
+        guard newIndex >= 0 else { return }
+        print("Go to previous page pair #\(newIndex), #\(newIndex + 1).")
+        setViewControllersSafe(newIndex, direction: .reverse, animated: animated)
     }
 
     // MARK: - Navigation Helpers
-    private func setViewControllersForCurrentIndex(animated: Bool, direction: UIPageViewController.NavigationDirection = .forward) {
-        guard currentIndex >= 0, currentIndex + 1 < pages.count else { return }
-        let leftPage = pages[currentIndex]
-        let rightPage = pages[currentIndex + 1]
+    private func setViewControllersSafe(_ newIndex: Int, direction: UIPageViewController.NavigationDirection, animated: Bool) {
+        // 如果是奇数页数，补空白页
+        if pages.count % 2 != 0 {
+            print("Add dummy page #\(pages.count).")
+            let dummyPage = NotebookPageView(pageIndex: pages.count, initialData: nil)
+            dummyPage.view.backgroundColor = pageBackgroundColor
+            dummyPage.view.layer.borderColor = UIColor.lightGray.cgColor
+            dummyPage.view.layer.borderWidth = 0.5
+            dummyPage.view.layer.shadowOffset = CGSize(width: -2, height: 0)
+            dummyPage.view.layer.shadowRadius = 5
+            dummyPage.view.layer.shadowOpacity = 0.2
+            pages.append(dummyPage)
+        }
+
+        guard newIndex >= 0, newIndex + 1 < pages.count else { return }
+
+        let leftPage = pages[newIndex]
+        let rightPage = pages[newIndex + 1]
+
+        currentIndex = newIndex
         setViewControllers([leftPage, rightPage], direction: direction, animated: animated)
     }
     
@@ -192,6 +209,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         // 计算新的索引
         let newIndex = index - 2
         guard newIndex >= 0 else { return nil }
+        print("Go to previous page pair #\(newIndex), #\(newIndex + 1).")
         return [pages[newIndex], pages[newIndex + 1]]
     }
 
@@ -207,6 +225,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         // 计算新的索引
         let newIndex = index + 2
         guard newIndex + 1 < pages.count else { return nil }
+        print("Go to next page pair #\(newIndex), #\(newIndex + 1).")
         return [pages[newIndex], pages[newIndex + 1]]
     }
 
