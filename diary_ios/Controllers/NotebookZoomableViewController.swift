@@ -2,8 +2,6 @@ import UIKit
 class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
 
-    private var currentTransform: CGAffineTransform = .identity
-
     init(notebookSpreadVC: NotebookSpreadViewController) {
         self.notebookSpreadVC = notebookSpreadVC
         super.init(nibName: nil, bundle: nil)
@@ -25,23 +23,25 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
         ])
 
         // 分别添加手势
-        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        let rotationGesture = UIRotationGestureRecognizer(target: self, action: #selector(handleRotation(_:)))
+        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        let rotation = UIRotationGestureRecognizer(target: self, action: #selector(handleRotation(_:)))
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+        pinch.delegate = self
+        pan.delegate = self
+        rotation.delegate = self
+        doubleTap.numberOfTapsRequired = 2
 
-        pinchGesture.delegate = self
-        panGesture.delegate = self
-        rotationGesture.delegate = self
-
-        view.addGestureRecognizer(pinchGesture)
-        view.addGestureRecognizer(panGesture)
-        view.addGestureRecognizer(rotationGesture)
+        view.addGestureRecognizer(pinch)
+        view.addGestureRecognizer(pan)
+        view.addGestureRecognizer(rotation)
+        view.addGestureRecognizer(doubleTap)
     }
 
     // MARK: 手势处理函数
-
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
-        guard let targetView = notebookSpreadVC.view else { return }
+        guard gesture.numberOfTouches >= 2,
+              let targetView = notebookSpreadVC.view else { return }
 
         if gesture.state == .began || gesture.state == .changed {
             targetView.transform = targetView.transform.scaledBy(x: gesture.scale, y: gesture.scale)
@@ -50,7 +50,8 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        guard let targetView = notebookSpreadVC.view else { return }
+        guard gesture.numberOfTouches >= 2,
+              let targetView = notebookSpreadVC.view else { return }
 
         let translation = gesture.translation(in: view)
         if gesture.state == .began || gesture.state == .changed {
@@ -60,7 +61,8 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
     }
 
     @objc private func handleRotation(_ gesture: UIRotationGestureRecognizer) {
-        guard let targetView = notebookSpreadVC.view else { return }
+        guard gesture.numberOfTouches >= 2,
+              let targetView = notebookSpreadVC.view else { return }
 
         if gesture.state == .began || gesture.state == .changed {
             targetView.transform = targetView.transform.rotated(by: gesture.rotation)
@@ -68,10 +70,24 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
         }
     }
 
-    // MARK: 同时识别多个手势
+    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        guard let targetView = notebookSpreadVC.view else { return }
+
+        UIView.animate(withDuration: 0.25, animations: {
+            targetView.transform = .identity
+        })
+    }
+    
+    // MARK: 手势控制策略
+    // 允许多个手势同时识别
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
+    }
+
+    // 只允许两指及以上手势开始
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        return gestureRecognizer.numberOfTouches >= 2
     }
 
     required init?(coder: NSCoder) {
