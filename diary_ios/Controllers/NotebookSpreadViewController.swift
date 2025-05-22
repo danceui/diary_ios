@@ -4,12 +4,12 @@ import UIKit
 class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
     private var pages: [NotebookPageView] = []
-    private var currentIndex: Int = -1
+    private var currentIndex: Int = 0
     
     // 笔记本样式配置
-    private let pageBackgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 0.50) // 浅紫色
-    private let pageControllerBackgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.50) // 浅绿色
-    private let spineShadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 0.5).cgColor // 深灰色
+    private let pageBackgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
+    private let pageControllerBackgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.5) // 浅绿色
+    private let spineShadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1).cgColor // 深灰色
     private let spineShadowWidth: CGFloat = 10.0
 
     // 添加手势识别器
@@ -37,7 +37,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         super.init(transitionStyle: .pageCurl, navigationOrientation: .horizontal, options: options)
     }
 
-    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupPageController()
@@ -45,6 +44,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         setupGestureRecognizers()
     }
     
+    // MARK: - Setup PageController
     private func setupPageController() {
         dataSource = self
         delegate = self
@@ -58,6 +58,14 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         view.layer.shadowOpacity = 0.8
     }
     
+    private func setupInitialPages() {
+        if pages.isEmpty {
+            addNewPagePair()
+        }
+        setViewControllersForCurrentIndex(animated: false)
+    }
+
+    // MARK: - Setup GestureRecognizers
     private func setupGestureRecognizers() {
         // 移除默认手势识别器（如果需要）
         for gesture in gestureRecognizers {
@@ -65,10 +73,9 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
                 view.removeGestureRecognizer(edgeGesture)
             }
         }
-        
         // 添加右侧边缘滑动手势（下一页）
         edgeSwipeGestureRecognizer = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleRightEdgeSwipe(_:)))
-        edgeSwipeGestureRecognizer.edges = .right
+        edgeSwipeGestureRecognizer.edges = .right //只识别屏幕右侧边缘的滑动
         view.addGestureRecognizer(edgeSwipeGestureRecognizer)
         
         // 添加左侧边缘滑动手势（上一页）
@@ -89,13 +96,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         }
     }
     
-    private func setupInitialPages() {
-        if pages.isEmpty {
-            addNewPagePair()
-        }
-        setViewControllersForCurrentIndex(animated: false)
-    }
-
     // MARK: - Page Management
     func addNewPagePair(initialData: Data? = nil) {
         let leftPage = NotebookPageView(pageIndex: pages.count, initialData: initialData)
@@ -111,11 +111,9 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             page.view.layer.shadowOpacity = 0.2
             pages.append(page)
         }
-        if currentIndex == -1 {
-            currentIndex = 0
-            setViewControllersForCurrentIndex(animated: false)
-        }
-        print("Add new page pair.")
+        currentIndex = pages.count - 2 // 指向新左页的索引
+        setViewControllersForCurrentIndex(animated: true, direction: .forward)
+        print("Add new page #\(currentIndex), #\(currentIndex + 1).")
     }
 
     func getPageCount() -> Int {
@@ -124,13 +122,13 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
 
     func goToNextPage(animated: Bool = true) {
         guard let nextPair = self.pageViewController(self, viewControllersAfter: self.viewControllers ?? []) else { return }
-        print("Go to next pair.")
+        print("Go to next page pair.")
         setViewControllers(nextPair, direction: .forward, animated: animated)
     }
 
     func goToPrevPage(animated: Bool = true) {
         guard let prevPair = self.pageViewController(self, viewControllersBefore: self.viewControllers ?? []) else { return }
-        print("Go to previous pair.")
+        print("Go to previous page pair.")
         setViewControllers(prevPair, direction: .reverse, animated: animated)
     }
 
@@ -139,9 +137,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         guard currentIndex >= 0, currentIndex + 1 < pages.count else { return }
         let leftPage = pages[currentIndex]
         let rightPage = pages[currentIndex + 1]
-        setViewControllers([leftPage, rightPage], direction: direction, animated: animated) { [weak self] _ in
-            self?.updatePageShadows()
-        }
+        setViewControllers([leftPage, rightPage], direction: direction, animated: animated)
     }
     
     private func updatePageShadows() {
@@ -223,7 +219,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             let index = pages.firstIndex(of: newLeftPage)
         else { return }
         currentIndex = index
-        updatePageShadows()
     }
 
     // MARK: - 页面翻转动画定制
@@ -235,16 +230,12 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             super.setViewControllers(nil, direction: direction, animated: false, completion: completion)
             return
         }
-        
         // 禁用交互以防动画过程中用户再次触发翻页
         self.view.isUserInteractionEnabled = false
-        
         // 使用系统翻页动画
         super.setViewControllers(viewControllers, direction: direction, animated: animated) { [weak self] finished in
             completion?(finished)
             self?.view.isUserInteractionEnabled = true
-            
-            // 更新当前索引和阴影
             if let newLeftPage = viewControllers.first as? NotebookPageView,
             let index = self?.pages.firstIndex(of: newLeftPage) {
                 self?.currentIndex = index

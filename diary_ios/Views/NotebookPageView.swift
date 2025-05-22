@@ -34,7 +34,7 @@ class NotebookPageView: UIViewController, PKCanvasViewDelegate {
 
     private func setupCanvas() {
         canvas.delegate = self
-        canvas.backgroundColor = .yellow.withAlphaComponent(0.1)
+        canvas.backgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 1) // 浅绿色
         canvas.layer.cornerRadius = 20
         canvas.layer.masksToBounds = true
         canvas.layer.borderColor = UIColor.lightGray.cgColor
