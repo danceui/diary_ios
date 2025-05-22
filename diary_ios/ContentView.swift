@@ -2,43 +2,45 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 struct ContentView: View {
-    private let notebookVC = NotebookSpreadViewController()
+    private let notebookSpreadVC = NotebookSpreadViewController()
     
     var body: some View {
         VStack(spacing: 0) {
-            NotebookViewContainer(controller: notebookVC)
-                .edgesIgnoringSafeArea(.all)
+            NotebookViewContainer(notebookSpreadVC: notebookSpreadVC)
+                .frame(width: 1200, height: 800) // 👈 你想要的大小
+                .clipped() // 防止超出边界
+                .border(Color.red) // 调试时画边框看效果
             
             Divider()
             
-            ToolBarView(notebookVC: notebookVC)
+            ToolBarView(notebookSpreadVC: notebookSpreadVC)
         }
     }
     
     @available(iOS 16.0, *)
     struct ToolBarView: View {
-        let notebookVC: NotebookSpreadViewController
+        let notebookSpreadVC: NotebookSpreadViewController
         
         var body: some View {
             HStack {
                 Button("⬅ Prev") {
-                    notebookVC.goToPrevPage()
+                    notebookSpreadVC.goToPrevPage()
                 }
                 
                 Button("Undo") {
-                    notebookVC.undo()
+                    notebookSpreadVC.undo()
                 }
                 
                 Button("Redo") {
-                    notebookVC.redo()
+                    notebookSpreadVC.redo()
                 }
                 
                 Button("Add Page") {
-                    notebookVC.addNewPagePair()
+                    notebookSpreadVC.addNewPagePair()
                 }
                 
                 Button("➡ Next") {
-                    notebookVC.goToNextPage()
+                    notebookSpreadVC.goToNextPage()
                 }
             }
             .padding()
