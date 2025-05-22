@@ -43,27 +43,41 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
         guard gesture.numberOfTouches >= 2,
               let targetView = notebookSpreadVC.view else { return }
 
-        let locationInView = gesture.location(in: targetView) // 获取缩放中心点
+        // 计算双指中点
+        let touch1 = gesture.location(ofTouch: 0, in: targetView)
+        let touch2 = gesture.location(ofTouch: 1, in: targetView)
+        let pinchCenter = CGPoint(x: (touch1.x + touch2.x) / 2, 
+                                y: (touch1.y + touch2.y) / 2)
 
-        if gesture.state == .began || gesture.state == .changed {
+        if gesture.state == .began {
+            // 只存储初始状态，不修改gesture.scale
             let currentScale = targetView.transform.a
-            var newScale = currentScale * gesture.scale
-            newScale = max(0.5, min(newScale, 1.5)) // 限制缩放范围
-            let scaleFactor = newScale / currentScale
+            targetView.layer.setValue(currentScale, forKey: "initialScale")
+            targetView.layer.setValue(pinchCenter, forKey: "initialPinchCenter")
+        }
+        
+        if gesture.state == .changed {
+            guard let initialScale = targetView.layer.value(forKey: "initialScale") as? CGFloat,
+                let initialPinchCenter = targetView.layer.value(forKey: "initialPinchCenter") as? CGPoint else { return }
+            // 直接使用gesture.scale作为相对变化量
+            var newScale = initialScale * gesture.scale
+            newScale = max(0.7, min(newScale, 1.5)) // 限制缩放范围
 
-            let anchor = locationInView
-            let translatedAnchor = CGPoint(x: anchor.x - targetView.bounds.midX,
-                                        y: anchor.y - targetView.bounds.midY)
-            let translation = CGAffineTransform(translationX: translatedAnchor.x, y: translatedAnchor.y)
-            let scale = CGAffineTransform(scaleX: scaleFactor, y: scaleFactor)
-            let back = CGAffineTransform(translationX: -translatedAnchor.x, y: -translatedAnchor.y)
+            // 计算偏移（保持视觉中心稳定）
+            let offsetX = pinchCenter.x - initialPinchCenter.x
+            let offsetY = pinchCenter.y - initialPinchCenter.y
 
-            // 先平移到缩放中心点，再缩放，最后平移回去
-            targetView.transform = targetView.transform.concatenating(translation)
-                                                        .concatenating(scale)
-                                                        .concatenating(back)
+            // 应用变换
+            targetView.transform = CGAffineTransform.identity
+                .translatedBy(x: offsetX, y: offsetY)
+                .scaledBy(x: newScale, y: newScale)
+                .translatedBy(x: -offsetX, y: -offsetY)
+        }
 
-            gesture.scale = 1.0
+        if gesture.state == .ended || gesture.state == .cancelled {
+            // 清理存储的状态
+            targetView.layer.setValue(nil, forKey: "initialTranslation")
+            targetView.layer.setValue(nil, forKey: "initialPinchCenter")
         }
     }
 
