@@ -7,12 +7,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             NotebookViewContainer(notebookSpreadVC: notebookSpreadVC)
-                .frame(width: 1200, height: 800) // 👈 你想要的大小
-                .clipped() // 防止超出边界
-                .border(Color.red) // 调试时画边框看效果
-            
             Divider()
-            
             ToolBarView(notebookSpreadVC: notebookSpreadVC)
         }
     }
