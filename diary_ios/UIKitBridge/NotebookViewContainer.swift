@@ -2,13 +2,13 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 struct NotebookViewContainer: UIViewControllerRepresentable {
-    let viewController: NotebookSpreadViewController
+    let controller: NotebookSpreadViewController
 
-    func makeUIViewController(context: Context) -> NotebookSpreadViewController {
-        return viewController
+    func makeUIViewController(context: Context) -> NotebookZoomableSpreadView {
+        return NotebookZoomableSpreadView(notebookVC: controller)
     }
 
-    func updateUIViewController(_ uiViewController: NotebookSpreadViewController, context: Context) {
-        // 无需更新
+    func updateUIViewController(_ uiViewController: NotebookZoomableSpreadView, context: Context) {
+        // 不需要更新
     }
 }
