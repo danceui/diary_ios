@@ -11,6 +11,10 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     private let pageControllerBackgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.50) // 浅绿色
     private let spineShadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 0.5).cgColor // 深灰色
     private let spineShadowWidth: CGFloat = 10.0
+
+    // 添加手势识别器
+    private var edgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
+    private var leftEdgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
     
     init() {
         // 设置页面间的间距
@@ -38,6 +42,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         super.viewDidLoad()
         setupPageController()
         setupInitialPages()
+        setupGestureRecognizers()
     }
     
     private func setupPageController() {
@@ -51,6 +56,37 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         view.layer.shadowOffset = .zero
         view.layer.shadowRadius = spineShadowWidth
         view.layer.shadowOpacity = 0.8
+    }
+    
+    private func setupGestureRecognizers() {
+        // 移除默认手势识别器（如果需要）
+        for gesture in gestureRecognizers {
+            if let edgeGesture = gesture as? UIScreenEdgePanGestureRecognizer {
+                view.removeGestureRecognizer(edgeGesture)
+            }
+        }
+        
+        // 添加右侧边缘滑动手势（下一页）
+        edgeSwipeGestureRecognizer = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleRightEdgeSwipe(_:)))
+        edgeSwipeGestureRecognizer.edges = .right
+        view.addGestureRecognizer(edgeSwipeGestureRecognizer)
+        
+        // 添加左侧边缘滑动手势（上一页）
+        leftEdgeSwipeGestureRecognizer = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleLeftEdgeSwipe(_:)))
+        leftEdgeSwipeGestureRecognizer.edges = .left
+        view.addGestureRecognizer(leftEdgeSwipeGestureRecognizer)
+    }
+    
+    @objc private func handleRightEdgeSwipe(_ gesture: UIScreenEdgePanGestureRecognizer) {
+        if gesture.state == .ended {
+            goToNextPage(animated: true)
+        }
+    }
+    
+    @objc private func handleLeftEdgeSwipe(_ gesture: UIScreenEdgePanGestureRecognizer) {
+        if gesture.state == .ended {
+            goToPrevPage(animated: true)
+        }
     }
     
     private func setupInitialPages() {
@@ -81,11 +117,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         }
         print("Add new page pair.")
     }
-
-    // func getPage(at index: Int) -> NotebookPageView? {
-    //     guard index >= 0 && index < pages.count else { return nil }
-    //     return pages[index]
-    // }
 
     func getPageCount() -> Int {
         return pages.count
@@ -125,24 +156,35 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         }
     }
 
-    // MARK: - 单页配置 (已注释/返回nil)
+    // MARK: - 单页配置
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerBefore viewController: UIViewController) -> UIViewController? {
-        return nil // or a placeholder
+        // 单页模式实现（虽然你使用双页模式，但最好实现这个方法）
+        guard let page = viewController as? NotebookPageView,
+              let index = pages.firstIndex(of: page),
+              index > 0 else {
+            return nil
+        }
+        return pages[index - 1]
     }
 
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerAfter viewController: UIViewController) -> UIViewController? {
-        return nil // or a placeholder
-    }
-
-    func pageViewController(_ pageViewController: UIPageViewController,
-                            spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
-        // 横屏时也保持双页模式
-        return .mid
+        // 单页模式实现
+        guard let page = viewController as? NotebookPageView,
+              let index = pages.firstIndex(of: page),
+              index < pages.count - 1 else {
+            return nil
+        }
+        return pages[index + 1]
     }
     
-    // MARK: - 双页
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
+        return .mid
+    }
+
+    // MARK: - 双页模式
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllersBefore viewControllers: [UIViewController]) -> [UIViewController]? {
         // 尝试获取当前显示的第一个视图控制器，将其转换为自定义的 NotebookPageView 类型
