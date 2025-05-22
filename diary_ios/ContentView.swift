@@ -24,23 +24,23 @@ struct ToolBarView: View {
     var body: some View {
         HStack {
             Button("⬅ Prev") {
-//                notebookVC.goToPrevPage()
+               notebookVC.goToPrevPage()
             }
 
             Button("Undo") {
-//                notebookVC.undo()
+               notebookVC.undo()
             }
 
             Button("Redo") {
-//                notebookVC.redo()
+               notebookVC.redo()
             }
 
             Button("Add Page") {
-                notebookVC.addNewPage()
+                notebookVC.addNewPagePair()
             }
 
             Button("➡ Next") {
-//                notebookVC.goToNextPage()
+               notebookVC.goToNextPage()
             }
         }
         .padding()
