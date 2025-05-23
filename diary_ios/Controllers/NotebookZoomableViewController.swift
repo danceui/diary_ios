@@ -20,7 +20,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         super.viewDidLoad()
         // setupScrollView
         scrollView.delegate = self
-        scrollView.minimumZoomScale = 0.8
+        scrollView.minimumZoomScale = 0.7
         scrollView.maximumZoomScale = 2.0
         scrollView.bouncesZoom = true
         scrollView.contentInsetAdjustmentBehavior = .never
@@ -48,11 +48,11 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         if containerView.bounds.size == .zero {
             let size = paperSize.size
             scrollView.contentSize = size
-            scrollView.setZoomScale(0.8, animated: false)
             containerView.frame.size = size
             notebookSpreadVC.view.frame.size = size
         }
         centerContent()
+        scrollView.setZoomScale(0.8, animated: false)
     }
 
     // MARK: - Zoom Handling
@@ -78,7 +78,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Double Tap
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        scrollView.setZoomScale(1.0, animated: true)
+        scrollView.setZoomScale(0.8, animated: true)
         printLayoutInfo(context: "handleDoubleTap")
     }
 
