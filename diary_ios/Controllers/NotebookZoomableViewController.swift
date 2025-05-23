@@ -2,11 +2,13 @@ import UIKit
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
+    let paperSize: PaperSize
     private let scrollView = UIScrollView()
     private let containerView = UIView()
 
-    init(notebookSpreadVC: NotebookSpreadViewController) {
+    init(notebookSpreadVC: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
         self.notebookSpreadVC = notebookSpreadVC
+        self.paperSize = paperSize
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -16,27 +18,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupScrollView()
-        setupContainerView()
-        embedNotebookSpreadVC()
-        addDoubleTapGesture()
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        if containerView.bounds.size == .zero {
-            // 初始布局
-            let initialSize = scrollView.bounds.size
-            containerView.frame = CGRect(origin: .zero, size: initialSize)
-            scrollView.contentSize = initialSize
-            notebookSpreadVC.view.frame = containerView.bounds
-        }
-        centerContent()
-    }
-
-    private func setupScrollView() {
+        // setupScrollView
         scrollView.delegate = self
-        scrollView.minimumZoomScale = 0.5
+        scrollView.minimumZoomScale = 0.8
         scrollView.maximumZoomScale = 2.0
         scrollView.bouncesZoom = true
         scrollView.contentInsetAdjustmentBehavior = .never
@@ -45,27 +29,33 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
         scrollView.frame = view.bounds
         scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(scrollView)
-    }
 
-    private func setupContainerView() {
-        scrollView.addSubview(containerView)
-    }
-
-    private func embedNotebookSpreadVC() {
+        // embedNotebookSpreadVC
         addChild(notebookSpreadVC)
+        view.addSubview(scrollView)
+        scrollView.addSubview(containerView)
         containerView.addSubview(notebookSpreadVC.view)
         notebookSpreadVC.didMove(toParent: self)
-    }
 
-    private func addDoubleTapGesture() {
+        // addDoubleTapGesture
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
         scrollView.addGestureRecognizer(doubleTap)
     }
 
-    // MARK: - Zoom Handling
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if containerView.bounds.size == .zero {
+            let size = paperSize.size
+            scrollView.contentSize = size
+            scrollView.setZoomScale(0.8, animated: false)
+            containerView.frame.size = size
+            notebookSpreadVC.view.frame.size = size
+        }
+        centerContent()
+    }
 
+    // MARK: - Zoom Handling
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return containerView
     }
@@ -86,18 +76,15 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
                                        y: contentSize.height / 2 + offsetY)
     }
 
-    // MARK: - Zoom Reset
-
+    // MARK: - Double Tap
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
         scrollView.setZoomScale(1.0, animated: true)
         printLayoutInfo(context: "handleDoubleTap")
     }
 
     // MARK: - Debug Info
-
     private func printLayoutInfo(context: String) {
         print("======== \(context) ========")
-        print("📐 view.bounds: \(view.bounds)")
         print("📐 scrollView.frame: \(scrollView.frame)")
         print("📐 scrollView.contentSize: \(scrollView.contentSize)")
         print("📐 scrollView.contentOffset: \(scrollView.contentOffset)")
