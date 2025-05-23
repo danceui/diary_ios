@@ -11,10 +11,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     private let spineShadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1).cgColor // 深灰色
     private let spineShadowWidth: CGFloat = 10.0
 
-    // 封面和背页
-    private let coverPage = NotebookPageViewController(pageIndex: -1, initialData: nil) // 封面页
-    private let backPage = NotebookPageViewController(pageIndex: -2, initialData: nil)  // 背页
-
     // 添加手势识别器
     private var edgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
     private var leftEdgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
@@ -46,15 +42,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         setupInitialPages()
         setupGestureRecognizers()
     }
-
-    private func setupSinglePage(_ page: NotebookPageViewController, isCover: Bool) {
-        page.view.backgroundColor = .white
-        page.view.layer.borderWidth = 2
-        page.view.layer.borderColor = UIColor.black.cgColor
-        page.view.layer.shadowOpacity = 0
-        
-        // 如果你想定制不同样式，可用 isCover 判断
-    }
     
     // MARK: - Setup PageController
     private func setupPageController() {
@@ -74,8 +61,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         if pages.isEmpty {
             addNewPagePair()
         }
-        setupSinglePage(coverPage, isCover: true)
-        setupSinglePage(backPage, isCover: false)
         setViewControllersSafe(currentIndex, direction: .forward, animated: false)
     }
 
@@ -136,50 +121,38 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
 
     func goToNextPage(animated: Bool = true) {
         let newIndex = currentIndex + 2
-        if newIndex >= pages.count {
-            setViewControllersSafe(pages.count, direction: .forward, animated: animated) // 背页
-            print("Go to back page.")
-        } else {
-            setViewControllersSafe(newIndex, direction: .forward, animated: animated)
-            print("Go to next page pair #\(newIndex), #\(newIndex + 1).")
-        }
+        print("Go to next page pair #\(newIndex), #\(newIndex + 1).")
+        setViewControllersSafe(newIndex, direction: .forward, animated: animated)
     }
 
     func goToPrevPage(animated: Bool = true) {
         let newIndex = currentIndex - 2
-        if newIndex < 0 {
-            setViewControllersSafe(-1, direction: .reverse, animated: animated) // 封面
-            print("Go to cover page.")
-        } else {
-            setViewControllersSafe(newIndex, direction: .reverse, animated: animated)
-            print("Go to previous page pair #\(newIndex), #\(newIndex + 1).")
-        }
+        guard newIndex >= 0 else { return}
+        print("Go to previous page pair #\(newIndex), #\(newIndex + 1).")
+        setViewControllersSafe(newIndex, direction: .reverse, animated: animated)
     }
 
     // MARK: - Navigation Helpers
     private func setViewControllersSafe(_ newIndex: Int, direction: UIPageViewController.NavigationDirection, animated: Bool) {
-        if newIndex < 0 {
-            // 显示封面页（第一页的前一页）
-            currentIndex = 0
-            isDoubleSided = false
-            self.setViewControllers([coverPage], direction: direction, animated: animated, completion: nil)
-            return
-        }
+        // 如果是奇数页数，补空白页
+        if pages.count % 2 != 0 {
+            print("Add dummy page #\(pages.count).")
+            let dummyPage = NotebookPageView(pageIndex: pages.count, initialData: nil)
+            dummyPage.view.backgroundColor = pageBackgroundColor
+            dummyPage.view.layer.borderColor = UIColor.lightGray.cgColor
+            dummyPage.view.layer.borderWidth = 0.5
+            dummyPage.view.layer.shadowOffset = CGSize(width: -2, height: 0)
+            dummyPage.view.layer.shadowRadius = 5
+            dummyPage.view.layer.shadowOpacity = 0.2
+            pages.append(dummyPage)}
 
-        if newIndex >= pages.count {
-            // 显示背页（最后一页的后一页）
-            currentIndex = pages.count - 2
-            isDoubleSided = false
-            self.setViewControllers([backPage], direction: direction, animated: animated, completion: nil)
-            return
-        }
+        guard newIndex >= 0, newIndex + 1 < pages.count else { return }
 
-        guard newIndex + 1 < pages.count else { return }
+        let leftPage = pages[newIndex]
+        let rightPage = pages[newIndex + 1]
 
-        // 正常双页情况
-        isDoubleSided = true
         currentIndex = newIndex
-        self.setViewControllers([pages[newIndex], pages[newIndex + 1]], direction: direction, animated: animated, completion: nil)
+        setViewControllers([leftPage, rightPage], direction: direction, animated: animated)
     }
     
     private func updatePageShadows() {
@@ -219,7 +192,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     
     func pageViewController(_ pageViewController: UIPageViewController,
                             spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
-        return isDoubleSided ? .mid : .min
+        return .mid
     }
 
     // MARK: - 双页模式
