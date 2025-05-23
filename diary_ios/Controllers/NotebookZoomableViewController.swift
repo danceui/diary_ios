@@ -14,7 +14,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        centerContent()
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -74,6 +77,20 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         return containerView
     }
 
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        centerContent()
+    }
+    
+    private func centerContent() {
+        let scrollViewSize = scrollView.bounds.size
+        let contentSize = containerView.frame.size
+        let scale = scrollView.zoomScale
+
+        let verticalInset = max(0, (scrollViewSize.height - contentSize.height * scale) / 2)
+        let horizontalInset = max(0, (scrollViewSize.width - contentSize.width * scale) / 2)
+
+        scrollView.contentInset = UIEdgeInsets(top: verticalInset, left: horizontalInset, bottom: verticalInset, right: horizontalInset)
+    }
     // MARK: - 双击还原缩放
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
         scrollView.setZoomScale(1.0, animated: true)
