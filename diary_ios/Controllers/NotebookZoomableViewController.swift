@@ -2,6 +2,8 @@ import UIKit
 class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
 
+    // 限制区域：相对于 self.view 的 frame（中心对齐）
+    let gestureArea = CGRect(x: (1024 - 900) / 2, y: (768 - 600) / 2, width: 900, height: 600) // iPad模拟器为例，可调
     init(notebookSpreadVC: NotebookSpreadViewController) {
         self.notebookSpreadVC = notebookSpreadVC
         super.init(nibName: nil, bundle: nil)
@@ -25,17 +27,27 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
         // 分别添加手势
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        let rotation = UIRotationGestureRecognizer(target: self, action: #selector(handleRotation(_:)))
+        // let rotation = UIRotationGestureRecognizer(target: self, action: #selector(handleRotation(_:)))
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
         pinch.delegate = self
         pan.delegate = self
-        rotation.delegate = self
+        // rotation.delegate = self
         doubleTap.numberOfTapsRequired = 2
 
         view.addGestureRecognizer(pinch)
         view.addGestureRecognizer(pan)
-        view.addGestureRecognizer(rotation)
+        // view.addGestureRecognizer(rotation)
         view.addGestureRecognizer(doubleTap)
+    }
+
+    private func allTouches(in gesture: UIGestureRecognizer, within area: CGRect) -> Bool {
+        for i in 0..<gesture.numberOfTouches {
+            let point = gesture.location(ofTouch: i, in: self.view)
+            if !area.contains(point) {
+                return false
+            }
+        }
+        return true
     }
 
     // MARK: 手势处理函数
@@ -43,46 +55,14 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
         guard gesture.numberOfTouches >= 2,
               let targetView = notebookSpreadVC.view else { return }
 
-        // 计算双指中点
-        let touch1 = gesture.location(ofTouch: 0, in: targetView)
-        let touch2 = gesture.location(ofTouch: 1, in: targetView)
-        let pinchCenter = CGPoint(x: (touch1.x + touch2.x) / 2, 
-                                y: (touch1.y + touch2.y) / 2)
-
-        if gesture.state == .began {
-            // 只存储初始状态，不修改gesture.scale
-            let currentScale = targetView.transform.a
-            targetView.layer.setValue(currentScale, forKey: "initialScale")
-            targetView.layer.setValue(pinchCenter, forKey: "initialPinchCenter")
-        }
-        
-        if gesture.state == .changed {
-            guard let initialScale = targetView.layer.value(forKey: "initialScale") as? CGFloat,
-                let initialPinchCenter = targetView.layer.value(forKey: "initialPinchCenter") as? CGPoint else { return }
-            // 直接使用gesture.scale作为相对变化量
-            var newScale = initialScale * gesture.scale
-            newScale = max(0.7, min(newScale, 1.5)) // 限制缩放范围
-
-            // 计算偏移（保持视觉中心稳定）
-            let offsetX = pinchCenter.x - initialPinchCenter.x
-            let offsetY = pinchCenter.y - initialPinchCenter.y
-
-            // 应用变换
-            targetView.transform = CGAffineTransform.identity
-                .translatedBy(x: offsetX, y: offsetY)
-                .scaledBy(x: newScale, y: newScale)
-                .translatedBy(x: -offsetX, y: -offsetY)
-        }
-
-        if gesture.state == .ended || gesture.state == .cancelled {
-            // 清理存储的状态
-            targetView.layer.setValue(nil, forKey: "initialTranslation")
-            targetView.layer.setValue(nil, forKey: "initialPinchCenter")
+        if gesture.state == .began || gesture.state == .changed {
+            targetView.transform = targetView.transform.scaledBy(x: gesture.scale, y: gesture.scale)
+            gesture.scale = 1.0
         }
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        guard gesture.numberOfTouches >= 2,
+        guard gesture.numberOfTouches >= 2, allTouches(in: gesture, within: gestureArea),
               let targetView = notebookSpreadVC.view else { return }
 
         let translation = gesture.translation(in: view)
@@ -92,15 +72,15 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
         }
     }
 
-    @objc private func handleRotation(_ gesture: UIRotationGestureRecognizer) {
-        guard gesture.numberOfTouches >= 2,
-              let targetView = notebookSpreadVC.view else { return }
+    // @objc private func handleRotation(_ gesture: UIRotationGestureRecognizer) {
+    //     guard gesture.numberOfTouches >= 2, allTouches(in: gesture, within: gestureArea),
+    //           let targetView = notebookSpreadVC.view else { return }
 
-        if gesture.state == .began || gesture.state == .changed {
-            targetView.transform = targetView.transform.rotated(by: gesture.rotation)
-            gesture.rotation = 0
-        }
-    }
+    //     if gesture.state == .began || gesture.state == .changed {
+    //         targetView.transform = targetView.transform.rotated(by: gesture.rotation)
+    //         gesture.rotation = 0
+    //     }
+    // }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
         guard let targetView = notebookSpreadVC.view else { return }
@@ -119,7 +99,7 @@ class NotebookZoomableViewController: UIViewController, UIGestureRecognizerDeleg
 
     // 只允许两指及以上手势开始
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        return gestureRecognizer.numberOfTouches >= 2
+        return gestureRecognizer.numberOfTouches >= 2 && allTouches(in: gestureRecognizer, within: gestureArea)
     }
 
     required init?(coder: NSCoder) {
