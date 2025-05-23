@@ -5,12 +5,6 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     private var pages: [NotebookPageViewController] = []
     private var currentIndex: Int = 0
     
-    // 笔记本样式配置
-    private let pageBackgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
-    private let pageControllerBackgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.5) // 浅绿色
-    private let spineShadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1).cgColor // 深灰色
-    private let spineShadowWidth: CGFloat = 10.0
-
     // 添加手势识别器
     private var edgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
     private var leftEdgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
@@ -21,8 +15,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             .spineLocation: UIPageViewController.SpineLocation.mid.rawValue,
             .interPageSpacing: 20.0 // 页面间距
         ]
-        
-        // 使用双页模式（spineLocation: .mid）和页面间距
+
         super.init(transitionStyle: .pageCurl, navigationOrientation: .horizontal, options: options)
         isDoubleSided = true
     }
@@ -47,13 +40,11 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     private func setupPageController() {
         dataSource = self
         delegate = self
-        view.backgroundColor = pageControllerBackgroundColor
         isDoubleSided = true
-        
-        // 设置书脊阴影效果
-        view.layer.shadowColor = spineShadowColor
+        view.backgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.5) // 浅绿色
+        view.layer.shadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1).cgColor // 深灰色
         view.layer.shadowOffset = .zero
-        view.layer.shadowRadius = spineShadowWidth
+        view.layer.shadowRadius = 10.0
         view.layer.shadowOpacity = 0.8
     }
     
@@ -63,9 +54,18 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             let coverPage = NotebookPageViewController(pageIndex: 1, role: .cover)
             let backPage = NotebookPageViewController(pageIndex: 2, role: .back)
             let blankBack = NotebookPageViewController(pageIndex: 3, role: .empty) // 空页
-            for page in [blankCover, coverPage, backPage, blankBack] {
+            pages.append(blankCover)
+            for page in [coverPage, backPage] {
                 pages.append(page)
+                page.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
+                page.view.layer.borderColor = UIColor.lightGray.cgColor
+                page.view.layer.borderWidth = 0.5
+                page.view.layer.shadowColor = UIColor.lightGray.cgColor
+                page.view.layer.shadowOffset = CGSize(width: -2, height: 0)
+                page.view.layer.shadowRadius = 5
+                page.view.layer.shadowOpacity = 0.2
             }
+            pages.append(blankBack)
             currentIndex = 0
             setViewControllersSafe(currentIndex, direction: .forward, animated: false)
         }
@@ -109,10 +109,10 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
 
         for page in [leftPage, rightPage] {
-            page.view.backgroundColor = pageBackgroundColor // 浅紫色
+            page.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
             page.view.layer.borderColor = UIColor.lightGray.cgColor
             page.view.layer.borderWidth = 0.5
-            // page.view.layer.shadowColor = UIColor.lightGray.cgColor
+            page.view.layer.shadowColor = UIColor.lightGray.cgColor
             page.view.layer.shadowOffset = CGSize(width: -2, height: 0)
             page.view.layer.shadowRadius = 5
             page.view.layer.shadowOpacity = 0.2

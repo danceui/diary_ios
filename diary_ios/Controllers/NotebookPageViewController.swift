@@ -35,20 +35,24 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     }
 
     private func setupCanvas() {
+        guard pageRole != .empty else {
+            view.backgroundColor = .clear
+            return
+        }
         canvas.delegate = self
         switch pageRole {
         case .normal:
             canvas.backgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 1) // 正常浅绿色
         case .cover:
-            canvas.backgroundColor = UIColor(red: 1.0, green: 0.95, blue: 0.75, alpha: 1) // 淡黄色封面
+            canvas.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1) // 灰色封面
             canvas.isUserInteractionEnabled = false // 禁止写字
         case .back:
             canvas.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1) // 灰色背页
             canvas.isUserInteractionEnabled = false
         case .empty:
-            canvas.backgroundColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 0) // 透明
-            canvas.isUserInteractionEnabled = false // 禁止写字
+            break
         }
+        
         canvas.layer.cornerRadius = 20
         canvas.layer.masksToBounds = true
         canvas.layer.borderColor = UIColor.lightGray.cgColor
