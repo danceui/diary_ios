@@ -59,9 +59,16 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     
     private func setupInitialPages() {
         if pages.isEmpty {
-            addNewPagePair()
+            let blankCover = NotebookPageViewController(pageIndex: 0, role: .empty) // 空页
+            let coverPage = NotebookPageViewController(pageIndex: 1, role: .cover)
+            let backPage = NotebookPageViewController(pageIndex: 2, role: .back)
+            let blankBack = NotebookPageViewController(pageIndex: 3, role: .empty) // 空页
+            for page in [blankCover, coverPage, backPage, blankBack] {
+                pages.append(page)
+            }
+            currentIndex = 0
+            setViewControllersSafe(currentIndex, direction: .forward, animated: false)
         }
-        setViewControllersSafe(currentIndex, direction: .forward, animated: false)
     }
 
     // MARK: - Setup GestureRecognizers
@@ -97,6 +104,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
     
     // MARK: - Page Management
     func addNewPagePair(initialData: Data? = nil) {
+        let insertIndex = currentIndex + 2
         let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
 
@@ -108,11 +116,12 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             page.view.layer.shadowOffset = CGSize(width: -2, height: 0)
             page.view.layer.shadowRadius = 5
             page.view.layer.shadowOpacity = 0.2
-            pages.append(page)
         }
-        currentIndex = pages.count - 2 // 指向新左页的索引
+
+        pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
+        currentIndex = insertIndex
+        print("Insert page pair #\(currentIndex), #\(currentIndex + 1).")
         setViewControllersSafe(currentIndex, direction: .forward, animated: true)
-        print("Add new page #\(currentIndex), #\(currentIndex + 1).")
     }
 
     func getPageCount() -> Int {
@@ -137,14 +146,9 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         // 如果是奇数页数，补空白页
         if pages.count % 2 != 0 {
             print("Add dummy page #\(pages.count).")
-            let dummyPage = NotebookPageView(pageIndex: pages.count, initialData: nil)
-            dummyPage.view.backgroundColor = pageBackgroundColor
-            dummyPage.view.layer.borderColor = UIColor.lightGray.cgColor
-            dummyPage.view.layer.borderWidth = 0.5
-            dummyPage.view.layer.shadowOffset = CGSize(width: -2, height: 0)
-            dummyPage.view.layer.shadowRadius = 5
-            dummyPage.view.layer.shadowOpacity = 0.2
-            pages.append(dummyPage)}
+            let dummyPage = NotebookPageViewController(pageIndex: pages.count, role: .normal)
+            pages.append(dummyPage)
+        }
 
         guard newIndex >= 0, newIndex + 1 < pages.count else { return }
 

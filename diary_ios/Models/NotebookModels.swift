@@ -1,5 +1,10 @@
 import UIKit
-
+enum PageRole {
+    case normal
+    case cover
+    case back
+    case empty
+}
 enum PaperSize {
     case a4
     case b5
