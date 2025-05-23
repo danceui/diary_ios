@@ -2,9 +2,8 @@ import UIKit
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
-
     private let scrollView = UIScrollView()
-    private let containerView = UIView() // 包含 notebookSpreadVC 的 view
+    private let containerView = UIView()
 
     init(notebookSpreadVC: NotebookSpreadViewController) {
         self.notebookSpreadVC = notebookSpreadVC
@@ -15,85 +14,86 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        // centerContent()
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupScrollView()
+        setupContainerView()
+        embedNotebookSpreadVC()
+        addDoubleTapGesture()
+    }
 
-        // 1. 配置 scrollView
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if containerView.bounds.size == .zero {
+            // 初始布局
+            let initialSize = scrollView.bounds.size
+            containerView.frame = CGRect(origin: .zero, size: initialSize)
+            scrollView.contentSize = initialSize
+            notebookSpreadVC.view.frame = containerView.bounds
+        }
+        centerContent()
+    }
+
+    private func setupScrollView() {
         scrollView.delegate = self
         scrollView.minimumZoomScale = 0.5
         scrollView.maximumZoomScale = 2.0
         scrollView.bouncesZoom = true
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.showsHorizontalScrollIndicator = false
         scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
 
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.frame = view.bounds
+        scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(scrollView)
+    }
 
-        NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        // 2. 加入 containerView
-        containerView.translatesAutoresizingMaskIntoConstraints = false
+    private func setupContainerView() {
         scrollView.addSubview(containerView)
+    }
 
-        NSLayoutConstraint.activate([
-            containerView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            containerView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            containerView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            containerView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            containerView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            containerView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
-        ])
-
-        // 3. 加入 NotebookSpreadViewController
+    private func embedNotebookSpreadVC() {
         addChild(notebookSpreadVC)
         containerView.addSubview(notebookSpreadVC.view)
         notebookSpreadVC.didMove(toParent: self)
+    }
 
-        notebookSpreadVC.view.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            notebookSpreadVC.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            notebookSpreadVC.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            notebookSpreadVC.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            notebookSpreadVC.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-        ])
-
-        // 4. 添加双击还原手势（可选）
+    private func addDoubleTapGesture() {
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
         scrollView.addGestureRecognizer(doubleTap)
     }
 
-    // MARK: - ScrollView Delegate 缩放目标
+    // MARK: - Zoom Handling
+
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return containerView
     }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        // centerContent()
+        centerContent()
         printLayoutInfo(context: "scrollViewDidZoom")
     }
-    
-    // private func centerContent() {
-    //     let scrollViewSize = scrollView.bounds.size
-    //     let contentSize = containerView.frame.size
-    //     let scale = scrollView.zoomScale
 
-    //     let verticalInset = max(0, (scrollViewSize.height - contentSize.height * scale) / 2)
-    //     let horizontalInset = max(0, (scrollViewSize.width - contentSize.width * scale) / 2)
+    private func centerContent() {
+        let scrollSize = scrollView.bounds.size
+        let contentSize = containerView.frame.size
 
-    //     scrollView.contentInset = UIEdgeInsets(top: verticalInset, left: horizontalInset, bottom: verticalInset, right: horizontalInset)
-    // }
+        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
+        let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
+
+        containerView.center = CGPoint(x: contentSize.width / 2 + offsetX,
+                                       y: contentSize.height / 2 + offsetY)
+    }
+
+    // MARK: - Zoom Reset
+
+    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        scrollView.setZoomScale(1.0, animated: true)
+        printLayoutInfo(context: "handleDoubleTap")
+    }
+
+    // MARK: - Debug Info
 
     private func printLayoutInfo(context: String) {
         print("======== \(context) ========")
@@ -102,18 +102,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("📐 scrollView.contentSize: \(scrollView.contentSize)")
         print("📐 scrollView.contentOffset: \(scrollView.contentOffset)")
         print("📐 scrollView.zoomScale: \(scrollView.zoomScale)")
-        print("📐 scrollView.contentInset: \(scrollView.contentInset)")
         print("📐 containerView.frame: \(containerView.frame)")
         print("📐 containerView.bounds: \(containerView.bounds)")
-        if let notebookView = notebookSpreadVC.view {
-            print("📐 notebookView.frame: \(notebookView.frame)")
-            print("📐 notebookView.bounds: \(notebookView.bounds)")
-        }
-    }
-
-    // MARK: - 双击还原缩放
-    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        scrollView.setZoomScale(1.0, animated: true)
-        printLayoutInfo(context: "handleDoubleTap")
+        print("📐 notebookView.frame: \(notebookSpreadVC.view.frame)")
+        print("📐 notebookView.bounds: \(notebookSpreadVC.view.bounds)")
     }
 }
