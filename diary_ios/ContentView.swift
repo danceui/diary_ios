@@ -7,7 +7,6 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             NotebookViewContainer(notebookSpreadVC: notebookSpreadVC)
-            Divider()
             ToolBarView(notebookSpreadVC: notebookSpreadVC)
         }
     }
