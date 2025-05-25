@@ -1,9 +1,14 @@
 import UIKit
 
+protocol NotebookSpreadViewControllerDelegate: AnyObject {
+    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole)
+}
+
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIPageViewController {
     private var pages: [NotebookPageViewController] = []
     private var currentIndex: Int = 0
+    weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     
     init() {
         // 设置页面间的间距
@@ -35,31 +40,40 @@ class NotebookSpreadViewController: UIPageViewController {
         dataSource = self
         delegate = self
         isDoubleSided = true
-        view.backgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.5) // 浅绿色
-        view.layer.shadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1).cgColor // 深灰色
-        view.layer.shadowOffset = .zero
-        view.layer.shadowRadius = 10.0
-        view.layer.shadowOpacity = 0.8
+        // view.backgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.5) // 浅绿色
+        // view.layer.shadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1).cgColor // 深灰色
+        // view.layer.shadowOffset = .zero
+        // view.layer.shadowRadius = 10.0
+        // view.layer.shadowOpacity = 0.8
     }
     
     private func setupInitialPages() {
         if pages.isEmpty {
-            let blankCover = NotebookPageViewController(pageIndex: 0, role: .empty) // 空页
-            let coverPage = NotebookPageViewController(pageIndex: 1, role: .cover)
-            let backPage = NotebookPageViewController(pageIndex: 2, role: .back)
-            let blankBack = NotebookPageViewController(pageIndex: 3, role: .empty) // 空页
-            pages.append(blankCover)
-            for page in [coverPage, backPage] {
-                pages.append(page)
-                page.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
-                page.view.layer.borderColor = UIColor.lightGray.cgColor
-                page.view.layer.borderWidth = 0.5
-                page.view.layer.shadowColor = UIColor.lightGray.cgColor
-                page.view.layer.shadowOffset = CGSize(width: -2, height: 0)
-                page.view.layer.shadowRadius = 5
-                page.view.layer.shadowOpacity = 0.2
-            }
-            pages.append(blankBack)
+            // let blankCover = NotebookPageViewController(pageIndex: 0, role: .empty) // 空页
+            // let coverPage = NotebookPageViewController(pageIndex: 1, role: .cover)
+            // let backPage = NotebookPageViewController(pageIndex: 2, role: .back)
+            // let blankBack = NotebookPageViewController(pageIndex: 3, role: .empty) // 空页
+            // pages.append(blankCover)
+            // for page in [coverPage, backPage] {
+            //     pages.append(page)
+            //     page.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
+            //     page.view.layer.borderColor = UIColor.lightGray.cgColor
+            //     page.view.layer.borderWidth = 0.5
+            //     page.view.layer.shadowColor = UIColor.lightGray.cgColor
+            //     page.view.layer.shadowOffset = CGSize(width: -2, height: 0)
+            //     page.view.layer.shadowRadius = 5
+            //     page.view.layer.shadowOpacity = 0.2
+            // }
+            // pages.append(blankBack)
+
+            pages = [
+                NotebookPageViewController(pageIndex: 0, role: .empty),
+                NotebookPageViewController(pageIndex: 1, role: .cover),
+                NotebookPageViewController(pageIndex: 2, role: .back),
+                NotebookPageViewController(pageIndex: 3, role: .empty)
+            ]
+            pages[1].view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
+            pages[2].view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
             currentIndex = 0
             setViewControllers(at: currentIndex, direction: .forward, animated: false)
         }
@@ -89,7 +103,6 @@ class NotebookSpreadViewController: UIPageViewController {
     func getPageCount() -> Int {
         return pages.count
     }
-
     
     private func updatePageShadows() {
         pages.enumerated().forEach { index, page in
@@ -107,17 +120,18 @@ class NotebookSpreadViewController: UIPageViewController {
                                 direction: UIPageViewController.NavigationDirection, 
                                 animated: Bool, 
                                 completion: ((Bool) -> Void)? = nil) {
-        guard index >= 0, index + 1 < pages.count else {
-            print("Invalid page index: \(index)")
-            return
-        }
-
+        guard index >= 0, index + 1 < pages.count else { return }
         let leftPage = pages[index]
         let rightPage = pages[index + 1]
-        print("Setting view controllers #\(index).")
-        // 禁用交互以防动画过程中用户再次触发翻页
+
+        // 在动画开始前就计算 role
+        let role: PageRole = index == 0 ? .cover : (index + 1 == pages.count - 1 ? .back : .normal)
+        // 提前通知 delegate：同步触发 centerContent 动画
+        pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: role)
+
+        // 翻页动画继续进行
         self.view.isUserInteractionEnabled = false
-        // 使用系统翻页动画
+        print("Setting view controllers #\(index).")
         super.setViewControllers([leftPage, rightPage], direction: direction, animated: animated) { [weak self] finished in
             completion?(finished)
             self?.view.isUserInteractionEnabled = true
@@ -128,16 +142,8 @@ class NotebookSpreadViewController: UIPageViewController {
     }
 
     private func syncPageState(_ index: Int) {
-        currentIndex = index
-        updatePageShadows()
-
-        if index == 0 {
-            NotificationCenter.default.post(name: .notebookPageIsCover, object: nil)
-        } else if index + 1 == pages.count - 1 {
-            NotificationCenter.default.post(name: .notebookPageIsBack, object: nil)
-        } else {
-            NotificationCenter.default.post(name: .notebookPageIsNormal, object: nil)
-        }
+        let role: PageRole = index == 0 ? .cover : (index + 1 == pages.count - 1 ? .back : .normal)
+        pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: role)
     }
 
     func exportAllDrawings() -> [Data] {
@@ -165,15 +171,12 @@ class NotebookSpreadViewController: UIPageViewController {
     }
 }
 
-extension NotebookSpreadViewController: UIPageViewControllerDataSource {
+extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageViewControllerDelegate {
     // 告诉 UIPageViewController 在当前页面之前显示哪个视图控制器
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerBefore viewController: UIViewController) -> UIViewController? {
         guard let page = viewController as? NotebookPageViewController,
-              let index = pages.firstIndex(of: page),
-              index > 0 else {
-            return nil
-        }
+              let index = pages.firstIndex(of: page), index > 0 else { return nil }
         return pages[index - 1]
     }
 
@@ -181,26 +184,15 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource {
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerAfter viewController: UIViewController) -> UIViewController? {
         guard let page = viewController as? NotebookPageViewController,
-              let index = pages.firstIndex(of: page),
-              index < pages.count - 1 else {
-            return nil
-        }
+              let index = pages.firstIndex(of: page), index < pages.count - 1 else { return nil }
         return pages[index + 1]
-    }
-
-    // 设置页面翻转的方向
-    func pageViewController(_ pageViewController: UIPageViewController,
-                            spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
-        return .mid
     }
 
     // 告诉 UIPageViewController 双页模式时在当前页面之前显示哪些视图控制器
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllersBefore viewControllers: [UIViewController]) -> [UIViewController]? {
         guard let page = viewControllers.first as? NotebookPageViewController,
-            let index = pages.firstIndex(of: page) else {
-            return nil
-        }
+            let index = pages.firstIndex(of: page) else { return nil }
         let newIndex = index - 2
         guard newIndex >= 0 else { return nil }
         return [pages[newIndex], pages[newIndex + 1]]
@@ -210,16 +202,18 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource {
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllersAfter viewControllers: [UIViewController]) -> [UIViewController]? {
         guard let page = viewControllers.first as? NotebookPageViewController,
-            let index = pages.firstIndex(of: page) else {
-            return nil
-        }
+            let index = pages.firstIndex(of: page) else { return nil }
         let newIndex = index + 2
         guard newIndex + 1 < pages.count else { return nil }
         return [pages[newIndex], pages[newIndex + 1]]
     }
-}
 
-extension NotebookSpreadViewController: UIPageViewControllerDelegate {
+    // 设置页面翻转的方向
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
+        return .mid
+    }
+    
     // 告诉 UIPageViewController 在翻页动画完成后需要执行的操作
     func pageViewController(_ pageViewController: UIPageViewController,
                         didFinishAnimating finished: Bool,
@@ -227,11 +221,10 @@ extension NotebookSpreadViewController: UIPageViewControllerDelegate {
                         transitionCompleted completed: Bool) {
         guard completed,
             let newLeftPage = viewControllers?.first as? NotebookPageViewController,
-            let index = pages.firstIndex(of: newLeftPage)
-        else { return }
+            let index = pages.firstIndex(of: newLeftPage) else { return }
         currentIndex = index
         print("Flipped to page pair #\(currentIndex), #\(currentIndex + 1).")
-        updatePageShadows()
         syncPageState(index)
+        updatePageShadows()
     } 
 }

@@ -3,19 +3,15 @@ import UIKit
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
     let paperSize: PaperSize
-
-    var currentPageRole: PageRole = .cover{
-        didSet {
-            centerContent()
-        }
-    }
     private let scrollView = UIScrollView()
     private let containerView = UIView()
+    private var currentPageRole: PageRole = .cover
 
     init(notebookSpreadVC: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
         self.notebookSpreadVC = notebookSpreadVC
         self.paperSize = paperSize
         super.init(nibName: nil, bundle: nil)
+        self.notebookSpreadVC.pageDelegate = self
     }
 
     required init?(coder: NSCoder) {
@@ -26,7 +22,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         super.viewDidLoad()
         setupScrollView()
         embedNotebookContent()
-        setupNotificationObservers()
         setupDoubleTapGesture()
     }
 
@@ -42,10 +37,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.delegate = self
         scrollView.minimumZoomScale = 0.7
         scrollView.maximumZoomScale = 2.0
-        scrollView.bouncesZoom = true
-        scrollView.contentInsetAdjustmentBehavior = .never
-        scrollView.showsHorizontalScrollIndicator = false
-        scrollView.showsVerticalScrollIndicator = false
+        // scrollView.bouncesZoom = true
+        // scrollView.contentInsetAdjustmentBehavior = .never
+        // scrollView.showsHorizontalScrollIndicator = false
+        // scrollView.showsVerticalScrollIndicator = false
         scrollView.frame = view.bounds
         scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(scrollView)
@@ -72,30 +67,31 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.addGestureRecognizer(doubleTap)
     }
 
-    private func setupNotificationObservers() {
-        let center = NotificationCenter.default
-        center.addObserver(self, selector: #selector(handleCoverPage), name: .notebookPageIsCover, object: nil)
-        center.addObserver(self, selector: #selector(handleBackPage), name: .notebookPageIsBack, object: nil)
-        center.addObserver(self, selector: #selector(handleNormalPage), name: .notebookPageIsNormal, object: nil)
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    
-    private func centerContent() {
+    private func centerContent(animated: Bool = false) {
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
         let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
         let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
+
         var roleXOffset: CGFloat = 0
         if currentPageRole == .cover {
             roleXOffset = -contentSize.width / 4
         } else if currentPageRole == .back {
             roleXOffset = contentSize.width / 4
         }
-        containerView.center = CGPoint(x: contentSize.width / 2 + offsetX + roleXOffset,
-                                       y: contentSize.height / 2 + offsetY)
+
+        let newCenter = CGPoint(
+            x: contentSize.width / 2 + offsetX + roleXOffset,
+            y: contentSize.height / 2 + offsetY
+        )
+
+        if animated {
+            UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut]) {
+                self.containerView.center = newCenter
+            }
+        } else {
+            containerView.center = newCenter
+        }
     }
 
     @objc private func handleCoverPage(_ notification: Notification) {
@@ -136,5 +132,12 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("📐 notebookView.frame: \(notebookSpreadVC.view.frame)")
         print("📐 notebookView.bounds: \(notebookSpreadVC.view.bounds)")
         print("================")
+    }
+}
+
+extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
+    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole) {
+        currentPageRole = role
+        centerContent(animated: true)
     }
 }
