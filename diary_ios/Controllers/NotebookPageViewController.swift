@@ -4,12 +4,10 @@ import PencilKit
 @available(iOS 16.0, *)
 class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
 
-    // MARK: - Public Properties
     let pageIndex: Int
     let pageRole: PageRole
     let canvas = HandwritingCanvas()
 
-    // MARK: - Private Properties
     private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
     private var snapshotIndex = 0
     private let maxSnapshots = 50
@@ -28,7 +26,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCanvas()
@@ -77,7 +74,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         }
     }
 
-    // MARK: - Drawing Data I/O
     func loadDrawing(data: Data) {
         do {
             canvas.drawing = try PKDrawing(data: data)
@@ -90,8 +86,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         return canvas.drawing.dataRepresentation()
     }
 
-
-    // MARK: - Undo/Redo
     func undo() {
         guard snapshotIndex > 0 else { return }
         snapshotIndex -= 1
@@ -106,7 +100,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         applySnapshotOfIndex(snapshotIndex)
     }
 
-    // MARK: - Snapshot Mgmt
     func currentSnapshot() -> PageSnapshot {
         return pageSnapshots[snapshotIndex]
     }

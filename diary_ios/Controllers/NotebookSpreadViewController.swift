@@ -1,13 +1,9 @@
 import UIKit
 
 @available(iOS 16.0, *)
-class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+class NotebookSpreadViewController: UIPageViewController {
     private var pages: [NotebookPageViewController] = []
     private var currentIndex: Int = 0
-    
-    // 添加手势识别器
-    private var edgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
-    private var leftEdgeSwipeGestureRecognizer: UIScreenEdgePanGestureRecognizer!
     
     init() {
         // 设置页面间的间距
@@ -33,10 +29,8 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         super.viewDidLoad()
         setupPageController()
         setupInitialPages()
-        setupGestureRecognizers()
     }
     
-    // MARK: - Setup PageController
     private func setupPageController() {
         dataSource = self
         delegate = self
@@ -67,42 +61,10 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             }
             pages.append(blankBack)
             currentIndex = 0
-            setViewControllersSafe(currentIndex, direction: .forward, animated: false)
-        }
-    }
-
-    // MARK: - Setup GestureRecognizers
-    private func setupGestureRecognizers() {
-        // 移除默认手势识别器（如果需要）
-        for gesture in gestureRecognizers {
-            if let edgeGesture = gesture as? UIScreenEdgePanGestureRecognizer {
-                view.removeGestureRecognizer(edgeGesture)
-            }
-        }
-        // 添加右侧边缘滑动手势（下一页）
-        edgeSwipeGestureRecognizer = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleRightEdgeSwipe(_:)))
-        edgeSwipeGestureRecognizer.edges = .right //只识别屏幕右侧边缘的滑动
-        view.addGestureRecognizer(edgeSwipeGestureRecognizer)
-        
-        // 添加左侧边缘滑动手势（上一页）
-        leftEdgeSwipeGestureRecognizer = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleLeftEdgeSwipe(_:)))
-        leftEdgeSwipeGestureRecognizer.edges = .left
-        view.addGestureRecognizer(leftEdgeSwipeGestureRecognizer)
-    }
-    
-    @objc private func handleRightEdgeSwipe(_ gesture: UIScreenEdgePanGestureRecognizer) {
-        if gesture.state == .ended {
-            goToNextPage(animated: true)
+            setViewControllers(at: currentIndex, direction: .forward, animated: false)
         }
     }
     
-    @objc private func handleLeftEdgeSwipe(_ gesture: UIScreenEdgePanGestureRecognizer) {
-        if gesture.state == .ended {
-            goToPrevPage(animated: true)
-        }
-    }
-
-    // MARK: - Page Management
     func addNewPagePair(initialData: Data? = nil) {
         let insertIndex = currentIndex + 2
         let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
@@ -121,43 +83,13 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         currentIndex = insertIndex
         print("Insert page pair #\(currentIndex), #\(currentIndex + 1).")
-        setViewControllersSafe(currentIndex, direction: .forward, animated: true)
+        setViewControllers(at: currentIndex, direction: .forward, animated: true)
     }
 
     func getPageCount() -> Int {
         return pages.count
     }
 
-    func goToNextPage(animated: Bool = true) {
-        let newIndex = currentIndex + 2
-        print("Go to next page pair #\(newIndex), #\(newIndex + 1).")
-        setViewControllersSafe(newIndex, direction: .forward, animated: animated)
-    }
-
-    func goToPrevPage(animated: Bool = true) {
-        let newIndex = currentIndex - 2
-        guard newIndex >= 0 else { return}
-        print("Go to previous page pair #\(newIndex), #\(newIndex + 1).")
-        setViewControllersSafe(newIndex, direction: .reverse, animated: animated)
-    }
-
-    // MARK: - Navigation Helpers
-    private func setViewControllersSafe(_ newIndex: Int, direction: UIPageViewController.NavigationDirection, animated: Bool) {
-        // 如果是奇数页数，补空白页
-        if pages.count % 2 != 0 {
-            print("Add dummy page #\(pages.count).")
-            let dummyPage = NotebookPageViewController(pageIndex: pages.count, role: .normal)
-            pages.append(dummyPage)
-        }
-
-        guard newIndex >= 0, newIndex + 1 < pages.count else { return }
-
-        let leftPage = pages[newIndex]
-        let rightPage = pages[newIndex + 1]
-
-        currentIndex = newIndex
-        setViewControllers([leftPage, rightPage], direction: direction, animated: animated)
-    }
     
     private func updatePageShadows() {
         pages.enumerated().forEach { index, page in
@@ -171,114 +103,48 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         }
     }
 
-    // MARK: - 单页配置
-    func pageViewController(_ pageViewController: UIPageViewController,
-                            viewControllerBefore viewController: UIViewController) -> UIViewController? {
-        // 单页模式实现（虽然你使用双页模式，但最好实现这个方法）
-        guard let page = viewController as? NotebookPageViewController,
-              let index = pages.firstIndex(of: page),
-              index > 0 else {
-            return nil
-        }
-        return pages[index - 1]
-    }
-
-    func pageViewController(_ pageViewController: UIPageViewController,
-                            viewControllerAfter viewController: UIViewController) -> UIViewController? {
-        // 单页模式实现
-        guard let page = viewController as? NotebookPageViewController,
-              let index = pages.firstIndex(of: page),
-              index < pages.count - 1 else {
-            return nil
-        }
-        return pages[index + 1]
-    }
-    
-    func pageViewController(_ pageViewController: UIPageViewController,
-                            spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
-        return .mid
-    }
-
-    // MARK: - 双页模式
-    func pageViewController(_ pageViewController: UIPageViewController,
-                            viewControllersBefore viewControllers: [UIViewController]) -> [UIViewController]? {
-        // 尝试获取当前显示的第一个视图控制器，将其转换为自定义的 NotebookPageViewController 类型
-        guard let page = viewControllers.first as? NotebookPageViewController,
-            // 在 pages 数组中查找这个页面的索引
-            let index = pages.firstIndex(of: page) else {
-            return nil
-        }
-        // 计算新的索引
-        let newIndex = index - 2
-        guard newIndex >= 0 else { return nil }
-        return [pages[newIndex], pages[newIndex + 1]]
-    }
-
-    func pageViewController(_ pageViewController: UIPageViewController,
-                            viewControllersAfter viewControllers: [UIViewController]) -> [UIViewController]? {
-        // 尝试获取当前显示的第一个视图控制器，将其转换为自定义的 NotebookPageViewController 类型
-        guard let page = viewControllers.first as? NotebookPageViewController,
-            // 在 pages 数组中查找这个页面的索引
-            let index = pages.firstIndex(of: page) else {
-            return nil
+    func setViewControllers(at index: Int,
+                                direction: UIPageViewController.NavigationDirection, 
+                                animated: Bool, 
+                                completion: ((Bool) -> Void)? = nil) {
+        guard index >= 0, index + 1 < pages.count else {
+            print("Invalid page index: \(index)")
+            return
         }
 
-        // 计算新的索引
-        let newIndex = index + 2
-        guard newIndex + 1 < pages.count else { return nil }
-        return [pages[newIndex], pages[newIndex + 1]]
+        let leftPage = pages[index]
+        let rightPage = pages[index + 1]
+        print("setViewControllers at \(index) and \(index + 1).")
+        // 禁用交互以防动画过程中用户再次触发翻页
+        self.view.isUserInteractionEnabled = false
+        // 使用系统翻页动画
+        super.setViewControllers([leftPage, rightPage], direction: direction, animated: animated) { [weak self] finished in
+            completion?(finished)
+            self?.view.isUserInteractionEnabled = true
+            self?.currentIndex = index
+            self?.updatePageShadows()
+            self?.syncPageState(index)
+        }
     }
 
-    func pageViewController(_ pageViewController: UIPageViewController,
-                        didFinishAnimating finished: Bool,
-                        previousViewControllers: [UIViewController],
-                        transitionCompleted completed: Bool) {
-        guard completed,
-            let newLeftPage = viewControllers?.first as? NotebookPageViewController,
-            let index = pages.firstIndex(of: newLeftPage)
-        else { return }
+    private func syncPageState(_ index: Int) {
+        print("syncPageState at \(index).")
         currentIndex = index
-        print("Go to page pair #\(currentIndex), #\(currentIndex + 1).")
         updatePageShadows()
 
-        if currentIndex == 0 {
+        if index == 0 {
             NotificationCenter.default.post(name: .notebookPageIsCover, object: nil)
-        } else if currentIndex + 1 == pages.count - 1 {
+        } else if index + 1 == pages.count - 1 {
             NotificationCenter.default.post(name: .notebookPageIsBack, object: nil)
         } else {
             NotificationCenter.default.post(name: .notebookPageIsNormal, object: nil)
         }
     }
 
-    // MARK: - 页面翻转动画定制
-    override func setViewControllers(_ viewControllers: [UIViewController]?, 
-                                direction: UIPageViewController.NavigationDirection, 
-                                animated: Bool, 
-                                completion: ((Bool) -> Void)? = nil) {
-        guard let viewControllers = viewControllers else {
-            super.setViewControllers(nil, direction: direction, animated: false, completion: completion)
-            return
-        }
-        // 禁用交互以防动画过程中用户再次触发翻页
-        self.view.isUserInteractionEnabled = false
-        // 使用系统翻页动画
-        super.setViewControllers(viewControllers, direction: direction, animated: animated) { [weak self] finished in
-            completion?(finished)
-            self?.view.isUserInteractionEnabled = true
-            if let newLeftPage = viewControllers.first as? NotebookPageViewController,
-            let index = self?.pages.firstIndex(of: newLeftPage) {
-                self?.currentIndex = index
-                self?.updatePageShadows()
-            }
-        }
-    }
-
-    // MARK: - Exports
     func exportAllDrawings() -> [Data] {
         return pages.map { $0.exportDrawing() }
     }
 
-    // MARK: - Undo/Redo
     func undo() {
         // 同时撤销左右两页的操作
         if currentIndex < pages.count {
@@ -298,4 +164,75 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             pages[currentIndex + 1].redo()
         }
     }
+}
+
+extension NotebookSpreadViewController: UIPageViewControllerDataSource {
+    // 告诉 UIPageViewController 在当前页面之前显示哪个视图控制器
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllerBefore viewController: UIViewController) -> UIViewController? {
+        guard let page = viewController as? NotebookPageViewController,
+              let index = pages.firstIndex(of: page),
+              index > 0 else {
+            return nil
+        }
+        return pages[index - 1]
+    }
+
+    // 告诉 UIPageViewController 在当前页面之后显示哪个视图控制器
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllerAfter viewController: UIViewController) -> UIViewController? {
+        guard let page = viewController as? NotebookPageViewController,
+              let index = pages.firstIndex(of: page),
+              index < pages.count - 1 else {
+            return nil
+        }
+        return pages[index + 1]
+    }
+
+    // 设置页面翻转的方向
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
+        return .mid
+    }
+
+    // 告诉 UIPageViewController 双页模式时在当前页面之前显示哪些视图控制器
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllersBefore viewControllers: [UIViewController]) -> [UIViewController]? {
+        guard let page = viewControllers.first as? NotebookPageViewController,
+            let index = pages.firstIndex(of: page) else {
+            return nil
+        }
+        let newIndex = index - 2
+        guard newIndex >= 0 else { return nil }
+        return [pages[newIndex], pages[newIndex + 1]]
+    }
+
+    // 告诉 UIPageViewController 双页模式时在当前页面之后显示哪些视图控制器
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllersAfter viewControllers: [UIViewController]) -> [UIViewController]? {
+        guard let page = viewControllers.first as? NotebookPageViewController,
+            let index = pages.firstIndex(of: page) else {
+            return nil
+        }
+        let newIndex = index + 2
+        guard newIndex + 1 < pages.count else { return nil }
+        return [pages[newIndex], pages[newIndex + 1]]
+    }
+}
+
+extension NotebookSpreadViewController: UIPageViewControllerDelegate {
+    // 告诉 UIPageViewController 在翻页动画完成后需要执行的操作
+    func pageViewController(_ pageViewController: UIPageViewController,
+                        didFinishAnimating finished: Bool,
+                        previousViewControllers: [UIViewController],
+                        transitionCompleted completed: Bool) {
+        guard completed,
+            let newLeftPage = viewControllers?.first as? NotebookPageViewController,
+            let index = pages.firstIndex(of: newLeftPage)
+        else { return }
+        currentIndex = index
+        print("pageViewController finished. Go to page pair #\(currentIndex), #\(currentIndex + 1).")
+        updatePageShadows()
+        syncPageState(index)
+    } 
 }

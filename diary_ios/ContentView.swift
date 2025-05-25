@@ -17,9 +17,6 @@ struct ContentView: View {
         
         var body: some View {
             HStack {
-                Button("⬅ Prev") {
-                    notebookSpreadVC.goToPrevPage()
-                }
                 
                 Button("Undo") {
                     notebookSpreadVC.undo()
@@ -33,9 +30,6 @@ struct ContentView: View {
                     notebookSpreadVC.addNewPagePair()
                 }
                 
-                Button("➡ Next") {
-                    notebookSpreadVC.goToNextPage()
-                }
             }
             .padding()
             .background(Color(UIColor.secondarySystemBackground))
