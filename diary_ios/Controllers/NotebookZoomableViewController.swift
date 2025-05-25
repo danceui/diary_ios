@@ -66,7 +66,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         doubleTap.numberOfTapsRequired = 2
         scrollView.addGestureRecognizer(doubleTap)
     }
-
+    
     private func centerContent(animated: Bool = false) {
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
@@ -74,10 +74,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
 
         var roleXOffset: CGFloat = 0
-        if currentPageRole == .cover {
+        switch currentPageRole {
+        case .cover:
             roleXOffset = -contentSize.width / 4
-        } else if currentPageRole == .back {
+        case .back:
             roleXOffset = contentSize.width / 4
+        default:
+            roleXOffset = 0
         }
 
         let newCenter = CGPoint(
@@ -86,9 +89,14 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         )
 
         if animated {
-            UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut]) {
-                self.containerView.center = newCenter
-            }
+            let animator = UIViewPropertyAnimator(
+                duration: 0.5, // 稍长，给用户一点“惯性”感
+                dampingRatio: 0.8, // 弹性值越低，弹簧越强（0.7~0.85是常用范围）
+                animations: {
+                    self.containerView.center = newCenter
+                }
+            )
+            animator.startAnimation()
         } else {
             containerView.center = newCenter
         }
