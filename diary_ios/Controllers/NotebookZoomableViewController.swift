@@ -5,6 +5,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let paperSize: PaperSize
     var currentPageRole: PageRole = .normal {
         didSet {
+            print("currentPageRole changed to \(currentPageRole)")
             centerContent()
         }
     }
