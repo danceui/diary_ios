@@ -84,7 +84,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
     
     private func centerContent() {
-        print("centerContent with PageRole: \(currentPageRole).")
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
         let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)

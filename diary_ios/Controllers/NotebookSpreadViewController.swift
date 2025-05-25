@@ -114,7 +114,7 @@ class NotebookSpreadViewController: UIPageViewController {
 
         let leftPage = pages[index]
         let rightPage = pages[index + 1]
-        print("setViewControllers at index \(index).")
+        print("Setting view controllers #\(index).")
         // 禁用交互以防动画过程中用户再次触发翻页
         self.view.isUserInteractionEnabled = false
         // 使用系统翻页动画
@@ -128,7 +128,6 @@ class NotebookSpreadViewController: UIPageViewController {
     }
 
     private func syncPageState(_ index: Int) {
-        print("syncPageState at index \(index).")
         currentIndex = index
         updatePageShadows()
 
@@ -231,7 +230,7 @@ extension NotebookSpreadViewController: UIPageViewControllerDelegate {
             let index = pages.firstIndex(of: newLeftPage)
         else { return }
         currentIndex = index
-        print("pageViewController finished. Go to page pair #\(currentIndex), #\(currentIndex + 1).")
+        print("Flipped to page pair #\(currentIndex), #\(currentIndex + 1).")
         updatePageShadows()
         syncPageState(index)
     } 
