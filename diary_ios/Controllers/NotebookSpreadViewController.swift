@@ -124,12 +124,6 @@ class NotebookSpreadViewController: UIPageViewController {
         let leftPage = pages[index]
         let rightPage = pages[index + 1]
 
-        // 在动画开始前就计算 role
-        let role: PageRole = index == 0 ? .cover : (index + 1 == pages.count - 1 ? .back : .normal)
-        // 提前通知 delegate：同步触发 centerContent 动画
-        pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: role)
-
-        // 翻页动画继续进行
         self.view.isUserInteractionEnabled = false
         print("Setting view controllers #\(index).")
         super.setViewControllers([leftPage, rightPage], direction: direction, animated: animated) { [weak self] finished in
@@ -142,7 +136,14 @@ class NotebookSpreadViewController: UIPageViewController {
     }
 
     private func syncPageState(_ index: Int) {
-        let role: PageRole = index == 0 ? .cover : (index + 1 == pages.count - 1 ? .back : .normal)
+        let role: PageRole 
+        if index == 0 {
+            role = .cover
+        } else if index + 1 == pages.count - 1 {
+            role = .back
+        } else {
+            role = .normal
+        }
         pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: role)
     }
 
