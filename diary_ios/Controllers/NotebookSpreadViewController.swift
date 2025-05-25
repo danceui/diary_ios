@@ -24,7 +24,6 @@ class NotebookSpreadViewController: UIPageViewController {
     required init?(coder: NSCoder) {
         let options: [UIPageViewController.OptionsKey: Any] = [
             .spineLocation: UIPageViewController.SpineLocation.mid.rawValue,
-            .interPageSpacing: 20.0 // 页面间距
         ]
         
         super.init(transitionStyle: .pageCurl, navigationOrientation: .horizontal, options: options)
@@ -80,6 +79,12 @@ class NotebookSpreadViewController: UIPageViewController {
     }
     
     func addNewPagePair(initialData: Data? = nil) {
+        // 不允许在最后一页之后添加页面
+        guard currentIndex + 2 < pages.count else {
+            print("Cannot add new page pair at the end.")
+            return
+        }
+
         let insertIndex = currentIndex + 2
         let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
