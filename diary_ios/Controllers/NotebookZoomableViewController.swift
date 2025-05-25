@@ -3,6 +3,11 @@ import UIKit
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
     let paperSize: PaperSize
+    var currentPageRole: PageRole = .normal {
+        didSet {
+            centerContent()
+        }
+    }
     private let scrollView = UIScrollView()
     private let containerView = UIView()
 
@@ -41,6 +46,15 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
         scrollView.addGestureRecognizer(doubleTap)
+
+        // notificationObservers
+        NotificationCenter.default.addObserver(self, selector: #selector(handleCoverPage), name: .notebookPageIsCover, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleBackPage), name: .notebookPageIsBack, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNormalPage), name: .notebookPageIsNormal, object: nil)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewDidLayoutSubviews() {
@@ -71,9 +85,26 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
         let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
         let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
-
-        containerView.center = CGPoint(x: contentSize.width / 2 + offsetX,
+        var addtionalXOffset: CGFloat = 0
+        if currentPageRole == .cover {
+            addtionalXOffset = -contentSize.width / 4
+        } else if currentPageRole == .back {
+            addtionalXOffset = contentSize.width / 4
+        }
+        containerView.center = CGPoint(x: contentSize.width / 2 + offsetX + addtionalXOffset,
                                        y: contentSize.height / 2 + offsetY)
+    }
+
+    @objc private func handleCoverPage(_ notification: Notification) {
+        currentPageRole = .cover
+    }
+
+    @objc private func handleBackPage(_ notification: Notification) {
+        currentPageRole = .back
+    }
+    
+    @objc private func handleNormalPage(_ notification: Notification) {
+        currentPageRole = .normal
     }
 
     // MARK: - Double Tap

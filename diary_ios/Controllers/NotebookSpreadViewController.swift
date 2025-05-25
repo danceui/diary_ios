@@ -101,7 +101,7 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
             goToPrevPage(animated: true)
         }
     }
-    
+
     // MARK: - Page Management
     func addNewPagePair(initialData: Data? = nil) {
         let insertIndex = currentIndex + 2
@@ -240,6 +240,14 @@ class NotebookSpreadViewController: UIPageViewController, UIPageViewControllerDa
         currentIndex = index
         print("Go to page pair #\(currentIndex), #\(currentIndex + 1).")
         updatePageShadows()
+
+        if currentIndex == 0 {
+            NotificationCenter.default.post(name: .notebookPageIsCover, object: nil)
+        } else if currentIndex + 1 == pages.count - 1 {
+            NotificationCenter.default.post(name: .notebookPageIsBack, object: nil)
+        } else {
+            NotificationCenter.default.post(name: .notebookPageIsNormal, object: nil)
+        }
     }
 
     // MARK: - 页面翻转动画定制

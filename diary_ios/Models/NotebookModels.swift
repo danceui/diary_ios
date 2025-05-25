@@ -5,6 +5,7 @@ enum PageRole {
     case back
     case empty
 }
+
 enum PaperSize {
     case a4
     case b5
