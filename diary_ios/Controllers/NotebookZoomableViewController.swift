@@ -4,9 +4,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
     let paperSize: PaperSize
 
-    var currentPageRole: PageRole = .normal {
+    var currentPageRole: PageRole = .cover{
         didSet {
-            print("currentPageRole changed to \(currentPageRole)")
             centerContent()
         }
     }
@@ -85,6 +84,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
     
     private func centerContent() {
+        print("centerContent with PageRole: \(currentPageRole).")
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
         let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
@@ -136,5 +136,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("📐 containerView.bounds: \(containerView.bounds)")
         print("📐 notebookView.frame: \(notebookSpreadVC.view.frame)")
         print("📐 notebookView.bounds: \(notebookSpreadVC.view.bounds)")
+        print("================")
     }
 }
