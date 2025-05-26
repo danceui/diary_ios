@@ -217,9 +217,6 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageVi
         currentIndex = index
         informPageState(index)
         print("Flipped to page pair #\(currentIndex), #\(currentIndex + 1).")
-        // 延迟执行，确保系统完成还原 transform 操作
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            self.applyStackEffect()
-        }
+        applyStackEffect() 
     } 
 }
