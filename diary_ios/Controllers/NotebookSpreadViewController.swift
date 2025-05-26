@@ -39,11 +39,11 @@ class NotebookSpreadViewController: UIPageViewController {
         dataSource = self
         delegate = self
         isDoubleSided = true
-        // view.backgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 0.5) // 浅绿色
-        // view.layer.shadowColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1).cgColor // 深灰色
-        // view.layer.shadowOffset = .zero
-        // view.layer.shadowRadius = 10.0
-        // view.layer.shadowOpacity = 0.8
+        // 阴影（轻微悬浮感）
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.5
+        view.layer.shadowOffset = CGSize(width: 2, height: 1)
+        view.layer.shadowRadius = 5
     }
     
     private func setupInitialPages() {
