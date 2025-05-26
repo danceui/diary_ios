@@ -72,6 +72,8 @@ class NotebookSpreadViewController: UIViewController {
         let insertIndex = currentIndex + 2
         let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
+        leftPage.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+        rightPage.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         currentIndex = insertIndex
         print("Insert page pair #\(insertIndex), #\(insertIndex + 1).")
@@ -220,7 +222,7 @@ class NotebookSpreadViewController: UIViewController {
         let role: PageRole 
         if index == 0 {
             role = .cover
-        } else if index == pages.count - 1 {
+        } else if index == pages.count - 2 {
             role = .back
         } else {
             role = .normal
