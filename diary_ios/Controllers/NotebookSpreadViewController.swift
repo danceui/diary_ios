@@ -123,63 +123,42 @@ class NotebookSpreadViewController: UIPageViewController {
     }
 
     func addPageEdgeEffect(to view: UIView, pageIndex: Int, totalPageCount: Int, isLeftPage: Bool) {
-        // 移除旧的效果
+        // 清除旧的效果
         view.subviews.filter { $0.tag == 9999 }.forEach { $0.removeFromSuperview() }
-        
-        // 参数配置
-        let maxVisibleStripes = 8                     // 最大可见条纹数
-        let stripeSpacing: CGFloat = 2             // 条纹间距
-        let stripeWidth: CGFloat = 4.0                // 条纹宽度
-        let verticalInset: CGFloat = 3.0             // 上下边距
-        
-        // 计算当前页在笔记本中的位置比例 (0.0-1.0)
-        let positionRatio: CGFloat
-        if isLeftPage {
-            positionRatio = CGFloat(pageIndex) / CGFloat(totalPageCount - 1)
-        } else {
-            positionRatio = 1.0 - CGFloat(pageIndex) / CGFloat(totalPageCount - 1)
-        }
-        
-        // 计算应显示的条纹数量 (非线性变化更真实)
-        let stripeCount = Int(pow(positionRatio, 0.6) * CGFloat(maxVisibleStripes))
-        
-        // 添加条纹效果
+
+        // 配置参数
+        let maxStripes = 6
+        let stripeSpacing: CGFloat = 12.0
+        let stripeWidth: CGFloat = 3.0
+        let verticalInset: CGFloat = 8.0
+
+        // 计算线性位置比例 (0.0 - 1.0)
+        let positionRatio = isLeftPage
+            ? CGFloat(pageIndex) / CGFloat(max(totalPageCount - 1, 1))
+            : 1.0 - CGFloat(pageIndex) / CGFloat(max(totalPageCount - 1, 1))
+
+        // 线性映射条纹数量
+        let stripeCount = Int(positionRatio * CGFloat(maxStripes))
+
+        // 添加条纹
         for i in 0..<stripeCount {
             let stripe = UIView()
             stripe.tag = 9999
             stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
-            stripe.layer.cornerRadius = 1
-            
+            stripe.layer.cornerRadius = 1.0
+
             let offset = CGFloat(i) * stripeSpacing
-            let xPosition: CGFloat
-            if isLeftPage {
-                xPosition = -stripeWidth + offset
-            } else {
-                xPosition = view.bounds.width - offset
-            }
-            
-            // 设置条纹框架
+            let x = isLeftPage ? -stripeWidth + offset : view.bounds.width - offset
+
             stripe.frame = CGRect(
-                x: xPosition,
+                x: x,
                 y: verticalInset,
                 width: stripeWidth,
-                height: view.bounds.height - 2 * verticalInset
+                height: view.bounds.height - verticalInset * 2
             )
-                
             stripe.autoresizingMask = [.flexibleHeight]
             view.addSubview(stripe)
         }
-        
-        // 添加边缘高光效果 (增强立体感)
-        // let highlightLayer = CALayer()
-        // highlightLayer.frame = CGRect(
-        //     x: isLeftPage ? -2 : view.bounds.width - 2,
-        //     y: verticalInset,
-        //     width: 2,
-        //     height: view.bounds.height - 2 * verticalInset
-        // )
-        // highlightLayer.backgroundColor = UIColor.white.withAlphaComponent(0.2).cgColor
-        // view.layer.addSublayer(highlightLayer)
     }
 
     func setViewControllers(at index: Int,
