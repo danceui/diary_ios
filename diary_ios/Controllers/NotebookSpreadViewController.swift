@@ -11,11 +11,9 @@ class NotebookSpreadViewController: UIPageViewController {
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     
     init() {
-        // 设置页面间的间距
         let options: [UIPageViewController.OptionsKey: Any] = [
             .spineLocation: UIPageViewController.SpineLocation.mid.rawValue,
         ]
-
         super.init(transitionStyle: .pageCurl, navigationOrientation: .horizontal, options: options)
         isDoubleSided = true
     }
@@ -24,7 +22,6 @@ class NotebookSpreadViewController: UIPageViewController {
         let options: [UIPageViewController.OptionsKey: Any] = [
             .spineLocation: UIPageViewController.SpineLocation.mid.rawValue,
         ]
-        
         super.init(transitionStyle: .pageCurl, navigationOrientation: .horizontal, options: options)
     }
 
@@ -38,7 +35,6 @@ class NotebookSpreadViewController: UIPageViewController {
         dataSource = self
         delegate = self
         isDoubleSided = true
-        // 阴影（轻微悬浮感）
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = 0.5
         view.layer.shadowOffset = CGSize(width: 2, height: 1)
@@ -56,12 +52,12 @@ class NotebookSpreadViewController: UIPageViewController {
             setupCoverAndBackAppearance()
             currentIndex = 0
             setViewControllers(at: currentIndex, direction: .forward, animated: false)
+            applyStackEffect() 
         }
     }
     
 
     func addNewPagePair(initialData: Data? = nil) {
-        // 不允许在最后一页之后添加页面
         guard currentIndex + 2 < pages.count else {
             print("Cannot add new page pair at the end.")
             return
@@ -81,21 +77,11 @@ class NotebookSpreadViewController: UIPageViewController {
             page.view.layer.shadowOpacity = 0.2
         }
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
+
         currentIndex = insertIndex
         setViewControllers(at: currentIndex, direction: .forward, animated: true)
-        addPageEdgeEffect(
-            to: leftPage.view,
-            pageIndex: currentIndex,
-            pageCount: pages.count,
-            isLeftPage: true
-        )
-        addPageEdgeEffect(
-            to: rightPage.view,
-            pageIndex: currentIndex + 1,
-            pageCount: pages.count,
-            isLeftPage: false
-        )
         print("Insert page pair #\(currentIndex), #\(currentIndex + 1).")
+        applyStackEffect() 
     }
 
     func getPageCount() -> Int {
@@ -110,77 +96,22 @@ class NotebookSpreadViewController: UIPageViewController {
         backPage.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
     }
 
-    private func updatePageShadows() {
-        pages.enumerated().forEach { index, page in
-            let isCurrent = (index == currentIndex || index == currentIndex + 1)
-            
-            UIView.animate(withDuration: 0.3) {
-                page.view.layer.shadowOpacity = isCurrent ? 0.1 : 0.3
-                page.view.layer.shadowOffset = isCurrent ? CGSize(width: -2, height: 0) : CGSize(width: -5, height: 2)
-                page.view.layer.shadowRadius = isCurrent ? 5 : 8
-            }
-        }
-    }
-
-    func addPageEdgeEffect(to view: UIView, pageIndex: Int, pageCount: Int, isLeftPage: Bool) {
-        // 可书写页数
-        let edgeCount = (pageCount - 4) / 2
-        let leftStripeCount = isLeftPage ? pageIndex / 2 : (pageIndex - 1) / 2
-        let rightStripeCount = edgeCount - leftStripeCount
-
-        // 添加条纹
-        if isLeftPage {
-            addStripes(to: view, stripeCount: leftStripeCount, isLeftPage: true)
-        } else {
-            addStripes(to: view, stripeCount: rightStripeCount, isLeftPage: false)
-        }
-        // // 配置参数
-        // let maxStripes = 6
-        // let stripeSpacing: CGFloat = 2.0
-        // let stripeWidth: CGFloat = 15.0
-        // let verticalInset: CGFloat = 8.0
-
-        // // 计算线性位置比例 (0.0 - 1.0)
-        // let positionRatio = isLeftPage
-        //     ? CGFloat(pageIndex) / CGFloat(max(pageCount - 1, 1))
-        //     : 1.0 - CGFloat(pageIndex) / CGFloat(max(pageCount - 1, 1))
-
-        // print("Position ratio for page \(pageIndex): \(positionRatio)")
-        // // 线性映射条纹数量
-        // let stripeCount = Int(positionRatio * CGFloat(maxStripes))
-    }
-
-    func addStripes(to view: UIView, stripeCount: Int, isLeftPage: Bool) {
-        // 清除旧的效果
-        view.subviews.filter { $0.tag == 9999 }.forEach { $0.removeFromSuperview() }
-        guard stripeCount > 0 else { return }
-        
-        let stripeWidth: CGFloat = 15.0
-        let stripeSpacing: CGFloat = 2.0
-        let verticalInset: CGFloat = 8.0
-
-        let referenceView = view.subviews.first
-        for i in 0..<stripeCount {
-            let stripe = UIView()
-            stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
-            stripe.layer.cornerRadius = 2
-            stripe.layer.borderColor = UIColor.black.cgColor
-            stripe.layer.borderWidth = 1
-            stripe.tag = 9999
-            
-            let xPosition: CGFloat
-            if isLeftPage {
-                xPosition = -CGFloat(i) * stripeSpacing
+    private func applyStackEffect() {
+        for (index, page) in pages.enumerated() {
+            if index == currentIndex || index == currentIndex + 1 {
+                page.view.layer.transform = CATransform3DIdentity
             } else {
-                xPosition = view.bounds.width - stripeWidth + CGFloat(i) * stripeSpacing
-            }
-            stripe.frame = CGRect(x: xPosition, y: verticalInset, width: stripeWidth, height: view.bounds.height - verticalInset * 2)
-            
-            // 插入到最底层或背景图之下
-            if let ref = referenceView {
-                view.insertSubview(stripe, belowSubview: ref)
-            } else {
-                view.addSubview(stripe)
+                // 偏移方向（左页向左偏移，右页向右偏移）
+                let isLeftSide = index % 2 == 0
+                let depthOffset: CGFloat = 10.0 // 页面厚度感
+                let xOffset: CGFloat = isLeftSide ? -depthOffset : depthOffset
+                let zOffset: CGFloat = -CGFloat(abs(currentIndex - index)) * 5.0
+
+                var transform = CATransform3DIdentity
+                transform.m34 = -1.0 / 500.0 // 透视效果
+                transform = CATransform3DTranslate(transform, xOffset, 0, zOffset)
+
+                page.view.layer.transform = transform
             }
         }
     }
@@ -199,12 +130,11 @@ class NotebookSpreadViewController: UIPageViewController {
             completion?(finished)
             self?.view.isUserInteractionEnabled = true
             self?.currentIndex = index
-            self?.updatePageShadows()
-            self?.syncPageState(index)
+            self?.informPageState(index)
         }
     }
 
-    private func syncPageState(_ index: Int) {
+    private func informPageState(_ index: Int) {
         let role: PageRole 
         if index == 0 {
             role = .cover
@@ -221,7 +151,6 @@ class NotebookSpreadViewController: UIPageViewController {
     }
 
     func undo() {
-        // 同时撤销左右两页的操作
         if currentIndex < pages.count {
             pages[currentIndex].undo()
         }
@@ -231,7 +160,6 @@ class NotebookSpreadViewController: UIPageViewController {
     }
 
     func redo() {
-        // 同时重做左右两页的操作
         if currentIndex < pages.count {
             pages[currentIndex].redo()
         }
@@ -242,7 +170,6 @@ class NotebookSpreadViewController: UIPageViewController {
 }
 
 extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageViewControllerDelegate {
-    // 告诉 UIPageViewController 在当前页面之前显示哪个视图控制器
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerBefore viewController: UIViewController) -> UIViewController? {
         guard let page = viewController as? NotebookPageViewController,
@@ -250,7 +177,6 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageVi
         return pages[index - 1]
     }
 
-    // 告诉 UIPageViewController 在当前页面之后显示哪个视图控制器
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerAfter viewController: UIViewController) -> UIViewController? {
         guard let page = viewController as? NotebookPageViewController,
@@ -258,7 +184,6 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageVi
         return pages[index + 1]
     }
 
-    // 告诉 UIPageViewController 双页模式时在当前页面之前显示哪些视图控制器
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllersBefore viewControllers: [UIViewController]) -> [UIViewController]? {
         guard let page = viewControllers.first as? NotebookPageViewController,
@@ -268,7 +193,6 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageVi
         return [pages[newIndex], pages[newIndex + 1]]
     }
 
-    // 告诉 UIPageViewController 双页模式时在当前页面之后显示哪些视图控制器
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllersAfter viewControllers: [UIViewController]) -> [UIViewController]? {
         guard let page = viewControllers.first as? NotebookPageViewController,
@@ -278,13 +202,11 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageVi
         return [pages[newIndex], pages[newIndex + 1]]
     }
 
-    // 设置页面翻转的方向
     func pageViewController(_ pageViewController: UIPageViewController,
                             spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
         return .mid
     }
     
-    // 告诉 UIPageViewController 在翻页动画完成后需要执行的操作
     func pageViewController(_ pageViewController: UIPageViewController,
                         didFinishAnimating finished: Bool,
                         previousViewControllers: [UIViewController],
@@ -293,8 +215,11 @@ extension NotebookSpreadViewController: UIPageViewControllerDataSource, UIPageVi
             let newLeftPage = viewControllers?.first as? NotebookPageViewController,
             let index = pages.firstIndex(of: newLeftPage) else { return }
         currentIndex = index
+        informPageState(index)
         print("Flipped to page pair #\(currentIndex), #\(currentIndex + 1).")
-        syncPageState(index)
-        updatePageShadows()
+        // 延迟执行，确保系统完成还原 transform 操作
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            self.applyStackEffect()
+        }
     } 
 }
