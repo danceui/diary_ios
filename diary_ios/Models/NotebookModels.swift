@@ -3,7 +3,6 @@ enum PageRole {
     case normal
     case cover
     case back
-    case empty
 }
 
 enum PaperSize {

@@ -3,9 +3,19 @@ import UIKit
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
     let paperSize: PaperSize
-    private let scrollView = UIScrollView()
     private let containerView = UIView()
     private var currentPageRole: PageRole = .cover
+
+    private lazy var scrollView: UIScrollView = {
+        let sv = UIScrollView()
+        sv.delegate = self
+        sv.minimumZoomScale = 0.5
+        sv.maximumZoomScale = 3.0
+        sv.showsVerticalScrollIndicator = false
+        sv.showsHorizontalScrollIndicator = false
+        sv.decelerationRate = .fast
+        return sv
+    }()
 
     init(notebookSpreadVC: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
         self.notebookSpreadVC = notebookSpreadVC
@@ -20,48 +30,42 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupScrollView()
+        setupUI()
+        setupGestures()
         embedNotebookContent()
-        setupDoubleTapGesture()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        setupContainerIfNeeded()
-        centerContent()
+        updateLayout()
         scrollView.setZoomScale(0.8, animated: false)
     }
 
     // MARK: - Setup
-    private func setupScrollView() {
-        scrollView.delegate = self
-        scrollView.minimumZoomScale = 0.7
-        scrollView.maximumZoomScale = 2.0
-        // scrollView.bouncesZoom = true
-        // scrollView.contentInsetAdjustmentBehavior = .never
-        // scrollView.showsHorizontalScrollIndicator = false
-        // scrollView.showsVerticalScrollIndicator = false
+    private func setupUI() {
+        view.backgroundColor = .systemBackground
         scrollView.frame = view.bounds
-        scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(scrollView)
+        containerView.frame = CGRect(origin: .zero, size: paperSize.size)
+        scrollView.addSubview(containerView)
     }
 
     private func embedNotebookContent() {
         addChild(notebookSpreadVC)
-        scrollView.addSubview(containerView)
         containerView.addSubview(notebookSpreadVC.view)
+        notebookSpreadVC.view.frame = containerView.bounds
         notebookSpreadVC.didMove(toParent: self)
     }
 
-    private func setupContainerIfNeeded() {
-        guard containerView.bounds.size == .zero else { return }
+    private func updateLayout() {
         let size = paperSize.size
         scrollView.contentSize = size
         containerView.frame.size = size
-        notebookSpreadVC.view.frame.size = size
+        notebookSpreadVC.view.frame.size = containerView.bounds
+        centerContent()
     }
 
-    private func setupDoubleTapGesture() {
+    private func setupGestures() {
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
         scrollView.addGestureRecognizer(doubleTap)
@@ -70,50 +74,30 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private func centerContent(animated: Bool = false) {
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
-        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
-        let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
+        let visibleSize = CGSize(width: contentSize.width * scrollView.zoomScale, height: contentSize.height * scrollView.zoomScale)
+        
+        var offset = CGPoint(
+            x: max((scrollSize.width - visibleSize.width) / 2, 0),
+            y: max((scrollSize.height - visibleSize.height) / 2, 0))
 
-        var roleXOffset: CGFloat = 0
         switch currentPageRole {
         case .cover:
-            roleXOffset = -contentSize.width / 4
+            offset.x -= (contentSize.width / 4) * scrollView.zoomScale
         case .back:
-            roleXOffset = contentSize.width / 4
+            offset.x += (contentSize.width / 4) * scrollView.zoomScale
         default:
-            roleXOffset = 0
+            break
         }
-
-        let newCenter = CGPoint(
-            x: contentSize.width / 2 + offsetX + roleXOffset,
-            y: contentSize.height / 2 + offsetY
-        )
 
         if animated {
-            let animator = UIViewPropertyAnimator(
-                duration: 0.5, // 稍长，给用户一点“惯性”感
-                dampingRatio: 0.8, // 弹性值越低，弹簧越强（0.7~0.85是常用范围）
-                animations: {
-                    self.containerView.center = newCenter
-                }
-            )
-            animator.startAnimation()
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+                self.scrollView.contentOffset = offset
+            }
         } else {
-            containerView.center = newCenter
+            scrollView.contentOffset = offset
         }
     }
-
-    @objc private func handleCoverPage(_ notification: Notification) {
-        currentPageRole = .cover
-    }
-
-    @objc private func handleBackPage(_ notification: Notification) {
-        currentPageRole = .back
-    }
     
-    @objc private func handleNormalPage(_ notification: Notification) {
-        currentPageRole = .normal
-    }
-
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
         scrollView.setZoomScale(0.8, animated: true)
         printLayoutInfo(context: "handleDoubleTap")

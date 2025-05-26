@@ -20,6 +20,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         if let initialData = initialData {
             loadDrawing(data: initialData)
         }
+        self.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
     }
 
     required init?(coder: NSCoder) {
@@ -32,10 +33,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     }
 
     private func setupCanvas() {
-        guard pageRole != .empty else {
-            view.backgroundColor = .clear
-            return
-        }
         canvas.delegate = self
         switch pageRole {
         case .normal:
@@ -46,8 +43,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         case .back:
             canvas.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1) // 灰色背页
             canvas.isUserInteractionEnabled = false
-        case .empty:
-            break
         }
         
         canvas.layer.cornerRadius = 20
