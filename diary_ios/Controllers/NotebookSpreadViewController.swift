@@ -14,7 +14,6 @@ class NotebookSpreadViewController: UIPageViewController {
         // 设置页面间的间距
         let options: [UIPageViewController.OptionsKey: Any] = [
             .spineLocation: UIPageViewController.SpineLocation.mid.rawValue,
-            .interPageSpacing: 20.0 // 页面间距
         ]
 
         super.init(transitionStyle: .pageCurl, navigationOrientation: .horizontal, options: options)
@@ -48,36 +47,19 @@ class NotebookSpreadViewController: UIPageViewController {
     
     private func setupInitialPages() {
         if pages.isEmpty {
-            // let blankCover = NotebookPageViewController(pageIndex: 0, role: .empty) // 空页
-            // let coverPage = NotebookPageViewController(pageIndex: 1, role: .cover)
-            // let backPage = NotebookPageViewController(pageIndex: 2, role: .back)
-            // let blankBack = NotebookPageViewController(pageIndex: 3, role: .empty) // 空页
-            // pages.append(blankCover)
-            // for page in [coverPage, backPage] {
-            //     pages.append(page)
-            //     page.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
-            //     page.view.layer.borderColor = UIColor.lightGray.cgColor
-            //     page.view.layer.borderWidth = 0.5
-            //     page.view.layer.shadowColor = UIColor.lightGray.cgColor
-            //     page.view.layer.shadowOffset = CGSize(width: -2, height: 0)
-            //     page.view.layer.shadowRadius = 5
-            //     page.view.layer.shadowOpacity = 0.2
-            // }
-            // pages.append(blankBack)
-
             pages = [
                 NotebookPageViewController(pageIndex: 0, role: .empty),
                 NotebookPageViewController(pageIndex: 1, role: .cover),
                 NotebookPageViewController(pageIndex: 2, role: .back),
                 NotebookPageViewController(pageIndex: 3, role: .empty)
             ]
-            pages[1].view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
-            pages[2].view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1) // 浅紫色
+            setupCoverAndBackAppearance()
             currentIndex = 0
             setViewControllers(at: currentIndex, direction: .forward, animated: false)
         }
     }
     
+
     func addNewPagePair(initialData: Data? = nil) {
         // 不允许在最后一页之后添加页面
         guard currentIndex + 2 < pages.count else {
@@ -98,17 +80,36 @@ class NotebookSpreadViewController: UIPageViewController {
             page.view.layer.shadowRadius = 5
             page.view.layer.shadowOpacity = 0.2
         }
-
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         currentIndex = insertIndex
-        print("Insert page pair #\(currentIndex), #\(currentIndex + 1).")
         setViewControllers(at: currentIndex, direction: .forward, animated: true)
+        addPageEdgeEffect(
+            to: leftPage.view,
+            pageIndex: currentIndex,
+            totalPageCount: pages.count,
+            isLeftPage: true
+        )
+        addPageEdgeEffect(
+            to: rightPage.view,
+            pageIndex: currentIndex + 1,
+            totalPageCount: pages.count,
+            isLeftPage: false
+        )
+        print("Insert page pair #\(currentIndex), #\(currentIndex + 1).")
     }
 
     func getPageCount() -> Int {
         return pages.count
     }
     
+    // MARK: - Notebook Appearance
+    private func setupCoverAndBackAppearance(){
+        let coverPage = pages[1]
+        coverPage.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+        let backPage = pages[2]
+        backPage.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+    }
+
     private func updatePageShadows() {
         pages.enumerated().forEach { index, page in
             let isCurrent = (index == currentIndex || index == currentIndex + 1)
@@ -119,6 +120,66 @@ class NotebookSpreadViewController: UIPageViewController {
                 page.view.layer.shadowRadius = isCurrent ? 5 : 8
             }
         }
+    }
+
+    func addPageEdgeEffect(to view: UIView, pageIndex: Int, totalPageCount: Int, isLeftPage: Bool) {
+        // 移除旧的效果
+        view.subviews.filter { $0.tag == 9999 }.forEach { $0.removeFromSuperview() }
+        
+        // 参数配置
+        let maxVisibleStripes = 8                     // 最大可见条纹数
+        let stripeSpacing: CGFloat = 2             // 条纹间距
+        let stripeWidth: CGFloat = 4.0                // 条纹宽度
+        let verticalInset: CGFloat = 3.0             // 上下边距
+        
+        // 计算当前页在笔记本中的位置比例 (0.0-1.0)
+        let positionRatio: CGFloat
+        if isLeftPage {
+            positionRatio = CGFloat(pageIndex) / CGFloat(totalPageCount - 1)
+        } else {
+            positionRatio = 1.0 - CGFloat(pageIndex) / CGFloat(totalPageCount - 1)
+        }
+        
+        // 计算应显示的条纹数量 (非线性变化更真实)
+        let stripeCount = Int(pow(positionRatio, 0.6) * CGFloat(maxVisibleStripes))
+        
+        // 添加条纹效果
+        for i in 0..<stripeCount {
+            let stripe = UIView()
+            stripe.tag = 9999
+            stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+            stripe.layer.cornerRadius = 1
+            
+            let offset = CGFloat(i) * stripeSpacing
+            let xPosition: CGFloat
+            if isLeftPage {
+                xPosition = -stripeWidth + offset
+            } else {
+                xPosition = view.bounds.width - offset
+            }
+            
+            // 设置条纹框架
+            stripe.frame = CGRect(
+                x: xPosition,
+                y: verticalInset,
+                width: stripeWidth,
+                height: view.bounds.height - 2 * verticalInset
+            )
+                
+            stripe.autoresizingMask = [.flexibleHeight]
+            view.addSubview(stripe)
+        }
+        
+        // 添加边缘高光效果 (增强立体感)
+        // let highlightLayer = CALayer()
+        // highlightLayer.frame = CGRect(
+        //     x: isLeftPage ? -2 : view.bounds.width - 2,
+        //     y: verticalInset,
+        //     width: 2,
+        //     height: view.bounds.height - 2 * verticalInset
+        // )
+        // highlightLayer.backgroundColor = UIColor.white.withAlphaComponent(0.2).cgColor
+        // view.layer.addSublayer(highlightLayer)
     }
 
     func setViewControllers(at index: Int,
