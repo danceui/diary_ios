@@ -159,22 +159,29 @@ class NotebookSpreadViewController: UIPageViewController {
         let stripeSpacing: CGFloat = 2.0
         let verticalInset: CGFloat = 8.0
 
-        if isLeftPage {
-            for i in 0..<stripeCount {
-                let stripe = UIView()
-                stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
-                stripe.layer.cornerRadius = 2
-                stripe.layer.borderColor = UIColor.black.cgColor
-                stripe.layer.borderWidth = 1
-                
-                let xPosition = -CGFloat(i) * stripeSpacing
-                stripe.frame = CGRect(x: xPosition, y: verticalInset, width: stripeWidth, height: view.bounds.height - verticalInset * 2)
-                stripe.tag = 9999 // 用于标记条纹视图
-                
-                view.insertSubview(stripe, at: 0) // 添加到最底层
+        let referenceView = view.subviews.first
+        for i in 0..<stripeCount {
+            let stripe = UIView()
+            stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+            stripe.layer.cornerRadius = 2
+            stripe.layer.borderColor = UIColor.black.cgColor
+            stripe.layer.borderWidth = 1
+            stripe.tag = 9999
+            
+            let xPosition: CGFloat
+            if isLeftPage {
+                xPosition = -CGFloat(i) * stripeSpacing
+            } else {
+                xPosition = view.bounds.width - stripeWidth + CGFloat(i) * stripeSpacing
             }
-        } else {
-
+            stripe.frame = CGRect(x: xPosition, y: verticalInset, width: stripeWidth, height: view.bounds.height - verticalInset * 2)
+            
+            // 插入到最底层或背景图之下
+            if let ref = referenceView {
+                view.insertSubview(stripe, belowSubview: ref)
+            } else {
+                view.addSubview(stripe)
+            }
         }
     }
 
