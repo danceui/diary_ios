@@ -3,6 +3,7 @@ enum PageRole {
     case normal
     case cover
     case back
+    case empty
 }
 
 enum PaperSize {
@@ -23,4 +24,9 @@ enum PaperSize {
             return CGSize(width: width, height: height)
         }
     }
+}
+
+enum FlipDirection {   
+    case forward
+    case backward
 }

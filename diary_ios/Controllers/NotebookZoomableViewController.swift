@@ -30,19 +30,19 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
+        setupViews()
+        setupNotebookSpreadVC()
         setupGestures()
-        embedNotebookContent()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        updateLayout()
+        centerContent()
         scrollView.setZoomScale(0.8, animated: false)
     }
 
     // MARK: - Setup
-    private func setupUI() {
+    private func setupViews() {
         view.backgroundColor = .systemBackground
         scrollView.frame = view.bounds
         view.addSubview(scrollView)
@@ -50,19 +50,11 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.addSubview(containerView)
     }
 
-    private func embedNotebookContent() {
+    private func setupNotebookSpreadVC() {
         addChild(notebookSpreadVC)
         containerView.addSubview(notebookSpreadVC.view)
-        notebookSpreadVC.view.frame = containerView.bounds
+        notebookSpreadVC.view.frame = containerView.bounds // 确保notebookSpreadVC.view填满containerView
         notebookSpreadVC.didMove(toParent: self)
-    }
-
-    private func updateLayout() {
-        let size = paperSize.size
-        scrollView.contentSize = size
-        containerView.frame.size = size
-        notebookSpreadVC.view.frame.size = containerView.bounds
-        centerContent()
     }
 
     private func setupGestures() {
@@ -70,31 +62,39 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         doubleTap.numberOfTapsRequired = 2
         scrollView.addGestureRecognizer(doubleTap)
     }
-    
+
+    // MARK: - Layout
     private func centerContent(animated: Bool = false) {
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
-        let visibleSize = CGSize(width: contentSize.width * scrollView.zoomScale, height: contentSize.height * scrollView.zoomScale)
-        
-        var offset = CGPoint(
-            x: max((scrollSize.width - visibleSize.width) / 2, 0),
-            y: max((scrollSize.height - visibleSize.height) / 2, 0))
+        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
+        let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
 
+        var roleXOffset: CGFloat = 0
         switch currentPageRole {
         case .cover:
-            offset.x -= (contentSize.width / 4) * scrollView.zoomScale
+            roleXOffset = -contentSize.width / 4
         case .back:
-            offset.x += (contentSize.width / 4) * scrollView.zoomScale
+            roleXOffset = contentSize.width / 4
         default:
-            break
+            roleXOffset = 0
         }
 
+        let newCenter = CGPoint(
+            x: contentSize.width / 2 + offsetX + roleXOffset,
+            y: contentSize.height / 2 + offsetY
+        )
         if animated {
-            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
-                self.scrollView.contentOffset = offset
-            }
+            let animator = UIViewPropertyAnimator(
+                duration: 0.5, // 稍长，给用户一点“惯性”感
+                dampingRatio: 0.8, // 弹性值越低，弹簧越强（0.7~0.85是常用范围）
+                animations: {
+                    self.containerView.center = newCenter
+                }
+            )
+            animator.startAnimation()
         } else {
-            scrollView.contentOffset = offset
+            containerView.center = newCenter
         }
     }
     
