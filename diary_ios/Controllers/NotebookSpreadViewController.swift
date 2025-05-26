@@ -86,13 +86,13 @@ class NotebookSpreadViewController: UIPageViewController {
         addPageEdgeEffect(
             to: leftPage.view,
             pageIndex: currentIndex,
-            totalPageCount: pages.count,
+            pageCount: pages.count,
             isLeftPage: true
         )
         addPageEdgeEffect(
             to: rightPage.view,
             pageIndex: currentIndex + 1,
-            totalPageCount: pages.count,
+            pageCount: pages.count,
             isLeftPage: false
         )
         print("Insert page pair #\(currentIndex), #\(currentIndex + 1).")
@@ -122,42 +122,59 @@ class NotebookSpreadViewController: UIPageViewController {
         }
     }
 
-    func addPageEdgeEffect(to view: UIView, pageIndex: Int, totalPageCount: Int, isLeftPage: Bool) {
-        // 清除旧的效果
-        view.subviews.filter { $0.tag == 9999 }.forEach { $0.removeFromSuperview() }
-
-        // 配置参数
-        let maxStripes = 6
-        let stripeSpacing: CGFloat = 12.0
-        let stripeWidth: CGFloat = 3.0
-        let verticalInset: CGFloat = 8.0
-
-        // 计算线性位置比例 (0.0 - 1.0)
-        let positionRatio = isLeftPage
-            ? CGFloat(pageIndex) / CGFloat(max(totalPageCount - 1, 1))
-            : 1.0 - CGFloat(pageIndex) / CGFloat(max(totalPageCount - 1, 1))
-
-        // 线性映射条纹数量
-        let stripeCount = Int(positionRatio * CGFloat(maxStripes))
+    func addPageEdgeEffect(to view: UIView, pageIndex: Int, pageCount: Int, isLeftPage: Bool) {
+        // 可书写页数
+        let edgeCount = (pageCount - 4) / 2
+        let leftStripeCount = isLeftPage ? pageIndex / 2 : (pageIndex - 1) / 2
+        let rightStripeCount = edgeCount - leftStripeCount
 
         // 添加条纹
-        for i in 0..<stripeCount {
-            let stripe = UIView()
-            stripe.tag = 9999
-            stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
-            stripe.layer.cornerRadius = 1.0
+        if isLeftPage {
+            addStripes(to: view, stripeCount: leftStripeCount, isLeftPage: true)
+        } else {
+            addStripes(to: view, stripeCount: rightStripeCount, isLeftPage: false)
+        }
+        // // 配置参数
+        // let maxStripes = 6
+        // let stripeSpacing: CGFloat = 2.0
+        // let stripeWidth: CGFloat = 15.0
+        // let verticalInset: CGFloat = 8.0
 
-            let offset = CGFloat(i) * stripeSpacing
-            let x = isLeftPage ? -stripeWidth + offset : view.bounds.width - offset
+        // // 计算线性位置比例 (0.0 - 1.0)
+        // let positionRatio = isLeftPage
+        //     ? CGFloat(pageIndex) / CGFloat(max(pageCount - 1, 1))
+        //     : 1.0 - CGFloat(pageIndex) / CGFloat(max(pageCount - 1, 1))
 
-            stripe.frame = CGRect(
-                x: x,
-                y: verticalInset,
-                width: stripeWidth,
-                height: view.bounds.height - verticalInset * 2
-            )
-            stripe.autoresizingMask = [.flexibleHeight]
-            view.addSubview(stripe)
+        // print("Position ratio for page \(pageIndex): \(positionRatio)")
+        // // 线性映射条纹数量
+        // let stripeCount = Int(positionRatio * CGFloat(maxStripes))
+    }
+
+    func addStripes(to view: UIView, stripeCount: Int, isLeftPage: Bool) {
+        // 清除旧的效果
+        view.subviews.filter { $0.tag == 9999 }.forEach { $0.removeFromSuperview() }
+        guard stripeCount > 0 else { return }
+        
+        let stripeWidth: CGFloat = 15.0
+        let stripeSpacing: CGFloat = 2.0
+        let verticalInset: CGFloat = 8.0
+
+        if isLeftPage {
+            for i in 0..<stripeCount {
+                let stripe = UIView()
+                stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+                stripe.layer.cornerRadius = 2
+                stripe.layer.borderColor = UIColor.black.cgColor
+                stripe.layer.borderWidth = 1
+                
+                let xPosition = -CGFloat(i) * stripeSpacing
+                stripe.frame = CGRect(x: xPosition, y: verticalInset, width: stripeWidth, height: view.bounds.height - verticalInset * 2)
+                stripe.tag = 9999 // 用于标记条纹视图
+                
+                view.insertSubview(stripe, at: 0) // 添加到最底层
+            }
+        } else {
+
         }
     }
 

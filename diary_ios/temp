@@ -1,0 +1,21 @@
+
+        for i in 0..<stripeCount {
+            let stripe = UIView()
+            stripe.tag = 9999
+            stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+            stripe.layer.cornerRadius = 1.0
+            stripe.layer.borderColor = UIColor.black.cgColor
+            stripe.layer.borderWidth = 0.5
+
+            let offset = CGFloat(i) * stripeSpacing
+            let x = isLeftPage ? -12 + offset : view.bounds.width - offset
+
+            stripe.frame = CGRect(
+                x: x,
+                y: verticalInset,
+                width: stripeWidth,
+                height: view.bounds.height - verticalInset * 2
+            )
+            stripe.autoresizingMask = [.flexibleHeight]
+            view.addSubview(stripe)
+        }
