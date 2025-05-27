@@ -20,6 +20,9 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         if let initialData = initialData {
             loadDrawing(data: initialData)
         }
+        if pageRole != .empty {
+            self.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+        }
     }
 
     required init?(coder: NSCoder) {
