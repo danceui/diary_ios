@@ -89,53 +89,60 @@ class NotebookSpreadViewController: UIViewController {
             print("❌ Invalid target index: \(newIndex)")
             return
         }
-        print("✅ beginPageFlip succeeded for direction: \(direction)")
 
         isAnimating = true
         flipContainer?.removeFromSuperview()
 
         let flippingPage: NotebookPageViewController
         let nextPage: NotebookPageViewController
+        let containerFrame: CGRect
+        let anchorPoint: CGPoint
+        let containerX: CGFloat
 
         if direction == .nextPage {
-            print("➡️ Flipig to next page pair at index: \(newIndex)")
+            print("➡️ Flipping to next page pair at index: \(newIndex)")
             flippingPage = pages[currentIndex + 1]
             nextPage = pages[newIndex]
-            flipContainer = UIView(frame: CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
-            flipContainer?.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
-            flipContainer?.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
+            containerFrame = CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
+            anchorPoint = CGPoint(x: 0, y: 0.5)
+            containerX = view.bounds.width / 2
         } else {
-            print("⬅️ Fliping to last page pair at index: \(newIndex)")
+            print("⬅️ Flipping to last page pair at index: \(newIndex)")
             flippingPage = pages[currentIndex]
             nextPage = pages[newIndex + 1]
-            flipContainer = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
-            flipContainer?.layer.anchorPoint = CGPoint(x: 1, y: 0.5)
-            flipContainer?.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
+            containerFrame = CGRect(x: 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
+            anchorPoint = CGPoint(x: 1, y: 0.5)
+            containerX = view.bounds.width / 2
         }
 
-        guard let flipContainer = flipContainer else {
-            print("❌ flipContainer creation failed")
-            return
-        }
+        let container = UIView(frame: containerFrame)
+        container.layer.anchorPoint = anchorPoint
+        container.layer.position = CGPoint(x: containerX, y: view.bounds.height / 2)
+        container.clipsToBounds = true
 
         var transform = CATransform3DIdentity
-        transform.m34 = -1.0 / 400
-        flipContainer.layer.transform = transform
-        flipContainer.clipsToBounds = true
-        view.addSubview(flipContainer)
+        transform.m34 = -1.0 / 1500
+        container.layer.transform = transform
 
-        guard let frontSnapshot = flippingPage.view.snapshotView(afterScreenUpdates: true),
-            let backSnapshot = nextPage.view.snapshotView(afterScreenUpdates: true) else {
+        view.addSubview(container)
+        self.flipContainer = container
+
+        guard let front = flippingPage.view.snapshotView(afterScreenUpdates: true),
+            let back = nextPage.view.snapshotView(afterScreenUpdates: true) else {
             print("❌ SnapshotView creation failed")
             return
         }
 
-        backSnapshot.frame = flipContainer.bounds
-        frontSnapshot.frame = flipContainer.bounds
-        backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0) // 翻转背页
-        flipContainer.addSubview(backSnapshot)
-        flipContainer.addSubview(frontSnapshot)
+        back.frame = container.bounds
+        back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
+        front.frame = container.bounds
 
+        container.addSubview(back)
+        container.addSubview(front)
+        self.backSnapshot = back
+        self.frontSnapshot = front
+        back.isHidden = true
+        front.isHidden = false
     }
 
     private func updatePageFlip(progress: CGFloat) {
@@ -148,11 +155,20 @@ class NotebookSpreadViewController: UIViewController {
         print("📐 Rotating flipContainer to angle: \(angle) radians")
 
         var transform = CATransform3DIdentity
-        transform.m34 = -1.0 / 500
+        transform.m34 = -1.0 / 1500
         flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
-
-        frontSnapshot?.isHidden = abs(progress) > 0.5
-        backSnapshot?.isHidden = abs(progress) < 0.5
+        
+        if progress > 0.5 {
+            frontSnapshot?.isHidden = true
+            backSnapshot?.isHidden = false
+            backSnapshot?.layer.zPosition = 1  // 确保背面在最前
+            print("▪️ Show backSnapshot, hide frontSnapshot.")
+        } else {
+            frontSnapshot?.isHidden = false
+            backSnapshot?.isHidden = true
+            frontSnapshot?.layer.zPosition = 1  // 确保背面在最前
+            print("🔸 Show frontSnapshot, hide backSnapshot.")
+        }
     }
 
     private func completeInteractivePageFlip(progress: CGFloat) {
