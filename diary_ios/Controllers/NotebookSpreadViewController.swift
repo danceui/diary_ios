@@ -124,38 +124,54 @@ class NotebookSpreadViewController: UIViewController {
         let nextLeftPage = pages[index]
         let nextRightPage = pages[index + 1]
 
-        currentRightPage.view.isHidden = true
-        nextLeftPage.view.isHidden = true
-
         // 创建翻页时截图
         let snapshotView = currentRightPage.view.snapshotView(afterScreenUpdates: true)!
         snapshotView.frame = rightPageContainer.frame
         snapshotView.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
         snapshotView.layer.position = CGPoint(x: rightPageContainer.frame.minX, y: rightPageContainer.frame.midY)
 
-        // 添加到主视图
         view.addSubview(snapshotView)
-
-        // 隐藏原始右页，避免干扰
         currentRightPage.view.isHidden = true
 
         // 添加透视变换
         var transform = CATransform3DIdentity
         transform.m34 = -1.0 / 1000 // 设置透视
         snapshotView.layer.transform = transform
-
-        // 添加阴影效果
         snapshotView.layer.shadowOpacity = 0.3
         snapshotView.layer.shadowRadius = 5
         snapshotView.layer.shadowOffset = CGSize(width: -5, height: 0)
 
-        // 动画
-        UIView.animate(withDuration: 0.8, animations: {
-            snapshotView.layer.transform = CATransform3DRotate(transform, -.pi, 0, 1, 0)
+        // 动画前先准备 new rightPage（先隐藏，动画中途展示）
+        nextRightPage.view.frame = rightPageContainer.bounds
+        nextRightPage.view.isHidden = true
+        rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
+        rightPageContainer.addSubview(nextRightPage.view)
+
+        UIView.animateKeyframes(withDuration: 1.0, delay: 0, options: .calculationModeCubic, animations: {
+            // 第一阶段：开始翻页
+            UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.4) {
+                snapshotView.layer.transform = CATransform3DRotate(transform, -.pi/2, 0, 1, 0)
+            }
+            
+            // 第二阶段：完成翻页
+            UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.6) {
+                nextRightPage.view.isHidden = false
+                snapshotView.layer.transform = CATransform3DRotate(transform, -.pi, 0, 1, 0)
+            }
         }, completion: { _ in
+            // 清理工作
             snapshotView.removeFromSuperview()
             currentRightPage.view.isHidden = false
-            self.goToPagePair(at: index)
+            
+            // 替换左页
+            self.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+            nextLeftPage.view.frame = self.leftPageContainer.bounds
+            self.leftPageContainer.addSubview(nextLeftPage.view)
+            
+            // 更新页面
+            self.currentIndex = index
+            self.applyPageShadows()
+            self.notifyPageState(index)
             self.isAnimating = false
         })
     }
