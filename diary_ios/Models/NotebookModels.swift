@@ -27,6 +27,6 @@ enum PaperSize {
 }
 
 enum PageTurnDirection {
-    case next
-    case last
+    case nextPage
+    case lastPage
 }
