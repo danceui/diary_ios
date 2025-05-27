@@ -67,7 +67,7 @@ class NotebookSpreadViewController: UIViewController {
             }
             updatePageFlip(progress: progress)
         case .ended, .cancelled:
-            completeInteractivePageFlip(progress: progress)
+            completePageFlip(progress: progress)
         default:
             break
         }
@@ -147,24 +147,24 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let angle = progress * .pi
-        print(String(format: "📌 Pan changed. 📐 Rotating progress: %.1f, angle: %.1f.", progress, angle))
+        // print(String(format: "📌 Pan changed. 📐 Rotating progress: %.1f, angle: %.1f.", progress, angle))
 
         var transform = CATransform3DIdentity
         transform.m34 = -1.0 / 1500
         flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
         
-        if progress > 0.5 {
+        if abs(progress) > 0.5 {
             frontSnapshot?.isHidden = true
             backSnapshot?.isHidden = false
-            print("▪️ Show backSnapshot, hide frontSnapshot.")
+            // print("▪️ Show backSnapshot, hide frontSnapshot.")
         } else {
             frontSnapshot?.isHidden = false
             backSnapshot?.isHidden = true
-            print("🔸 Show frontSnapshot, hide backSnapshot.")
+            // print("🔸 Show frontSnapshot, hide backSnapshot.")
         }
     }
 
-    private func completeInteractivePageFlip(progress: CGFloat) {
+    private func completePageFlip(progress: CGFloat) {
         guard let flipContainer = flipContainer else {
             print("⚠️ flipContainer is nil on complete")
             return
@@ -173,8 +173,6 @@ class NotebookSpreadViewController: UIViewController {
         let shouldFlip = abs(progress) > 0.5
         let direction = panDirection
         let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
-
-        print("🏁 completeInteractivePageFlip: shouldFlip=\(shouldFlip), targetIndex=\(targetIndex)")
 
         UIView.animate(withDuration: 0.3, animations: {
             var transform = CATransform3DIdentity
@@ -185,6 +183,7 @@ class NotebookSpreadViewController: UIViewController {
             if shouldFlip {
                 self.goToPagePair(at: targetIndex)
             }
+            print("⏸️ Flip cancelled")
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.isAnimating = false
@@ -196,7 +195,7 @@ class NotebookSpreadViewController: UIViewController {
             print("❌ Index out of bounds: \(index)")
             return
         }
-        print("➡️ Navigating to page pair at index: \(index)")
+        print("▶️ Flip to page pair #\(index), #\(index + 1)")
 
         let leftPage = pages[index]
         let rightPage = pages[index + 1]
