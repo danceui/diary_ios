@@ -45,7 +45,7 @@ class NotebookSpreadViewController: UIViewController {
             NotebookPageViewController(pageIndex: 4, role: .back),
             NotebookPageViewController(pageIndex: 5, role: .empty)
         ]
-        goToPagePair(at: 0)
+        goToPagePair(to: 0)
     }
 
     private func setupGestureRecognizers() {
@@ -84,7 +84,7 @@ class NotebookSpreadViewController: UIViewController {
 
         isAnimating = true
         flipContainer?.removeFromSuperview()
-        print("📌 Pan first updating. Flipping to page pair \(newIndex), \(newIndex + 1)")
+        print("📌 Pan began. Flipping to page pair \(newIndex), \(newIndex + 1)")
 
         // 获取翻页前后的页面
         let flippingPage: NotebookPageViewController = (direction == .nextPage) ? pages[currentIndex + 1] : pages[currentIndex]
@@ -171,10 +171,11 @@ class NotebookSpreadViewController: UIViewController {
             let angle: CGFloat = shouldFlip ? .pi : 0
             flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
         }, completion: { _ in
+            print("📌 Pan completed.", terminator:" ")
             if shouldFlip {
-                self.goToPagePair(at: targetIndex)
+                self.goToPagePair(to: targetIndex)
             } else {
-                self.goToPagePair(at: self.currentIndex)
+                self.goToPagePair(to: self.currentIndex)
             }
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
@@ -197,15 +198,15 @@ class NotebookSpreadViewController: UIViewController {
 
         currentIndex = insertIndex
         print("📄 Insert page pair #\(currentIndex), #\(currentIndex + 1).")
-        goToPagePair(at: currentIndex)
+        goToPagePairWithAnimation(to: currentIndex)
     }
 
-    private func goToPagePair(at index: Int) {
+    private func goToPagePair(to index: Int) {
         guard index >= 0 && index < pages.count - 1 else {
             print("❌ Index out of bounds: \(index)")
             return
         }
-        print("▶️ Flip to page pair #\(index), #\(index + 1)")
+        print("▶️ Go to page pair \(index), \(index + 1)")
 
         let leftPage = pages[index]
         let rightPage = pages[index + 1]
@@ -224,6 +225,60 @@ class NotebookSpreadViewController: UIViewController {
         notifyPageState(index)
     }
 
+    private func goToPagePairWithAnimation(to index: Int) {
+        guard !isAnimating else { return }
+        guard index >= 0, index + 1 < pages.count else {
+            print("❌ Invalid target index for animation: \(index)")
+            return
+        }
+
+        isAnimating = true
+        panDirection = index > currentIndex ? .nextPage : .lastPage
+
+        // 设置翻页视图
+        let flippingPage = panDirection == .nextPage ? pages[currentIndex + 1] : pages[currentIndex]
+        let nextPage = panDirection == .nextPage ? pages[index] : pages[index + 1]
+
+        let container = UIView(frame: CGRect(x: panDirection == .nextPage ? view.bounds.width / 2 : 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
+        container.layer.anchorPoint = CGPoint(x: panDirection == .nextPage ? 0 : 1, y: 0.5)
+        container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
+        container.clipsToBounds = true
+
+        var transform = CATransform3DIdentity
+        transform.m34 = -1.0 / 1500
+        container.layer.transform = transform
+
+        view.addSubview(container)
+        self.flipContainer = container
+
+        guard let front = flippingPage.view.snapshotView(afterScreenUpdates: true),
+            let back = nextPage.view.snapshotView(afterScreenUpdates: true) else { return }
+
+        back.frame = container.bounds
+        back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
+        front.frame = container.bounds
+
+        container.addSubview(back)
+        container.addSubview(front)
+        backSnapshot = back
+        frontSnapshot = front
+        back.isHidden = true
+        front.isHidden = false
+
+        // 开始动画
+        UIView.animate(withDuration: 0.5, animations: {
+            var t = CATransform3DIdentity
+            t.m34 = -1.0 / 1000
+            container.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
+        }, completion: { _ in
+            self.goToPagePair(to: index)
+            container.removeFromSuperview()
+            self.flipContainer = nil
+            self.isAnimating = false
+        })
+    }
+
+    // MARK: - Appearance
     private func applyPageShadows() {
         pages.enumerated().forEach { index, page in
             page.view.layer.shadowColor = UIColor.black.cgColor
