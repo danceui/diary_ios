@@ -26,9 +26,9 @@ struct ContentView: View {
                     notebookSpreadVC.redo()
                 }
                 
-//                Button("Add Page") {
-//                    notebookSpreadVC.addNewPagePair()
-//                }
+               Button("Add Page") {
+                   notebookSpreadVC.addNewPagePair()
+               }
                 
             }
             .padding()

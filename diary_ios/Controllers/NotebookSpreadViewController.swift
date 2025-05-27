@@ -28,6 +28,7 @@ class NotebookSpreadViewController: UIViewController {
         setupGestureRecognizers()
     }
 
+    // MARK: - Setup
     private func setupPageContainers() {
         leftPageContainer.frame = CGRect(x: 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
         rightPageContainer.frame = CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
@@ -41,12 +42,10 @@ class NotebookSpreadViewController: UIViewController {
             NotebookPageViewController(pageIndex: 1, role: .cover),
             NotebookPageViewController(pageIndex: 2, role: .normal),
             NotebookPageViewController(pageIndex: 3, role: .normal),
-            NotebookPageViewController(pageIndex: 4, role: .normal),
-            NotebookPageViewController(pageIndex: 5, role: .normal),
-            NotebookPageViewController(pageIndex: 6, role: .back),
-            NotebookPageViewController(pageIndex: 7, role: .empty)
+            NotebookPageViewController(pageIndex: 4, role: .back),
+            NotebookPageViewController(pageIndex: 5, role: .empty)
         ]
-        goToPagePair(at: 4)
+        goToPagePair(at: 0)
     }
 
     private func setupGestureRecognizers() {
@@ -54,6 +53,7 @@ class NotebookSpreadViewController: UIViewController {
         view.addGestureRecognizer(panGesture)
     }
 
+    // MARK: - Gesture Handling
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
@@ -180,6 +180,24 @@ class NotebookSpreadViewController: UIViewController {
             self.flipContainer = nil
             self.isAnimating = false
         })
+    }
+
+    // MARK: - Page Navigation
+    func addNewPagePair(initialData: Data? = nil) {
+        // 不允许在最后一页之后添加页面
+        guard currentIndex + 2 < pages.count else {
+            print("❌ Cannot add new page pair at the end.")
+            return
+        }
+
+        let insertIndex = currentIndex + 2
+        let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
+        let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
+        pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
+
+        currentIndex = insertIndex
+        print("📄 Insert page pair #\(currentIndex), #\(currentIndex + 1).")
+        goToPagePair(at: currentIndex)
     }
 
     private func goToPagePair(at index: Int) {
