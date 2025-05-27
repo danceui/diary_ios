@@ -57,7 +57,7 @@ class NotebookSpreadViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
-        
+
         switch gesture.state {
         case .changed:
             if flipContainer == nil {
@@ -147,7 +147,7 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let angle = progress * .pi
-        print("📌 Pan changed. 📐 Rotating progress \(progress), angle: \(angle).")
+        print(String(format: "📌 Pan changed. 📐 Rotating progress: %.1f, angle: %.1f.", progress, angle))
 
         var transform = CATransform3DIdentity
         transform.m34 = -1.0 / 1500
