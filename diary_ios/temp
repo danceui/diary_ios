@@ -1,21 +1,35 @@
 
-        for i in 0..<stripeCount {
-            let stripe = UIView()
-            stripe.tag = 9999
-            stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
-            stripe.layer.cornerRadius = 1.0
-            stripe.layer.borderColor = UIColor.black.cgColor
-            stripe.layer.borderWidth = 0.5
+for i in 0..<stripeCount {
+    let stripe = UIView()
+    stripe.tag = 9999
+    stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+    stripe.layer.cornerRadius = 1.0
+    stripe.layer.borderColor = UIColor.black.cgColor
+    stripe.layer.borderWidth = 0.5
 
-            let offset = CGFloat(i) * stripeSpacing
-            let x = isLeftPage ? -12 + offset : view.bounds.width - offset
+    let offset = CGFloat(i) * stripeSpacing
+    let x = isLeftPage ? -12 + offset : view.bounds.width - offset
 
-            stripe.frame = CGRect(
-                x: x,
-                y: verticalInset,
-                width: stripeWidth,
-                height: view.bounds.height - verticalInset * 2
-            )
-            stripe.autoresizingMask = [.flexibleHeight]
-            view.addSubview(stripe)
-        }
+    stripe.frame = CGRect(
+        x: x,
+        y: verticalInset,
+        width: stripeWidth,
+        height: view.bounds.height - verticalInset * 2
+    )
+    stripe.autoresizingMask = [.flexibleHeight]
+    view.addSubview(stripe)
+}
+
+
+
+// 准备 rightPageContainer/leftPageContainer 未来的显示内容
+let preloadLeft = pages[newIndex]
+let preloadRight = pages[newIndex + 1]
+preloadLeft.view.frame = leftPageContainer.bounds
+preloadRight.view.frame = rightPageContainer.bounds
+
+leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
+
+leftPageContainer.addSubview(preloadLeft.view)
+rightPageContainer.addSubview(preloadRight.view)
