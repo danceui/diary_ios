@@ -90,7 +90,7 @@ class NotebookSpreadViewController: UIViewController {
             return
         }
         print("✅ beginPageFlip succeeded for direction: \(direction)")
-        
+
         isAnimating = true
         flipContainer?.removeFromSuperview()
 
@@ -148,10 +148,11 @@ class NotebookSpreadViewController: UIViewController {
         print("📐 Rotating flipContainer to angle: \(angle) radians")
 
         var transform = CATransform3DIdentity
-        transform.m34 = -1.0 / 1000
+        transform.m34 = -1.0 / 500
         flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
 
         frontSnapshot?.isHidden = abs(progress) > 0.5
+        backSnapshot?.isHidden = abs(progress) < 0.5
     }
 
     private func completeInteractivePageFlip(progress: CGFloat) {
