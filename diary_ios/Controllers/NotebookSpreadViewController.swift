@@ -56,9 +56,11 @@ class NotebookSpreadViewController: UIViewController {
         guard !isAnimating else { return }
         
         if gesture.direction == .left {
-            goToPagePair(at: currentIndex + 2)
+        performPageFlipAnimation(to: currentIndex + 2)
+            // goToPagePair(at: currentIndex + 2)
         } else if gesture.direction == .right {
-            goToPagePair(at: currentIndex - 2)
+        performPageFlipAnimation(to: currentIndex - 2)
+            // goToPagePair(at: currentIndex - 2)
         }
     }
 
@@ -112,81 +114,52 @@ class NotebookSpreadViewController: UIViewController {
         notifyPageState(index)
     }
 
+    // MARK: - Flip Animation
+    private func performPageFlipAnimation(to index: Int) {
+        guard index >= 2, index + 1 < pages.count else { return }
+        guard !isAnimating else { return }
+        isAnimating = true
 
-    // func flipToNextPage() {
-    //     if currentIndex == pages.count - 3 {
-    //         goToBackPage()
-    //         return
-    //     }
+        let currentRightPage = pages[index - 1]
+        let nextLeftPage = pages[index]
+        let nextRightPage = pages[index + 1]
 
-    //     if !isAnimating { return }
-    //     isAnimating = true
-        
-    //     let currentRightPage = pages[currentIndex + 1]
-    //     let nextLeftPage = pages[currentIndex + 2]
-        
-    //     // 设置初始状态
-    //     nextLeftPage.view.frame = rightPageContainer.bounds
-    //     nextLeftPage.view.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
-    //     nextLeftPage.view.layer.position = CGPoint(x: rightPageContainer.bounds.minX, y: rightPageContainer.bounds.midY)
-    //     nextLeftPage.view.layer.transform = CATransform3DMakeRotation(.pi / 2, 0, 1, 0)
-    //     rightPageContainer.addSubview(nextLeftPage.view)
-        
-    //     // 创建翻页动画
-    //     UIView.animate(withDuration: 0.8, delay: 0, options: .curveEaseInOut, animations: {
-    //         // 当前右页翻过去
-    //         currentRightPage.view.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
-    //         currentRightPage.view.layer.position = CGPoint(x: self.rightPageContainer.bounds.minX, y: self.rightPageContainer.bounds.midY)
-    //         currentRightPage.view.layer.transform = CATransform3DMakeRotation(-.pi / 2, 0, 1, 0)
-            
-    //         // 新左页翻过来
-    //         nextLeftPage.view.layer.transform = CATransform3DIdentity
-    //     }) { _ in
-    //         currentRightPage.view.removeFromSuperview()
-    //         currentRightPage.view.layer.transform = CATransform3DIdentity
-    //         self.currentIndex += 2
-    //         self.goToPagePair(at: self.currentIndex)
-    //         self.isAnimating = false
-    //     }
-    // }
-    
-    // func flipToPreviousPage() {
-    //     if currentIndex == 1 {
-    //         goToCoverPage()
-    //         return
-    //     }
+        currentRightPage.view.isHidden = true
+        nextLeftPage.view.isHidden = true
 
-    //     if !isAnimating { return }
-    //     isAnimating = true
-        
-    //     let currentLeftPage = pages[currentIndex]
-    //     let previousRightPage = pages[currentIndex - 1]
-        
-    //     // 设置初始状态
-    //     previousRightPage.view.frame = leftPageContainer.bounds
-    //     previousRightPage.view.layer.anchorPoint = CGPoint(x: 1, y: 0.5)
-    //     previousRightPage.view.layer.position = CGPoint(x: leftPageContainer.bounds.maxX, y: leftPageContainer.bounds.midY)
-    //     previousRightPage.view.layer.transform = CATransform3DMakeRotation(-.pi / 2, 0, 1, 0)
-    //     leftPageContainer.addSubview(previousRightPage.view)
-        
-    //     // 创建翻页动画
-    //     UIView.animate(withDuration: 0.8, delay: 0, options: .curveEaseInOut, animations: {
-    //         // 当前左页翻过去
-    //         currentLeftPage.view.layer.anchorPoint = CGPoint(x: 1, y: 0.5)
-    //         currentLeftPage.view.layer.position = CGPoint(x: self.leftPageContainer.bounds.maxX, y: self.leftPageContainer.bounds.midY)
-    //         currentLeftPage.view.layer.transform = CATransform3DMakeRotation(.pi / 2, 0, 1, 0)
-            
-    //         // 前一右页翻过来
-    //         previousRightPage.view.layer.transform = CATransform3DIdentity
-    //     }) { _ in
-    //         currentLeftPage.view.removeFromSuperview()
-    //         currentLeftPage.view.layer.transform = CATransform3DIdentity
-    //         self.currentIndex -= 2
-    //         self.goToPagePair(at: self.currentIndex)
-    //         self.isAnimating = false
-    //     }
-    // }
-    
+        // 创建翻页时截图
+        let snapshotView = currentRightPage.view.snapshotView(afterScreenUpdates: true)!
+        snapshotView.frame = rightPageContainer.frame
+        snapshotView.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
+        snapshotView.layer.position = CGPoint(x: rightPageContainer.frame.minX, y: rightPageContainer.frame.midY)
+
+        // 添加到主视图
+        view.addSubview(snapshotView)
+
+        // 隐藏原始右页，避免干扰
+        currentRightPage.view.isHidden = true
+
+        // 添加透视变换
+        var transform = CATransform3DIdentity
+        transform.m34 = -1.0 / 1000 // 设置透视
+        snapshotView.layer.transform = transform
+
+        // 添加阴影效果
+        snapshotView.layer.shadowOpacity = 0.3
+        snapshotView.layer.shadowRadius = 5
+        snapshotView.layer.shadowOffset = CGSize(width: -5, height: 0)
+
+        // 动画
+        UIView.animate(withDuration: 0.8, animations: {
+            snapshotView.layer.transform = CATransform3DRotate(transform, -.pi, 0, 1, 0)
+        }, completion: { _ in
+            snapshotView.removeFromSuperview()
+            currentRightPage.view.isHidden = false
+            self.goToPagePair(at: index)
+            self.isAnimating = false
+        })
+    }
+
     // MARK: - Notebook Appearance
     private func applyPageShadows() {
         pages.enumerated().forEach { index, page in
