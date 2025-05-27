@@ -26,7 +26,7 @@ enum PaperSize {
     }
 }
 
-enum FlipDirection {   
-    case forward
-    case backward
+enum PageTurnDirection {
+    case next
+    case last
 }

@@ -19,7 +19,7 @@ class NotebookSpreadViewController: UIViewController {
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var panStartIndex: Int = 0
-    private var panDirection: Int = 1
+    private var panDirection: PageTurnDirection = .next
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -59,10 +59,12 @@ class NotebookSpreadViewController: UIViewController {
         let percent = translation.x / view.bounds.width
         let limitedProgress = min(max(percent, -1), 1)
 
+        print("🎯 Pan state: \(gesture.state.rawValue), translation.x: \(translation.x), progress: \(limitedProgress)")
+
         switch gesture.state {
         case .began:
             panStartIndex = currentIndex
-            panDirection = translation.x < 0 ? -1 : 1 // 左滑是负方向，右滑是正方向
+            panDirection = translation.x < 0 ? .next : .last
             beginInteractivePageFlip(direction: panDirection)
         case .changed:
             updateInteractivePageFlip(progress: limitedProgress)
@@ -73,13 +75,13 @@ class NotebookSpreadViewController: UIViewController {
         }
     }
 
-    private func beginInteractivePageFlip(direction: Int) {
+    private func beginInteractivePageFlip(direction: PageTurnDirection) {
         guard !isAnimating else {
             print("⚠️ Already animating")
             return
         }
 
-        let index = direction == 1 ? currentIndex + 2 : currentIndex - 2
+        let index = direction == .next ? currentIndex + 2 : currentIndex - 2
         guard index >= 0, index + 1 < pages.count else {
             print("❌ Invalid target index: \(index)")
             return
@@ -88,24 +90,29 @@ class NotebookSpreadViewController: UIViewController {
         isAnimating = true
         flipContainer?.removeFromSuperview()
 
-        let currentRightPage = pages[currentIndex + 1]
-        let nextLeftPage = pages[index]
+        let flippingPage = direction == .next ? pages[currentIndex + 1] : pages[currentIndex]
+        let nextPage = direction == .next ? pages[index] : pages[index + 1]
 
         var transform = CATransform3DIdentity
         transform.m34 = -1.0 / 500
 
-        // Flip from book center
         let containerWidth = view.bounds.width / 2
         let container = UIView(frame: CGRect(x: view.bounds.width / 2, y: 0, width: containerWidth, height: view.bounds.height))
-        container.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
-        container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
+        if direction == .next {
+            container.layer.anchorPoint = CGPoint(x: 1, y: 0.5)
+            container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
+        } else {
+            container.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
+            container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
+        }
         container.layer.transform = transform
         container.clipsToBounds = true
         view.addSubview(container)
+        view.bringSubviewToFront(container)
         flipContainer = container
 
-        guard let back = nextLeftPage.view.snapshotView(afterScreenUpdates: true),
-              let front = currentRightPage.view.snapshotView(afterScreenUpdates: true) else {
+        guard let front = flippingPage.view.snapshotView(afterScreenUpdates: true),
+            let back = nextPage.view.snapshotView(afterScreenUpdates: true) else {
             print("❌ SnapshotView creation failed")
             return
         }
@@ -128,7 +135,7 @@ class NotebookSpreadViewController: UIViewController {
             return
         }
 
-        let angle = abs(progress * .pi)
+        let angle = -progress * .pi
         print("📐 Rotating flipContainer to angle: \(angle) radians")
 
         var transform = CATransform3DIdentity
@@ -146,14 +153,14 @@ class NotebookSpreadViewController: UIViewController {
 
         let shouldFlip = abs(progress) > 0.5
         let direction = panDirection
-        let targetIndex = panStartIndex + direction * 2
+        let targetIndex = direction == .next ? currentIndex + 2 : currentIndex - 2
 
         print("🏁 completeInteractivePageFlip: shouldFlip=\(shouldFlip), targetIndex=\(targetIndex)")
 
         UIView.animate(withDuration: 0.3, animations: {
             var transform = CATransform3DIdentity
             transform.m34 = -1.0 / 1000
-            let angle: CGFloat = shouldFlip ? -CGFloat(direction) * .pi : 0
+            let angle: CGFloat = shouldFlip ? .pi : 0
             flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
         }, completion: { _ in
             if shouldFlip {
