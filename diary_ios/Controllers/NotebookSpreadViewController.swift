@@ -113,72 +113,74 @@ class NotebookSpreadViewController: UIViewController {
         applyPageShadows()
         notifyPageState(index)
     }
+private func performPageFlipAnimation(to index: Int) {
+    guard index >= 2, index + 1 < pages.count else { return }
+    guard !isAnimating else { return }
+    isAnimating = true
 
-    // MARK: - Flip Animation
-    private func performPageFlipAnimation(to index: Int) {
-        guard index >= 2, index + 1 < pages.count else { return }
-        guard !isAnimating else { return }
-        isAnimating = true
+    let currentRightPage = pages[index - 1]
+    let nextLeftPage = pages[index]
+    let nextRightPage = pages[index + 1]
 
-        let currentRightPage = pages[index - 1]
-        let nextLeftPage = pages[index]
-        let nextRightPage = pages[index + 1]
+    // 1. 准备3D透视变换
+    var transform = CATransform3DIdentity
+    transform.m34 = -1.0 / 500  // 更强的透视效果
+    
+    // 2. 创建双面容器
+    let flipContainer = UIView(frame: rightPageContainer.frame)
+    flipContainer.layer.anchorPoint = CGPoint(x: 0, y: 0.5) // 从右侧翻转
+    flipContainer.layer.position = CGPoint(x: rightPageContainer.frame.minX, y: rightPageContainer.frame.midY)
+    flipContainer.layer.transform = transform
+    view.addSubview(flipContainer)
 
-        // 创建翻页时截图
-        let flipContainer = UIView(frame: rightPageContainer.frame)
-        flipContainer.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
-        flipContainer.layer.position = CGPoint(x: rightPageContainer.frame.minX, y: rightPageContainer.frame.midY)
+    // 3. 创建正面视图（当前页）
+    let frontView = currentRightPage.view.snapshotView(afterScreenUpdates: true)!
+    frontView.frame = flipContainer.bounds
+    
+    // 4. 创建背面视图（下一页）
+    let backView = nextLeftPage.view.snapshotView(afterScreenUpdates: true)!
+    backView.frame = flipContainer.bounds
+    backView.layer.transform = CATransform3DMakeRotation(.pi, 0, 1, 0) // 初始旋转180度
+    
+    // 5. 构建双面结构
+    let container = CALayer()
+    container.frame = flipContainer.bounds
+    container.isDoubleSided = true
+    
+    let frontLayer = frontView.layer
+    let backLayer = backView.layer
+    
+    // 设置背面内容
+    backLayer.isDoubleSided = true
+    backLayer.transform = CATransform3DMakeRotation(.pi, 0, 1, 0)
+    
+    // 添加到容器
+    container.addSublayer(frontLayer)
+    container.addSublayer(backLayer)
+    flipContainer.layer.addSublayer(container)
+    
+    // 6. 准备新页面
+    nextRightPage.view.frame = rightPageContainer.bounds
+    nextRightPage.view.isHidden = true
+    rightPageContainer.addSubview(nextRightPage.view)
+    currentRightPage.view.isHidden = true
 
-        var transform = CATransform3DIdentity
-        transform.m34 = -1.0 / 1000
-        flipContainer.layer.transform = transform
-        flipContainer.layer.isDoubleSided = true
-        view.addSubview(flipContainer)
-
-        let frontSnapshot = currentRightPage.view.snapshotView(afterScreenUpdates: true)!
-        frontSnapshot.frame = flipContainer.frame
-        flipContainer.addSubview(frontSnapshot)
+    // 7. 动画执行
+    UIView.animate(withDuration: 1.0, delay: 0, options: .curveEaseInOut, animations: {
+        flipContainer.layer.transform = CATransform3DRotate(transform, -.pi, 0, 1, 0)
+    }, completion: { _ in
+        // 8. 清理工作
+        flipContainer.removeFromSuperview()
+        currentRightPage.view.isHidden = false
         
-        let backSnapshot = nextLeftPage.view.snapshotView(afterScreenUpdates: true)!
-        backSnapshot.frame = flipContainer.bounds
-        backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0) // 旋转 180 度作为背面
-        flipContainer.addSubview(backSnapshot)
-
-        // 动画前先准备 new rightPage（先隐藏，动画中途展示）
-        nextRightPage.view.frame = rightPageContainer.bounds
-        nextRightPage.view.isHidden = true
-        rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-        rightPageContainer.addSubview(nextRightPage.view)
-        currentRightPage.view.isHidden = true
-
-        UIView.animateKeyframes(withDuration: 1.0, delay: 0, options: .calculationModeCubic, animations: {
-            // 第一阶段：开始翻页
-            UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.4) {
-                flipContainer.layer.transform = CATransform3DRotate(transform, -.pi/2, 0, 1, 0)
-            }
-            
-            // 第二阶段：完成翻页
-            UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.6) {
-                nextRightPage.view.isHidden = false
-                flipContainer.layer.transform = CATransform3DRotate(transform, -.pi, 0, 1, 0)
-            }
-        }, completion: { _ in
-            // 清理工作
-            flipContainer.removeFromSuperview()
-            currentRightPage.view.isHidden = false
-            
-            // 替换左页
-            self.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-            nextLeftPage.view.frame = self.leftPageContainer.bounds
-            self.leftPageContainer.addSubview(nextLeftPage.view)
-
-            // 更新页面
-            self.currentIndex = index
-            self.applyPageShadows()
-            self.notifyPageState(index)
-            self.isAnimating = false
-        })
-    }
+        // 9. 更新页面状态
+        self.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+        self.leftPageContainer.addSubview(nextLeftPage.view)
+        
+        self.currentIndex = index
+        self.isAnimating = false
+    })
+}
 
     // MARK: - Notebook Appearance
     private func applyPageShadows() {
