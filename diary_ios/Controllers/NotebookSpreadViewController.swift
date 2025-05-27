@@ -57,18 +57,13 @@ class NotebookSpreadViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
-
-        print("🎯 Pan state: \(gesture.state.rawValue), translation.x: \(translation.x), progress: \(progress)")
-
+        
         switch gesture.state {
         case .changed:
             if flipContainer == nil {
-                print("📌 pan first updating")
                 panStartIndex = currentIndex
                 panDirection = translation.x < 0 ? .nextPage : .lastPage
                 beginPageFlip(direction: panDirection)
-            } else {
-                print("📌 pan changed")
             }
             updatePageFlip(progress: progress)
         case .ended, .cancelled:
@@ -100,14 +95,14 @@ class NotebookSpreadViewController: UIViewController {
         let containerX: CGFloat
 
         if direction == .nextPage {
-            print("➡️ Flipping to next page pair at index: \(newIndex)")
+            print("📌 Pan first updating. ➡️ Flipping to next page pair at index: \(newIndex)")
             flippingPage = pages[currentIndex + 1]
             nextPage = pages[newIndex]
             containerFrame = CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
             anchorPoint = CGPoint(x: 0, y: 0.5)
             containerX = view.bounds.width / 2
         } else {
-            print("⬅️ Flipping to last page pair at index: \(newIndex)")
+            print("📌 Pan first updating. ⬅️ Flipping to last page pair at index: \(newIndex)")
             flippingPage = pages[currentIndex]
             nextPage = pages[newIndex + 1]
             containerFrame = CGRect(x: 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
@@ -152,7 +147,7 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let angle = progress * .pi
-        print("📐 Rotating flipContainer to angle: \(angle) radians")
+        print("📌 Pan changed. 📐 Rotating progress \(progress), angle: \(angle).")
 
         var transform = CATransform3DIdentity
         transform.m34 = -1.0 / 1500
@@ -161,12 +156,10 @@ class NotebookSpreadViewController: UIViewController {
         if progress > 0.5 {
             frontSnapshot?.isHidden = true
             backSnapshot?.isHidden = false
-            backSnapshot?.layer.zPosition = 1  // 确保背面在最前
             print("▪️ Show backSnapshot, hide frontSnapshot.")
         } else {
             frontSnapshot?.isHidden = false
             backSnapshot?.isHidden = true
-            frontSnapshot?.layer.zPosition = 1  // 确保背面在最前
             print("🔸 Show frontSnapshot, hide backSnapshot.")
         }
     }
