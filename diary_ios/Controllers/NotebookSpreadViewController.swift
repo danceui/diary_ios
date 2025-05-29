@@ -192,13 +192,14 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let insertIndex = currentIndex + 2
-        let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
-        let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
+        // let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
+        // let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
+        let leftPage = pages[currentIndex]
+        let rightPage = pages[currentIndex + 1]
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
 
-        currentIndex = insertIndex
-        print("📄 Insert page pair #\(currentIndex), #\(currentIndex + 1).")
-        goToPagePairWithAnimation(to: currentIndex)
+        print("📄 Insert page pair #\(insertIndex), #\(insertIndex + 1).")
+        goToNewPagePairWithAnimation()
     }
 
     private func goToPagePair(to index: Int) {
@@ -225,28 +226,18 @@ class NotebookSpreadViewController: UIViewController {
         notifyPageState(index)
     }
 
-    private func goToPagePairWithAnimation(to index: Int) {
+    private func goToNewPagePairWithAnimation() {
         guard !isAnimating else { return }
-        guard index >= 0, index + 1 < pages.count else {
-            print("❌ Invalid target index for animation: \(index)")
-            return
-        }
-
         isAnimating = true
-        panDirection = index > currentIndex ? .nextPage : .lastPage
 
         // 设置翻页视图
-        let flippingPage = panDirection == .nextPage ? pages[currentIndex + 1] : pages[currentIndex]
-        let nextPage = panDirection == .nextPage ? pages[index] : pages[index + 1]
+        let flippingPage = pages[currentIndex + 1]
+        let nextPage =  pages[currentIndex + 2]
 
-        let container = UIView(frame: CGRect(x: panDirection == .nextPage ? view.bounds.width / 2 : 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
-        container.layer.anchorPoint = CGPoint(x: panDirection == .nextPage ? 0 : 1, y: 0.5)
+        let container = UIView(frame: CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
+        container.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
         container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
         container.clipsToBounds = true
-
-        var transform = CATransform3DIdentity
-        transform.m34 = -1.0 / 1500
-        container.layer.transform = transform
 
         view.addSubview(container)
         self.flipContainer = container
@@ -255,24 +246,32 @@ class NotebookSpreadViewController: UIViewController {
             let back = nextPage.view.snapshotView(afterScreenUpdates: true) else { return }
 
         back.frame = container.bounds
-        back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
         front.frame = container.bounds
 
         container.addSubview(back)
         container.addSubview(front)
         backSnapshot = back
         frontSnapshot = front
-        back.isHidden = true
         front.isHidden = false
+        back.isHidden = true
 
-        // 开始动画
-        UIView.animate(withDuration: 0.5, animations: {
-            var t = CATransform3DIdentity
-            t.m34 = -1.0 / 1000
-            container.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
+        currentIndex += 2
+        UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: [.calculationModeLinear], animations: {
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
+                var t  = CATransform3DIdentity
+                t .m34 = -1.0 / 1500
+                container.layer.transform = CATransform3DRotate(t, -.pi/2, 0, 1, 0)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
+                front.isHidden = true
+                back.isHidden = false
+                var t = CATransform3DIdentity
+                t.m34 = -1.0 / 1500
+                container.layer.transform = CATransform3DRotate(t, -.pi, 0, 1, 0)
+            }
         }, completion: { _ in
-            self.goToPagePair(to: index)
-            container.removeFromSuperview()
+            self.goToPagePair(to: self.currentIndex)
+            self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.isAnimating = false
         })
