@@ -55,15 +55,16 @@ class NotebookSpreadViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
+        let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
 
         switch gesture.state {
         case .changed:
             if flipContainer == nil {
-                beginPageFlip(direction: translation.x < 0 ? .nextPage : .lastPage)
+                beginPageFlip(direction: direction)
             }
-            updatePageFlip(direction: translation.x < 0 ? .nextPage : .lastPage, progress: progress)
+            updatePageFlip(direction: direction, progress: progress)
         case .ended, .cancelled:
-            completePageFlip(direction: translation.x < 0 ? .nextPage : .lastPage, progress: progress)
+            completePageFlip(direction: direction, progress: progress)
         default:
             break
         }
@@ -83,17 +84,14 @@ class NotebookSpreadViewController: UIViewController {
         print("📌 Pan began. Flipping to page pair \(newIndex), \(newIndex + 1)")
 
         // 获取翻页前后的页面
-        let flippingPage: NotebookPageViewController = (direction == .nextPage) ? pages[currentIndex + 1] : pages[currentIndex]
-        let nextPage: NotebookPageViewController = (direction == .nextPage) ? pages[newIndex] : pages[newIndex + 1]
+        let flippingPage = (direction == .nextPage) ? pages[currentIndex + 1] : pages[currentIndex]
+        let nextPage = (direction == .nextPage) ? pages[newIndex] : pages[newIndex + 1]
 
         let container = UIView(frame: CGRect(x: direction == .nextPage ? view.bounds.width / 2 : 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
         container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
         container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
         container.clipsToBounds = true
-
-        var transform = CATransform3DIdentity
-        transform.m34 = -1.0 / 1500
-        container.layer.transform = transform
+        container.layer.transform.m34 = -1.0 / 1500
 
         view.addSubview(container)
         self.flipContainer = container
@@ -102,15 +100,14 @@ class NotebookSpreadViewController: UIViewController {
         guard let front = flippingPage.view.snapshotView(afterScreenUpdates: true),
             let back = nextPage.view.snapshotView(afterScreenUpdates: true) else { return }
 
+        front.frame = container.bounds
         back.frame = container.bounds
         back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
-        front.frame = container.bounds
-
         container.addSubview(back)
         container.addSubview(front)
 
-        self.backSnapshot = back
-        self.frontSnapshot = front
+        backSnapshot = back
+        frontSnapshot = front
         back.isHidden = true
         front.isHidden = false
     }
@@ -152,14 +149,11 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
-        guard let flipContainer = flipContainer else {
-            print("⚠️ flipContainer is nil on complete")
-            return
-        }
+        guard let flipContainer = flipContainer else { return }
 
         let shouldFlip = abs(progress) > 0.5
         let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
-
+        
         UIView.animate(withDuration: 0.3, animations: {
             var transform = CATransform3DIdentity
             transform.m34 = -1.0 / 1000
@@ -167,11 +161,7 @@ class NotebookSpreadViewController: UIViewController {
             flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
         }, completion: { _ in
             print("📌 Pan completed.", terminator:" ")
-            if shouldFlip {
-                self.goToPagePair(to: targetIndex)
-            } else {
-                self.goToPagePair(to: self.currentIndex)
-            }
+            self.goToPagePair(to: shouldFlip ? targetIndex : self.currentIndex)
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.isAnimating = false
@@ -190,15 +180,6 @@ class NotebookSpreadViewController: UIViewController {
         let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
-        let label = UILabel()
-        label.text = "这是一个测试文本"
-        label.textColor = .black
-        label.font = UIFont.systemFont(ofSize: 18)
-        label.sizeToFit()
-        label.center = CGPoint(x: leftPage.view.bounds.midX, y: leftPage.view.bounds.midY)
-
-        leftPage.view.addSubview(label)
-
         print("📄 Insert page pair at \(insertIndex).")
         animatePageFlip(to: .nextPage)
     }
@@ -233,17 +214,13 @@ class NotebookSpreadViewController: UIViewController {
         beginPageFlip(direction: direction)
 
         // 模拟从 0 到 1 的翻页过程
-        let animationDuration: TimeInterval = 0.6
-        let frameRate: TimeInterval = 1.0 / 60.0
-        let totalFrames = Int(animationDuration / frameRate)
+        let totalFrames = Int(0.6 / (1.0 / 60.0))
         var currentFrame = 0
 
-        Timer.scheduledTimer(withTimeInterval: frameRate, repeats: true) { timer in
+        Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { timer in
             currentFrame += 1
-            let progress = -CGFloat(currentFrame) / CGFloat(totalFrames)
-
-            // 从 0 到 ±1，决定方向
-            let flippedProgress = direction == .nextPage ? progress : -progress
+            let progress = CGFloat(currentFrame) / CGFloat(totalFrames)
+            let flippedProgress = direction == .nextPage ? -progress : progress
             self.updatePageFlip(direction: direction, progress: flippedProgress)
 
             if currentFrame >= totalFrames {
