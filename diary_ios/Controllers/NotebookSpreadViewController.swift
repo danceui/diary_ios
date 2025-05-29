@@ -192,14 +192,20 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let insertIndex = currentIndex + 2
-        // let leftPage = NotebookPageViewController(pageIndex: pages.count, initialData: initialData)
-        // let rightPage = NotebookPageViewController(pageIndex: pages.count + 1, initialData: initialData)
-        let leftPage = pages[currentIndex]
-        let rightPage = pages[currentIndex + 1]
+        let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
+        let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
+        let label = UILabel()
+        label.text = "这是一个测试文本"
+        label.textColor = .black
+        label.font = UIFont.systemFont(ofSize: 18)
+        label.sizeToFit()
+        label.center = CGPoint(x: leftPage.view.bounds.midX, y: leftPage.view.bounds.midY)
 
-        print("📄 Insert page pair #\(insertIndex), #\(insertIndex + 1).")
-        goToNewPagePairWithAnimation()
+        leftPage.view.addSubview(label)
+
+        print("📄 Insert page pair at \(insertIndex).")
+    animatePageFlip(to: .nextPage)
     }
 
     private func goToPagePair(to index: Int) {
@@ -226,57 +232,35 @@ class NotebookSpreadViewController: UIViewController {
         notifyPageState(index)
     }
 
-    private func goToNewPagePairWithAnimation() {
+    func animatePageFlip(to direction: PageTurnDirection) {
         guard !isAnimating else { return }
-        isAnimating = true
 
-        // 设置翻页视图
-        let flippingPage = pages[currentIndex + 1]
-        let nextPage =  pages[currentIndex + 2]
+        panDirection = direction
+        panStartIndex = currentIndex
 
-        let container = UIView(frame: CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
-        container.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
-        container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
-        container.clipsToBounds = true
+        beginPageFlip(direction: direction)
 
-        view.addSubview(container)
-        self.flipContainer = container
+        // 模拟从 0 到 1 的翻页过程
+        let animationDuration: TimeInterval = 0.6
+        let frameRate: TimeInterval = 1.0 / 60.0
+        let totalFrames = Int(animationDuration / frameRate)
+        var currentFrame = 0
 
-        guard let front = flippingPage.view.snapshotView(afterScreenUpdates: true),
-            let back = nextPage.view.snapshotView(afterScreenUpdates: true) else { return }
+        Timer.scheduledTimer(withTimeInterval: frameRate, repeats: true) { timer in
+            currentFrame += 1
+            let progress = -CGFloat(currentFrame) / CGFloat(totalFrames)
 
-        back.frame = container.bounds
-        front.frame = container.bounds
+            // 从 0 到 ±1，决定方向
+            let flippedProgress = direction == .nextPage ? progress : -progress
+            self.updatePageFlip(direction: direction, progress: flippedProgress)
 
-        container.addSubview(back)
-        container.addSubview(front)
-        backSnapshot = back
-        frontSnapshot = front
-        front.isHidden = false
-        back.isHidden = true
-
-        currentIndex += 2
-        UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: [.calculationModeLinear], animations: {
-            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
-                var t  = CATransform3DIdentity
-                t .m34 = -1.0 / 1500
-                container.layer.transform = CATransform3DRotate(t, -.pi/2, 0, 1, 0)
+            if currentFrame >= totalFrames {
+                timer.invalidate()
+                self.completePageFlip(progress: flippedProgress)
             }
-            UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
-                front.isHidden = true
-                back.isHidden = false
-                var t = CATransform3DIdentity
-                t.m34 = -1.0 / 1500
-                container.layer.transform = CATransform3DRotate(t, -.pi, 0, 1, 0)
-            }
-        }, completion: { _ in
-            self.goToPagePair(to: self.currentIndex)
-            self.flipContainer?.removeFromSuperview()
-            self.flipContainer = nil
-            self.isAnimating = false
-        })
+        }
     }
-
+    
     // MARK: - Appearance
     private func applyPageShadows() {
         pages.enumerated().forEach { index, page in
