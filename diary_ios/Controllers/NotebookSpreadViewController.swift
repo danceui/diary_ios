@@ -18,8 +18,6 @@ class NotebookSpreadViewController: UIViewController {
     private var flipContainer: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
-    private var panStartIndex: Int = 0
-    private var panDirection: PageTurnDirection = .nextPage
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,13 +59,11 @@ class NotebookSpreadViewController: UIViewController {
         switch gesture.state {
         case .changed:
             if flipContainer == nil {
-                panStartIndex = currentIndex
-                panDirection = translation.x < 0 ? .nextPage : .lastPage
-                beginPageFlip(direction: panDirection)
+                beginPageFlip(direction: translation.x < 0 ? .nextPage : .lastPage)
             }
-            updatePageFlip(direction: panDirection, progress: progress)
+            updatePageFlip(direction: translation.x < 0 ? .nextPage : .lastPage, progress: progress)
         case .ended, .cancelled:
-            completePageFlip(progress: progress)
+            completePageFlip(direction: translation.x < 0 ? .nextPage : .lastPage, progress: progress)
         default:
             break
         }
@@ -155,14 +151,13 @@ class NotebookSpreadViewController: UIViewController {
         }
     }
 
-    private func completePageFlip(progress: CGFloat) {
+    private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
         guard let flipContainer = flipContainer else {
             print("⚠️ flipContainer is nil on complete")
             return
         }
 
         let shouldFlip = abs(progress) > 0.5
-        let direction = panDirection
         let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
 
         UIView.animate(withDuration: 0.3, animations: {
@@ -205,7 +200,7 @@ class NotebookSpreadViewController: UIViewController {
         leftPage.view.addSubview(label)
 
         print("📄 Insert page pair at \(insertIndex).")
-    animatePageFlip(to: .nextPage)
+        animatePageFlip(to: .nextPage)
     }
 
     private func goToPagePair(to index: Int) {
@@ -235,9 +230,6 @@ class NotebookSpreadViewController: UIViewController {
     func animatePageFlip(to direction: PageTurnDirection) {
         guard !isAnimating else { return }
 
-        panDirection = direction
-        panStartIndex = currentIndex
-
         beginPageFlip(direction: direction)
 
         // 模拟从 0 到 1 的翻页过程
@@ -256,7 +248,7 @@ class NotebookSpreadViewController: UIViewController {
 
             if currentFrame >= totalFrames {
                 timer.invalidate()
-                self.completePageFlip(progress: flippedProgress)
+                self.completePageFlip(direction: .nextPage, progress: flippedProgress)
             }
         }
     }
