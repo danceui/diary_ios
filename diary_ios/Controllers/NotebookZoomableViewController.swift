@@ -97,6 +97,32 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             containerView.center = newCenter
         }
     }
+
+    private func updateCenterOffset(progress: CGFloat, role: PageRole) {
+        let offsetX = containerView.bounds.width / 4
+        var roleXOffset: CGFloat = 0
+
+        switch role {
+        case .cover:
+            roleXOffset = -offsetX * (1 - progress) // progress 从 0 到 -1
+        case .back:
+            roleXOffset = offsetX * (1 + progress) // progress 从 0 到 1
+        default:
+            return
+        }
+
+        let scrollSize = scrollView.bounds.size
+        let contentSize = containerView.frame.size
+        let offsetXCenter = max((scrollSize.width - contentSize.width) / 2, 0)
+        let offsetYCenter = max((scrollSize.height - contentSize.height) / 2, 0)
+
+        let newCenter = CGPoint(
+            x: contentSize.width / 2 + offsetXCenter + roleXOffset,
+            y: contentSize.height / 2 + offsetYCenter
+        )
+
+        containerView.center = newCenter
+    }
     
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
         scrollView.setZoomScale(0.8, animated: true)
@@ -131,5 +157,8 @@ extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
     func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole) {
         currentPageRole = role
         centerContent(animated: true)
+    }
+    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageFlipProgress progress: CGFloat, role: PageRole) {
+        updateCenterOffset(progress: progress, role: role)
     }
 }

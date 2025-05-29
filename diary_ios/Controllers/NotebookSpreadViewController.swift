@@ -2,6 +2,7 @@ import UIKit
 
 protocol NotebookSpreadViewControllerDelegate: AnyObject {
     func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole)
+    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageFlipProgress progress: CGFloat, role: PageRole)
 }
 
 @available(iOS 16.0, *)
@@ -129,6 +130,16 @@ class NotebookSpreadViewController: UIViewController {
             preloadLeft.view.frame = leftPageContainer.bounds
             leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
             leftPageContainer.addSubview(preloadLeft.view)
+        }
+
+        if currentIndex == 2 && direction == .lastPage {
+            print("⬅️ Reaching cover page.")
+            pageDelegate?.notebookSpreadViewController(self, didUpdatePageFlipProgress: progress, role: .cover)
+            return
+        } else if currentIndex + 4 == pages.count && direction == .nextPage {
+            print("➡️ Reaching back page.")
+            pageDelegate?.notebookSpreadViewController(self, didUpdatePageFlipProgress: progress, role: .back)
+            return
         }
 
         var transform = CATransform3DIdentity
