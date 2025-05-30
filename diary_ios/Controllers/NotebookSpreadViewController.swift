@@ -57,13 +57,12 @@ class NotebookSpreadViewController: UIViewController {
         let translation = gesture.translation(in: view)
         let velocity = gesture.velocity(in: view)
 
-        let rawProgress = translation.x * 2 / view.bounds.width
-        let clampedProgress = min(max(rawProgress, -1), 1)
+        let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
         let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
 
         switch gesture.state {
         case .changed:
-            if abs(rawProgress) >= 1 {
+            if abs(progress) >= 1 {
                 return
             }
             if flipContainer == nil {
@@ -72,11 +71,15 @@ class NotebookSpreadViewController: UIViewController {
             // 根据速度调整响应灵敏度
             // let sensitivity: CGFloat = abs(velocity.x) > 500 ? 1.5 : 1.0
             // let adjustedProgress = clampedProgress * sensitivity
-            updatePageFlip(direction: direction, progress: clampedProgress)
+            updatePageFlip(direction: direction, progress: progress)
 
         case .ended, .cancelled:
-            let finalProgress = min(max(rawProgress, -1), 1)
-            completePageFlip(direction: direction, progress: finalProgress)
+            let isFast = abs(velocity.x) > 800 // 你可以微调这个阈值
+            if isFast {
+                completePageFlip(direction: direction, progress: 1)
+            } else {
+                completePageFlip(direction: direction, progress: progress)
+            }
 
         default:
             break
