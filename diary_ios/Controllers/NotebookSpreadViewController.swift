@@ -158,16 +158,28 @@ class NotebookSpreadViewController: UIViewController {
         print(String(format: "🔥 progress: %.1f", progress), terminator: " ")
         let width = pageDelegate?.currentContentWidth() ?? 0 
         var offset: CGFloat = 0
+        let easedProgress = easeInOutCubic(progress)
+
         if currentIndex == 2 && direction == .lastPage {
-            offset = -width / 4 * progress
+            offset = -width / 4 * easedProgress
         } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            offset = width / 4 * progress
+            offset = width / 4 * easedProgress
         } else if currentIndex == 0 && direction == .nextPage {
-            offset = -width / 4 * (1 - progress)
+            offset = -width / 4 * (1 - easedProgress)
         } else if currentIndex == pages.count - 2 && direction == .lastPage {
-            offset = width / 4 * (1 - progress)
+            offset = width / 4 * (1 - easedProgress)
         }
         onProgressChanged?(offset)
+
+        // // 添加弹簧效果
+        // UIView.animate(withDuration: 0.3, 
+        //             delay: 0,
+        //             usingSpringWithDamping: 0.7,
+        //             initialSpringVelocity: 0.5,
+        //             options: [.allowUserInteraction, .beginFromCurrentState],
+        //             animations: {
+        //                 self.onProgressChanged?(offset)
+        //             })
     }
 
     private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
