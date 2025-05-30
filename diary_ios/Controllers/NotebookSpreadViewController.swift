@@ -2,7 +2,6 @@ import UIKit
 
 protocol NotebookSpreadViewControllerDelegate: AnyObject {
     func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole)
-    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageFlipProgress progress: CGFloat, role: PageRole)
 }
 
 @available(iOS 16.0, *)
@@ -15,6 +14,7 @@ class NotebookSpreadViewController: UIViewController {
     private var rightPageContainer = UIView()
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
+    var onProgressOffsetChanged: ((CGFloat) -> Void)?
 
     private var flipContainer: UIView?
     private var frontSnapshot: UIView?
@@ -121,25 +121,19 @@ class NotebookSpreadViewController: UIViewController {
 
         // 提前显示未来的左右页
         if direction == .nextPage {
-            let preloadRight = pages[currentIndex + 3]
-            preloadRight.view.frame = rightPageContainer.bounds
-            rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-            rightPageContainer.addSubview(preloadRight.view)
+            if currentIndex + 3 < pages.count {
+                let preloadRight = pages[currentIndex + 3]
+                preloadRight.view.frame = rightPageContainer.bounds
+                rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
+                rightPageContainer.addSubview(preloadRight.view)
+            }
         } else {
-            let preloadLeft = pages[currentIndex - 2]
-            preloadLeft.view.frame = leftPageContainer.bounds
-            leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-            leftPageContainer.addSubview(preloadLeft.view)
-        }
-
-        if currentIndex == 2 && direction == .lastPage {
-            print("⬅️ Reaching cover page.")
-            pageDelegate?.notebookSpreadViewController(self, didUpdatePageFlipProgress: progress, role: .cover)
-            return
-        } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            print("➡️ Reaching back page.")
-            pageDelegate?.notebookSpreadViewController(self, didUpdatePageFlipProgress: progress, role: .back)
-            return
+            if currentIndex - 2 >= 0 {
+                let preloadLeft = pages[currentIndex - 2]
+                preloadLeft.view.frame = leftPageContainer.bounds
+                leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+                leftPageContainer.addSubview(preloadLeft.view)
+            }
         }
 
         var t = CATransform3DIdentity
@@ -156,6 +150,28 @@ class NotebookSpreadViewController: UIViewController {
             frontSnapshot?.isHidden = false
             backSnapshot?.isHidden = true
             // print("🔸 Show frontSnapshot, hide backSnapshot.")
+        }
+        // Trigger center offset update
+        if currentIndex == 2 && direction == .lastPage {
+            print("🔥 onProgressOffsetChanged progress: \(progress)")
+            onProgressOffsetChanged?(computeCenterOffset(progress: progress, role: .cover))
+            pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: .cover)
+        } else if currentIndex + 4 == pages.count && direction == .nextPage {
+            print("🔥 onProgressOffsetChanged progress: \(progress)")
+            onProgressOffsetChanged?(computeCenterOffset(progress: progress, role: .back))
+            pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: .back)
+        }
+    }
+
+    private func computeCenterOffset(progress: CGFloat, role: PageRole) -> CGFloat {
+        let pageWidth = view.bounds.width
+        switch role {
+        case .cover:
+            return -pageWidth / 4 * (1 + progress)
+        case .back:
+            return pageWidth / 4 * (1 - progress)
+        default:
+            return 0
         }
     }
 

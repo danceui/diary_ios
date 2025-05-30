@@ -23,6 +23,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         self.paperSize = paperSize
         super.init(nibName: nil, bundle: nil)
         self.notebookSpreadVC.pageDelegate = self
+        self.notebookSpreadVC.onProgressOffsetChanged = { [weak self] offset in
+            self?.centerContent(roleXOffset: offset)
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -65,63 +68,16 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - Layout
-    private func centerContent(animated: Bool = false) {
+    private func centerContent(roleXOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
         let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
         let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
 
-        var roleXOffset: CGFloat = 0
-        switch currentPageRole {
-        case .cover:
-            roleXOffset = -contentSize.width / 4
-        case .back:
-            roleXOffset = contentSize.width / 4
-        default:
-            roleXOffset = 0
-        }
-
-        let newCenter = CGPoint(
+        containerView.center = CGPoint(
             x: contentSize.width / 2 + offsetX + roleXOffset,
             y: contentSize.height / 2 + offsetY
         )
-        if animated {
-            let animator = UIViewPropertyAnimator(
-                duration: 0.5, // 稍长，给用户一点“惯性”感
-                dampingRatio: 0.8, // 弹性值越低，弹簧越强（0.7~0.85是常用范围）
-                animations: {
-                    self.containerView.center = newCenter
-                }
-            )
-            animator.startAnimation()
-        } else {
-            containerView.center = newCenter
-        }
-    }
-
-    private func centerContent(progress: CGFloat, role: PageRole) {
-        guard role == .cover || role == .back else { return }
-
-        let scrollSize = scrollView.bounds.size
-        let contentSize = containerView.frame.size
-        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
-        let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
-
-        var roleXOffset: CGFloat = 0
-        switch role {
-        case .cover:
-            roleXOffset = -contentSize.width / 4 * (1 + progress)
-        case .back:
-            roleXOffset = contentSize.width / 4 * (1 - progress)
-        default:
-            roleXOffset = 0
-        }
-
-        let newCenter = CGPoint(
-            x: contentSize.width / 2 + offsetX + roleXOffset,
-            y: contentSize.height / 2 + offsetY
-        )
-        containerView.center = newCenter
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
@@ -129,9 +85,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         printLayoutInfo(context: "handleDoubleTap")
     }
 
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-        return containerView
-    }
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? { return containerView }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         centerContent()
@@ -156,9 +110,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
     func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole) {
         currentPageRole = role
-        centerContent(animated: true)
-    }
-    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageFlipProgress progress: CGFloat, role: PageRole) {
-        centerContent(progress: progress, role: role)
+        centerContent()
     }
 }
