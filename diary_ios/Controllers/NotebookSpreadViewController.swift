@@ -152,21 +152,21 @@ class NotebookSpreadViewController: UIViewController {
             backSnapshot?.isHidden = true
             // print("🔸 Show frontSnapshot, hide backSnapshot.")
         }
-        triggerCenterOffsetUpdate(direction: direction, progress: progress)
+        updateCenterOffset(direction: direction, progress: abs(progress))
     }
 
-    private func triggerCenterOffsetUpdate(direction: PageTurnDirection, progress: CGFloat) {
+    private func updateCenterOffset(direction: PageTurnDirection, progress: CGFloat) {
         print(String(format: "🔥 progress: %.1f", progress), terminator: " ")
-        let contentWidth = pageDelegate?.currentContentWidth() ?? 0
+        let width = pageDelegate?.currentContentWidth() ?? 0 
         var offset: CGFloat = 0
         if currentIndex == 2 && direction == .lastPage {
-            offset = -contentWidth / 4 * progress
+            offset = -width / 4 * progress
         } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            offset = -contentWidth / 4 * progress
+            offset = width / 4 * progress
         } else if currentIndex == 0 && direction == .nextPage {
-            offset = -contentWidth / 4 * (1 + progress)
+            offset = -width / 4 * (1 - progress)
         } else if currentIndex == pages.count - 2 && direction == .lastPage {
-            offset = contentWidth / 4 * (1 - progress)
+            offset = width / 4 * (1 - progress)
         }
         onProgressOffsetChanged?(offset)
     }
@@ -185,11 +185,11 @@ class NotebookSpreadViewController: UIViewController {
         }, completion: { _ in
             print("📌 Pan completed.", terminator:" ")
             if shouldFlip {
+                self.updateCenterOffset(direction: direction, progress: 1.0)
                 self.goToPagePair(to: targetIndex)
-                self.triggerCenterOffsetUpdate(direction: direction, progress: 1.0)
             } else {
+                self.updateCenterOffset(direction: direction, progress: 0.0)
                 self.goToPagePair(to: self.currentIndex)
-                self.triggerCenterOffsetUpdate(direction: direction, progress: 0.0)
             }
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
