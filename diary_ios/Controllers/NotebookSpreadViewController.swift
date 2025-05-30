@@ -56,29 +56,26 @@ class NotebookSpreadViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let velocity = gesture.velocity(in: view)
-
         let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
         let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
 
         switch gesture.state {
         case .changed:
-            if abs(progress) >= 1 {
-                return
-            }
-            if flipContainer == nil {
-                beginPageFlip(direction: direction)
-            }
-            // 根据速度调整响应灵敏度
-            // let sensitivity: CGFloat = abs(velocity.x) > 500 ? 1.5 : 1.0
-            // let adjustedProgress = clampedProgress * sensitivity
+            if abs(progress) >= 1 { return }
+            if flipContainer == nil { beginPageFlip(direction: direction) }
             updatePageFlip(direction: direction, progress: progress)
 
         case .ended, .cancelled:
             let isFast = abs(velocity.x) > 800 // 你可以微调这个阈值
-            if isFast {
-                completePageFlip(direction: direction, progress: 1)
+            let shouldFlip = isFast || abs(progress) > 0.5
+            if shouldFlip {
+                completeFlipAnimation(direction: direction, 
+                                progress: progress,
+                                velocity: velocity.x)
+                // completePageFlip(direction: direction, progress: progress)
             } else {
-                completePageFlip(direction: direction, progress: progress)
+                cancelFlipAnimation(direction: direction, 
+                                    progress: progress)
             }
 
         default:
@@ -86,6 +83,7 @@ class NotebookSpreadViewController: UIViewController {
         }
     }
 
+    // MARK: - Page Flip Animation
     private func beginPageFlip(direction: PageTurnDirection) {
         guard !isAnimating else { return }
 
@@ -207,6 +205,61 @@ class NotebookSpreadViewController: UIViewController {
                 self.updateProgressOffset(direction: direction, progress: 0.0)
                 self.goToPagePair(to: self.currentIndex)
             }
+            self.flipContainer?.removeFromSuperview()
+            self.flipContainer = nil
+            self.isAnimating = false
+        })
+    }
+
+    private func completeFlipAnimation(direction: PageTurnDirection,
+                                    progress: CGFloat,
+                                    velocity: CGFloat) {
+        guard let flipContainer = flipContainer else { return }
+
+        let remainingProgress = 1 - abs(progress)
+        let duration = TimeInterval(0.2 + 0.3 * Double(remainingProgress)) // 可调参数
+        let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
+
+        UIView.animate(withDuration: duration,
+                    delay: 0,
+                    usingSpringWithDamping: 0.7,
+                    initialSpringVelocity: abs(velocity / 1000),
+                    options: [.curveEaseOut, .allowUserInteraction],
+                    animations: {
+            var t = CATransform3DIdentity
+            t.m34 = -1.0 / 1000
+            flipContainer.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
+            self.updateProgressOffset(direction: direction, progress: 1.0)
+            self.frontSnapshot?.isHidden = true
+            self.backSnapshot?.isHidden = false
+        }, completion: { _ in
+            self.goToPagePair(to: targetIndex)
+            self.flipContainer?.removeFromSuperview()
+            self.flipContainer = nil
+            self.isAnimating = false
+        })
+    }
+
+    private func cancelFlipAnimation(direction: PageTurnDirection,
+                                    progress: CGFloat) {
+        guard let flipContainer = flipContainer else { return }
+
+        let duration = TimeInterval(0.2 + 0.2 * Double(abs(progress))) // 可调参数
+
+        UIView.animate(withDuration: duration,
+                    delay: 0,
+                    usingSpringWithDamping: 0.7,
+                    initialSpringVelocity: 0.5,
+                    options: [.curveEaseOut, .allowUserInteraction],
+                    animations: {
+            var t = CATransform3DIdentity
+            t.m34 = -1.0 / 1500
+            flipContainer.layer.transform = CATransform3DRotate(t, 0, 0, 1, 0)
+            self.updateProgressOffset(direction: direction, progress: 0.0)
+            self.frontSnapshot?.isHidden = false
+            self.backSnapshot?.isHidden = true
+        }, completion: { _ in
+            self.goToPagePair(to: self.currentIndex)
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.isAnimating = false
