@@ -142,10 +142,10 @@ class NotebookSpreadViewController: UIViewController {
             return
         }
 
-        var transform = CATransform3DIdentity
-        transform.m34 = -1.0 / 1500
+        var t = CATransform3DIdentity
+        t.m34 = -1.0 / 1500
         let angle = progress * .pi
-        flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
+        flipContainer.layer.transform = CATransform3DRotate(t, angle, 0, 1, 0)
         // print(String(format: "📌 Pan changed. 📐 Rotating progress: %.1f, angle: %.1f.", progress, angle))
         
         if abs(progress) > 0.5 {
@@ -166,10 +166,10 @@ class NotebookSpreadViewController: UIViewController {
         let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
         
         UIView.animate(withDuration: 0.3, animations: {
-            var transform = CATransform3DIdentity
-            transform.m34 = -1.0 / 1000
+            var t = CATransform3DIdentity
+            t.m34 = -1.0 / 1000
             let angle: CGFloat = shouldFlip ? .pi : 0
-            flipContainer.layer.transform = CATransform3DRotate(transform, angle, 0, 1, 0)
+            flipContainer.layer.transform = CATransform3DRotate(t, angle, 0, 1, 0)
         }, completion: { _ in
             print("📌 Pan completed.", terminator:" ")
             self.goToPagePair(to: shouldFlip ? targetIndex : self.currentIndex)
