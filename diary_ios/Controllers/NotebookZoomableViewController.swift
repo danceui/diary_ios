@@ -78,8 +78,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             x: contentSize.width / 2 + offsetX + roleXOffset,
             y: contentSize.height / 2 + offsetY
         )
-
-        printLayoutInfo(context: "roleXOffset: \(roleXOffset), centerPoint: \(containerView.center)")
+        printLayoutInfo(context: "roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(containerView.center))")
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
@@ -96,15 +95,15 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Debug Info
     private func printLayoutInfo(context: String) {
-        print("======== \(context) ========")
-        print("📐 scrollView.frame: \(scrollView.frame)")
-        print("📐 scrollView.contentSize: \(scrollView.contentSize)")
-        print("📐 scrollView.contentOffset: \(scrollView.contentOffset)")
-        print("📐 scrollView.zoomScale: \(scrollView.zoomScale)")
-        print("📐 containerView.frame: \(containerView.frame)")
-        print("📐 containerView.bounds: \(containerView.bounds)")
-        print("📐 notebookView.frame: \(notebookSpreadVC.view.frame)")
-        print("📐 notebookView.bounds: \(notebookSpreadVC.view.bounds)")
+        print("\(context)")
+        print("📐 scrollView.frame: \(formatRect(scrollView.frame))")
+        print("📐 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
+        print("📐 scrollView.contentOffset: \(formatPoint(scrollView.contentOffset))")
+        print("📐 scrollView.zoomScale: \(format(scrollView.zoomScale))")
+        print("📐 containerView.frame: \(formatRect(containerView.frame))")
+        print("📐 containerView.bounds: \(formatRect(containerView.bounds))")
+        print("📐 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
+        print("📐 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
         print("================")
     }
 }

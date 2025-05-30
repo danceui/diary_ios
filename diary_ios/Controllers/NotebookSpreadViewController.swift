@@ -152,20 +152,23 @@ class NotebookSpreadViewController: UIViewController {
             backSnapshot?.isHidden = true
             // print("🔸 Show frontSnapshot, hide backSnapshot.")
         }
-        // Trigger center offset update
+        triggerCenterOffsetUpdate(direction: direction, progress: progress)
+    }
+
+    private func triggerCenterOffsetUpdate(direction: PageTurnDirection, progress: CGFloat) {
+        print(String(format: "🔥 progress: %.1f", progress), terminator: " ")
+        let contentWidth = pageDelegate?.currentContentWidth() ?? 0
+        var offset: CGFloat = 0
         if currentIndex == 2 && direction == .lastPage {
-            onProgressOffsetChanged?(-(pageDelegate?.currentContentWidth() ?? 0) / 4 * progress)
-            print("🔥 progress: \(progress)")
+            offset = -contentWidth / 4 * progress
         } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            onProgressOffsetChanged?(-(pageDelegate?.currentContentWidth() ?? 0) / 4 * progress)
-            print("🔥 progress: \(progress)")
+            offset = -contentWidth / 4 * progress
         } else if currentIndex == 0 && direction == .nextPage {
-            onProgressOffsetChanged?(-(pageDelegate?.currentContentWidth() ?? 0) / 4 * (1 + progress))
-            print("🔥 progress: \(progress)")
+            offset = -contentWidth / 4 * (1 + progress)
         } else if currentIndex == pages.count - 2 && direction == .lastPage {
-            onProgressOffsetChanged?((pageDelegate?.currentContentWidth() ?? 0) / 4 * (1 - progress))
-            print("🔥 progress: \(progress)")
+            offset = contentWidth / 4 * (1 - progress)
         }
+        onProgressOffsetChanged?(offset)
     }
 
     private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
@@ -181,7 +184,13 @@ class NotebookSpreadViewController: UIViewController {
             flipContainer.layer.transform = CATransform3DRotate(t, angle, 0, 1, 0)
         }, completion: { _ in
             print("📌 Pan completed.", terminator:" ")
-            self.goToPagePair(to: shouldFlip ? targetIndex : self.currentIndex)
+            if shouldFlip {
+                self.goToPagePair(to: targetIndex)
+                self.triggerCenterOffsetUpdate(direction: direction, progress: 1.0)
+            } else {
+                self.goToPagePair(to: self.currentIndex)
+                self.triggerCenterOffsetUpdate(direction: direction, progress: 0.0)
+            }
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.isAnimating = false
