@@ -14,7 +14,7 @@ class NotebookSpreadViewController: UIViewController {
     private var rightPageContainer = UIView()
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
-    var onProgressOffsetChanged: ((CGFloat) -> Void)?
+    var onProgressChanged: ((CGFloat) -> Void)?
 
     private var flipContainer: UIView?
     private var frontSnapshot: UIView?
@@ -151,10 +151,10 @@ class NotebookSpreadViewController: UIViewController {
             backSnapshot?.isHidden = true
             // print("🔸 Show frontSnapshot, hide backSnapshot.")
         }
-        updateCenterOffset(direction: direction, progress: abs(progress))
+        updateProgressOffset(direction: direction, progress: abs(progress))
     }
 
-    private func updateCenterOffset(direction: PageTurnDirection, progress: CGFloat) {
+    private func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
         print(String(format: "🔥 progress: %.1f", progress), terminator: " ")
         let width = pageDelegate?.currentContentWidth() ?? 0 
         var offset: CGFloat = 0
@@ -167,7 +167,7 @@ class NotebookSpreadViewController: UIViewController {
         } else if currentIndex == pages.count - 2 && direction == .lastPage {
             offset = width / 4 * (1 - progress)
         }
-        onProgressOffsetChanged?(offset)
+        onProgressChanged?(offset)
     }
 
     private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
@@ -184,10 +184,10 @@ class NotebookSpreadViewController: UIViewController {
         }, completion: { _ in
             print("📌 Pan completed.", terminator:" ")
             if shouldFlip {
-                self.updateCenterOffset(direction: direction, progress: 1.0)
+                self.updateProgressOffset(direction: direction, progress: 1.0)
                 self.goToPagePair(to: targetIndex)
             } else {
-                self.updateCenterOffset(direction: direction, progress: 0.0)
+                self.updateProgressOffset(direction: direction, progress: 0.0)
                 self.goToPagePair(to: self.currentIndex)
             }
             self.flipContainer?.removeFromSuperview()
@@ -198,7 +198,6 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - Page Navigation
     func addNewPagePair(initialData: Data? = nil) {
-        // 不允许在最后一页之后添加页面
         guard currentIndex + 2 < pages.count else {
             print("❌ Cannot add new page pair at the end.")
             return
@@ -209,7 +208,7 @@ class NotebookSpreadViewController: UIViewController {
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         print("📄 Insert page pair at \(insertIndex).")
-        animatePageFlip(to: .nextPage)
+        autoPageFlip(to: .nextPage)
     }
 
     private func goToPagePair(to index: Int) {
@@ -235,7 +234,7 @@ class NotebookSpreadViewController: UIViewController {
         applyPageShadows()
     }
 
-    func animatePageFlip(to direction: PageTurnDirection) {
+    func autoPageFlip(to direction: PageTurnDirection) {
         guard !isAnimating else { return }
 
         beginPageFlip(direction: direction)
