@@ -2,6 +2,7 @@ import UIKit
 
 protocol NotebookSpreadViewControllerDelegate: AnyObject {
     func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole)
+    func currentContentWidth() -> CGFloat
 }
 
 @available(iOS 16.0, *)
@@ -153,23 +154,22 @@ class NotebookSpreadViewController: UIViewController {
         }
         // Trigger center offset update
         if currentIndex == 2 && direction == .lastPage {
-            print("🔥 onProgressOffsetChanged progress: \(progress)")
             onProgressOffsetChanged?(computeCenterOffset(progress: progress, role: .cover))
             pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: .cover)
         } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            print("🔥 onProgressOffsetChanged progress: \(progress)")
             onProgressOffsetChanged?(computeCenterOffset(progress: progress, role: .back))
             pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: .back)
         }
     }
 
     private func computeCenterOffset(progress: CGFloat, role: PageRole) -> CGFloat {
-        let pageWidth = view.bounds.width
+        let contentWidth = pageDelegate?.currentContentWidth()
+        print("🔥 onProgressOffsetChanged progress: \(progress), contentWidth: \(String(describing: contentWidth))")
         switch role {
         case .cover:
-            return -pageWidth / 4 * (1 + progress)
+            return -(contentWidth ?? 0) / 4 * progress
         case .back:
-            return pageWidth / 4 * (1 - progress)
+            return -(contentWidth ?? 0) / 4 * progress
         default:
             return 0
         }

@@ -78,6 +78,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             x: contentSize.width / 2 + offsetX + roleXOffset,
             y: contentSize.height / 2 + offsetY
         )
+
+        printLayoutInfo(context: "roleXOffset: \(roleXOffset)")
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
@@ -110,6 +112,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
     func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole) {
         currentPageRole = role
-        centerContent()
+        // centerContent()
+    }
+    func currentContentWidth() -> CGFloat {
+        return containerView.frame.size.width
     }
 }
