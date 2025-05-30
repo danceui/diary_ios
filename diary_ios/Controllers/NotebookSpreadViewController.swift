@@ -154,24 +154,17 @@ class NotebookSpreadViewController: UIViewController {
         }
         // Trigger center offset update
         if currentIndex == 2 && direction == .lastPage {
-            onProgressOffsetChanged?(computeCenterOffset(progress: progress, role: .cover))
-            pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: .cover)
+            onProgressOffsetChanged?(-(pageDelegate?.currentContentWidth() ?? 0) / 4 * progress)
+            print("🔥 progress: \(progress)")
         } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            onProgressOffsetChanged?(computeCenterOffset(progress: progress, role: .back))
-            pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: .back)
-        }
-    }
-
-    private func computeCenterOffset(progress: CGFloat, role: PageRole) -> CGFloat {
-        let contentWidth = pageDelegate?.currentContentWidth()
-        print("🔥 onProgressOffsetChanged progress: \(progress), contentWidth: \(String(describing: contentWidth))")
-        switch role {
-        case .cover:
-            return -(contentWidth ?? 0) / 4 * progress
-        case .back:
-            return -(contentWidth ?? 0) / 4 * progress
-        default:
-            return 0
+            onProgressOffsetChanged?(-(pageDelegate?.currentContentWidth() ?? 0) / 4 * progress)
+            print("🔥 progress: \(progress)")
+        } else if currentIndex == 0 && direction == .nextPage {
+            onProgressOffsetChanged?(-(pageDelegate?.currentContentWidth() ?? 0) / 4 * (1 + progress))
+            print("🔥 progress: \(progress)")
+        } else if currentIndex == pages.count - 2 && direction == .lastPage {
+            onProgressOffsetChanged?((pageDelegate?.currentContentWidth() ?? 0) / 4 * (1 - progress))
+            print("🔥 progress: \(progress)")
         }
     }
 

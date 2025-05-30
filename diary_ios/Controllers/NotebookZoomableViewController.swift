@@ -79,7 +79,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             y: contentSize.height / 2 + offsetY
         )
 
-        printLayoutInfo(context: "roleXOffset: \(roleXOffset)")
+        printLayoutInfo(context: "roleXOffset: \(roleXOffset), centerPoint: \(containerView.center)")
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
