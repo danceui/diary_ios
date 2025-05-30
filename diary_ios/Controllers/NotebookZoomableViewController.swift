@@ -108,7 +108,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
 
         var roleXOffset: CGFloat = 0
-        switch currentPageRole {
+        switch role {
         case .cover:
             roleXOffset = -contentSize.width / 4 * (1 + progress)
         case .back:
