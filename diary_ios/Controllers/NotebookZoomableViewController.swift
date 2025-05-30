@@ -73,10 +73,18 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
         let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
 
-        containerView.center = CGPoint(
+        let targetCenter = CGPoint(
             x: contentSize.width / 2 + offsetX + roleXOffset,
             y: contentSize.height / 2 + offsetY
         )
+        UIView.animate(withDuration: 0.3,
+                    delay: 0,
+                    usingSpringWithDamping: 0.7,
+                    initialSpringVelocity: 0.5,
+                    options: [.allowUserInteraction, .beginFromCurrentState],
+                    animations: {
+            self.containerView.center = targetCenter
+        })
         printLayoutInfo(context: "roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(containerView.center))")
     }
 
