@@ -1,7 +1,6 @@
 import UIKit
 
 protocol NotebookSpreadViewControllerDelegate: AnyObject {
-    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole)
     func currentContentWidth() -> CGFloat
 }
 
@@ -234,7 +233,6 @@ class NotebookSpreadViewController: UIViewController {
 
         currentIndex = index
         applyPageShadows()
-        notifyPageState(index)
     }
 
     func animatePageFlip(to direction: PageTurnDirection) {
@@ -285,19 +283,6 @@ class NotebookSpreadViewController: UIViewController {
                 page.view.layer.shadowPath = nil
             }
         }
-    }
-
-    private func notifyPageState(_ index: Int) {
-        let role: PageRole
-        if index == 0 {
-            role = .cover
-        } else if index == pages.count - 2 {
-            role = .back
-        } else {
-            role = .normal
-        }
-        print("📢 Page role updated: \(role)")
-        pageDelegate?.notebookSpreadViewController(self, didUpdatePageRole: role)
     }
 
     func exportAllDrawings() -> [Data] {

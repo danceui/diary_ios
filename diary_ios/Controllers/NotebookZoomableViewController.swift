@@ -4,7 +4,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
     let paperSize: PaperSize
     private let containerView = UIView()
-    private var currentPageRole: PageRole = .cover
 
     private lazy var scrollView: UIScrollView = {
         let sv = UIScrollView()
@@ -109,10 +108,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 }
 
 extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
-    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole) {
-        currentPageRole = role
-        // centerContent()
-    }
     func currentContentWidth() -> CGFloat {
         return containerView.frame.size.width
     }
