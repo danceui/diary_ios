@@ -56,20 +56,28 @@ class NotebookSpreadViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let velocity = gesture.velocity(in: view)
-        let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
+
+        let rawProgress = translation.x * 2 / view.bounds.width
+        let clampedProgress = min(max(rawProgress, -1), 1)
         let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
 
         switch gesture.state {
         case .changed:
+            if abs(rawProgress) >= 1 {
+                return
+            }
             if flipContainer == nil {
                 beginPageFlip(direction: direction)
             }
             // 根据速度调整响应灵敏度
-            let sensitivity: CGFloat = abs(velocity.x) > 500 ? 1.5 : 1.0
-            let adjustedProgress = progress * sensitivity
-            updatePageFlip(direction: direction, progress: adjustedProgress)
+            // let sensitivity: CGFloat = abs(velocity.x) > 500 ? 1.5 : 1.0
+            // let adjustedProgress = clampedProgress * sensitivity
+            updatePageFlip(direction: direction, progress: clampedProgress)
+
         case .ended, .cancelled:
-            completePageFlip(direction: direction, progress: progress)
+            let finalProgress = min(max(rawProgress, -1), 1)
+            completePageFlip(direction: direction, progress: finalProgress)
+
         default:
             break
         }
