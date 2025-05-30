@@ -61,7 +61,12 @@ class NotebookSpreadViewController: UIViewController {
 
         switch gesture.state {
         case .changed:
-            if abs(progress) >= 1 { return }
+            print("💨 Pan changing progress: \(format(progress))")
+            if direction == .nextPage {
+                guard progress < -0.01 && progress > -1.0 else { return }
+            } else {
+                guard progress > 0.01 && progress < 1.0 else { return }
+            }
             if flipContainer == nil { beginPageFlip(direction: direction) }
             updatePageFlip(direction: direction, progress: progress)
 
