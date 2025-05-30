@@ -55,6 +55,7 @@ class NotebookSpreadViewController: UIViewController {
     // MARK: - Gesture Handling
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
+        let velocity = gesture.velocity(in: view)
         let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
         let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
 
@@ -63,7 +64,10 @@ class NotebookSpreadViewController: UIViewController {
             if flipContainer == nil {
                 beginPageFlip(direction: direction)
             }
-            updatePageFlip(direction: direction, progress: progress)
+            // 根据速度调整响应灵敏度
+            let sensitivity: CGFloat = abs(velocity.x) > 500 ? 1.5 : 1.0
+            let adjustedProgress = progress * sensitivity
+            updatePageFlip(direction: direction, progress: adjustedProgress)
         case .ended, .cancelled:
             completePageFlip(direction: direction, progress: progress)
         default:
@@ -169,16 +173,7 @@ class NotebookSpreadViewController: UIViewController {
         } else if currentIndex == pages.count - 2 && direction == .lastPage {
             offset = width / 4 * (1 - easedProgress)
         }
-
-        // 添加弹簧效果
-        UIView.animate(withDuration: 0.3, 
-                    delay: 0,
-                    usingSpringWithDamping: 0.7,
-                    initialSpringVelocity: 0.5,
-                    options: [.allowUserInteraction, .beginFromCurrentState],
-                    animations: {
-                        self.onProgressChanged?(offset)
-                    })
+        onProgressChanged?(offset)
     }
 
     private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
