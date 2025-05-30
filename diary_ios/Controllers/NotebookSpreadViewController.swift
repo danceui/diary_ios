@@ -72,7 +72,6 @@ class NotebookSpreadViewController: UIViewController {
                 completeFlipAnimation(direction: direction, 
                                 progress: progress,
                                 velocity: velocity.x)
-                // completePageFlip(direction: direction, progress: progress)
             } else {
                 cancelFlipAnimation(direction: direction, 
                                     progress: progress)
@@ -222,7 +221,7 @@ class NotebookSpreadViewController: UIViewController {
 
         UIView.animate(withDuration: duration,
                     delay: 0,
-                    usingSpringWithDamping: 0.7,
+                    usingSpringWithDamping: 1.0,
                     initialSpringVelocity: abs(velocity / 1000),
                     options: [.curveEaseOut, .allowUserInteraction],
                     animations: {
@@ -248,7 +247,7 @@ class NotebookSpreadViewController: UIViewController {
 
         UIView.animate(withDuration: duration,
                     delay: 0,
-                    usingSpringWithDamping: 0.7,
+                    usingSpringWithDamping: 1.0,
                     initialSpringVelocity: 0.5,
                     options: [.curveEaseOut, .allowUserInteraction],
                     animations: {

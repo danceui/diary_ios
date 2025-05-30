@@ -81,11 +81,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let distance = hypot(containerView.center.x - targetCenter.x,
                      containerView.center.y - targetCenter.y)
         let duration = min(max(0.15, Double(distance / 500)), 0.5) // 动态范围 0.15～0.5 秒
-        // damping = 0.85 看起来更“顺滑稳重”
         // initialSpringVelocity = 0.8 会让手指松开后动得更有惯性感
         UIView.animate(withDuration: duration,
                     delay: 0,
-                    usingSpringWithDamping: 0.7,
+                    usingSpringWithDamping: 0.5,
                     initialSpringVelocity: 0.5,
                     options: [.allowUserInteraction, .beginFromCurrentState],
                     animations: {
