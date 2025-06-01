@@ -86,7 +86,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
                     delay: 0,
                     usingSpringWithDamping: 0.5,
                     initialSpringVelocity: 0.5,
-                    options: [.allowUserInteraction, .beginFromCurrentState],
+                    options: [.curveLinear],
                     animations: {
             self.containerView.center = targetCenter
         })

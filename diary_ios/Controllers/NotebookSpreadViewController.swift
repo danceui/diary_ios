@@ -19,6 +19,7 @@ class NotebookSpreadViewController: UIViewController {
     private var flipContainer: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
+    private var lastProgress: CGFloat?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,27 +62,19 @@ class NotebookSpreadViewController: UIViewController {
 
         switch gesture.state {
         case .changed:
-            print("💨 Pan changing progress: \(format(progress))")
-            if direction == .nextPage {
-                guard progress < -0.01 && progress > -1.0 else { return }
-            } else {
-                guard progress > 0.01 && progress < 1.0 else { return }
-            }
+            // 不允许progress正负号变化
+            if let last = lastProgress, (last > 0 && progress < 0) || (last < 0 && progress > 0) { return }
+            lastProgress = progress
+
             if flipContainer == nil { beginPageFlip(direction: direction) }
             updatePageFlip(direction: direction, progress: progress)
-
         case .ended, .cancelled:
-            let isFast = abs(velocity.x) > 800 // 你可以微调这个阈值
-            let shouldFlip = isFast || abs(progress) > 0.5
-            if shouldFlip {
-                completeFlipAnimation(direction: direction, 
-                                progress: progress,
-                                velocity: velocity.x)
+            lastProgress = nil
+            if abs(velocity.x) > 800 || abs(progress) > 0.5 {
+                completeFlipAnimation(direction: direction, progress: progress, velocity: velocity.x)
             } else {
-                cancelFlipAnimation(direction: direction, 
-                                    progress: progress)
+                cancelFlipAnimation(direction: direction, progress: progress)
             }
-
         default:
             break
         }
@@ -89,7 +82,10 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - Page Flip Animation
     private func beginPageFlip(direction: PageTurnDirection) {
-        guard !isAnimating else { return }
+        guard !isAnimating else { 
+            print("⚠️ Animating, ignore pan.")
+            return 
+        }
 
         let newIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
         guard newIndex >= 0, newIndex + 1 < pages.count else {
@@ -189,6 +185,7 @@ class NotebookSpreadViewController: UIViewController {
         onProgressChanged?(offset)
     }
 
+    // MARK: - Animation Completion
     private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
         guard let flipContainer = flipContainer else { return }
 
@@ -228,7 +225,7 @@ class NotebookSpreadViewController: UIViewController {
                     delay: 0,
                     usingSpringWithDamping: 1.0,
                     initialSpringVelocity: abs(velocity / 1000),
-                    options: [.curveEaseOut, .allowUserInteraction],
+                    options: [.curveEaseOut],
                     animations: {
             var t = CATransform3DIdentity
             t.m34 = -1.0 / 1000
@@ -254,7 +251,7 @@ class NotebookSpreadViewController: UIViewController {
                     delay: 0,
                     usingSpringWithDamping: 1.0,
                     initialSpringVelocity: 0.5,
-                    options: [.curveEaseOut, .allowUserInteraction],
+                    options: [.curveEaseOut],
                     animations: {
             var t = CATransform3DIdentity
             t.m34 = -1.0 / 1500
@@ -309,7 +306,10 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     func autoPageFlip(to direction: PageTurnDirection) {
-        guard !isAnimating else { return }
+        guard !isAnimating else {
+            print("⚠️ Animating, ignore pan.")
+            return 
+        }
 
         beginPageFlip(direction: direction)
 
