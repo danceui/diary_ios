@@ -8,6 +8,7 @@ protocol NotebookSpreadViewControllerDelegate: AnyObject {
 class NotebookSpreadViewController: UIViewController {
     private var pages: [NotebookPageViewController] = []
     private var flipController: FlipAnimatorController!
+    private var lockedDirection: PageTurnDirection?
     
     var currentIndex: Int = 0
     var leftPageContainer = UIView()
@@ -58,6 +59,13 @@ class NotebookSpreadViewController: UIViewController {
 
         switch gesture.state {
         case .changed:
+            if lockedDirection == nil {
+                lockedDirection = direction
+            } else if direction != lockedDirection {
+                print("❌ Progress sign reversed.")
+                flipController.cleanup()
+                return
+            }
             if !flipController.state.isFlipping {
                 // print("🚩 Begin page flip - \(direction)")
                 flipController.begin(direction: direction)
@@ -65,6 +73,7 @@ class NotebookSpreadViewController: UIViewController {
             // print("🚩 Update page flip - progress \(format(progress))")
             flipController.update(direction: direction, progress: progress)
         case .ended, .cancelled:
+            lockedDirection = nil
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
                 // print("🚩 Complete page flip - progress \(format(progress))")
                 flipController.complete(direction: direction, progress: progress, velocity: velocity.x)

@@ -159,6 +159,7 @@ class FlipAnimatorController {
     }
 
     func cleanup() {
+        print("🧹 Clean all animations.")
         animator?.stopAnimation(true)
         animator = nil
         container?.removeFromSuperview()
