@@ -7,9 +7,7 @@ protocol NotebookSpreadViewControllerDelegate: AnyObject {
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIViewController {
     private var pages: [NotebookPageViewController] = []
-    private var currentIndex: Int = 0
-    private var flipState: FlipState = .idle
-    private var lastProgress: CGFloat?
+    var currentIndex: Int = 0
 
     private var leftPageContainer = UIView()
     private var rightPageContainer = UIView()
@@ -17,26 +15,12 @@ class NotebookSpreadViewController: UIViewController {
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
 
-    private var flipContainer: UIView?
-    private var frontSnapshot: UIView?
-    private var backSnapshot: UIView?
-    private var flipAnimator: UIViewPropertyAnimator?
+    private var flipController: FlipAnimatorController!
 
-    private enum FlipState {
-        case idle
-        case flippingToNext
-        case flippingToLast
 
-        var direction: PageTurnDirection? {
-            switch self {
-            case .flippingToNext: return .nextPage
-            case .flippingToLast: return .lastPage
-            case .idle: return nil
-            }
-        }
-    }
     override func viewDidLoad() {
         super.viewDidLoad()
+        flipController = FlipAnimatorController(host: self)
         setupPageContainers()
         setupInitialPages()
         setupGestureRecognizers()
@@ -75,199 +59,26 @@ class NotebookSpreadViewController: UIViewController {
         let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
 
         switch gesture.state {
+        case .began:
+            print("🚩 Begin page flip - \(direction)")
+            flipController.begin(direction: direction)
         case .changed:
-            // 不允许 progress 正负号变化
-            if let l = lastProgress, (l > 0 && progress < 0) || (l < 0 && progress > 0) { 
-                print("❌ Progress sign changed. Cancel Flip.")
-                cancelFlipAnimation(direction: l > 0 ? .nextPage : .lastPage, progress: 0)
-                return 
-            }
-            lastProgress = progress
-
-            if flipState == .idle {
-                print("🚩 Begin page flip - \(direction)")
-                beginPageFlip(direction: direction)
-                flipState = direction == .nextPage ? .flippingToNext : .flippingToLast
-            }
             print("🚩 Update page flip - progress \(format(progress))")
-            updatePageFlip(direction: direction, progress: progress)
+            flipController.update(direction: direction, progress: progress)
         case .ended, .cancelled:
-            lastProgress = nil
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
                 print("🚩 Complete page flip - progress \(format(progress))")
-                completeFlipAnimation(direction: direction, progress: progress)
+                flipController.complete(direction: direction)
             } else {
                 print("🚩 Cancel page flip - progress \(format(progress))")
-                cancelFlipAnimation(direction: direction, progress: progress)
+                flipController.cancel(direction: direction)
             }
         default:
             break
         }
     }
 
-    // MARK: - Page Flip Animation
-    private func beginPageFlip(direction: PageTurnDirection) {
-        let newIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
-        guard newIndex >= 0, newIndex + 1 < pages.count else {
-            print("❌ Invalid target index: \(newIndex)")
-            return
-        }
-
-        // 强制清理旧状态
-        flipAnimator?.stopAnimation(true)
-        flipAnimator = nil
-        flipContainer?.removeFromSuperview()
-        flipContainer = nil
-        flipState = direction == .nextPage ? .flippingToNext : .flippingToLast
-        // print("📌 Pan began. Flipping to page pair \(newIndex), \(newIndex + 1)")
-
-        // 获取翻页前后的页面
-        let flippingPage = (direction == .nextPage) ? pages[currentIndex + 1] : pages[currentIndex]
-        let nextPage = (direction == .nextPage) ? pages[newIndex] : pages[newIndex + 1]
-
-        let container = UIView(frame: CGRect(x: direction == .nextPage ? view.bounds.width / 2 : 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height))
-        container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
-        container.clipsToBounds = true
-        container.layer.transform.m34 = -1.0 / 1500
-
-        view.addSubview(container)
-        self.flipContainer = container
-
-        // 生成翻页视图截图
-        guard let front = flippingPage.view.snapshotView(afterScreenUpdates: true),
-            let back = nextPage.view.snapshotView(afterScreenUpdates: true) else { return }
-
-        front.frame = container.bounds
-        back.frame = container.bounds
-        back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
-        container.addSubview(back)
-        container.addSubview(front)
-
-        backSnapshot = back
-        frontSnapshot = front
-        back.isHidden = true
-        front.isHidden = false
-    }
-
-    private func updatePageFlip(direction: PageTurnDirection, progress: CGFloat) {
-        guard let flipContainer = flipContainer else {
-            print("⚠️ flipContainer is nil")
-            return
-        }
-
-        // 预加载左右页
-        if direction == .nextPage {
-            if currentIndex + 3 < pages.count {
-                let preloadRight = pages[currentIndex + 3]
-                preloadRight.view.frame = rightPageContainer.bounds
-                rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-                rightPageContainer.addSubview(preloadRight.view)
-            }
-        } else {
-            if currentIndex - 2 >= 0 {
-                let preloadLeft = pages[currentIndex - 2]
-                preloadLeft.view.frame = leftPageContainer.bounds
-                leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-                leftPageContainer.addSubview(preloadLeft.view)
-            }
-        }
-
-        var t = CATransform3DIdentity
-        t.m34 = -1.0 / 1500
-        let angle = progress * .pi
-        flipContainer.layer.transform = CATransform3DRotate(t, angle, 0, 1, 0)
-        // print(String(format: "📌 Pan changed. 📐 Rotating progress: %.1f, angle: %.1f.", progress, angle))
-        
-        if abs(progress) < 0.5 {
-            frontSnapshot?.isHidden = false
-            backSnapshot?.isHidden = true
-            // print("🔸 Show frontSnapshot, hide backSnapshot.")
-        } else {
-            frontSnapshot?.isHidden = true
-            backSnapshot?.isHidden = false
-            // print("▪️ Show backSnapshot, hide frontSnapshot.")
-        }
-
-        updateProgressOffset(direction: direction, progress: abs(progress))
-    }
-
-    private func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
-        print(String(format: "🔥 Page flip progress: %.1f", progress), terminator: ", ")
-        let width = pageDelegate?.currentContentWidth() ?? 0 
-        var offset: CGFloat = 0
-        let easedProgress = easeInOutCubic(progress)
-
-        if currentIndex == 2 && direction == .lastPage {
-            offset = -width / 4 * easedProgress
-        } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            offset = width / 4 * easedProgress
-        } else if currentIndex == 0 && direction == .nextPage {
-            offset = -width / 4 * (1 - easedProgress)
-        } else if currentIndex == pages.count - 2 && direction == .lastPage {
-            offset = width / 4 * (1 - easedProgress)
-        }
-        onProgressChanged?(offset)
-    }
-
-    // MARK: - Animation Completion
-    private func completeFlipAnimation(direction: PageTurnDirection,
-                                    progress: CGFloat) {
-        guard let flipContainer = flipContainer else { return }
-
-        let remainingProgress = 1 - abs(progress)
-        let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
-
-        // 停止上一个动画
-        flipAnimator?.stopAnimation(true)
-
-        // 创建动画器
-        flipAnimator = UIViewPropertyAnimator(duration: 0.3 + remainingProgress * 0.2, curve: .easeOut) {
-            var t = CATransform3DIdentity
-            t.m34 = -1.0 / 1000
-            flipContainer.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
-            self.frontSnapshot?.isHidden = true
-            self.backSnapshot?.isHidden = false
-            self.updateProgressOffset(direction: direction, progress: 1.0)
-        }
-
-        flipAnimator?.addCompletion { _ in
-            self.goToPagePair(to: targetIndex)
-            self.flipContainer?.removeFromSuperview()
-            self.flipContainer = nil
-            self.flipAnimator = nil
-            self.flipState = .idle
-        }
-
-        flipAnimator?.startAnimation()
-    }
-
-    private func cancelFlipAnimation(direction: PageTurnDirection,
-                                    progress: CGFloat) {
-        guard let flipContainer = flipContainer else { return }
-        flipAnimator?.stopAnimation(true)
-
-        flipAnimator = UIViewPropertyAnimator(duration: 0.2 + 0.2 * abs(progress), curve: .easeOut) {
-            var t = CATransform3DIdentity
-            t.m34 = -1.0 / 1500
-            flipContainer.layer.transform = CATransform3DRotate(t, 0, 0, 1, 0)
-            self.updateProgressOffset(direction: direction, progress: 0.0)
-            self.frontSnapshot?.isHidden = false
-            self.backSnapshot?.isHidden = true
-        }
-
-        flipAnimator?.addCompletion { _ in
-            self.goToPagePair(to: self.currentIndex)
-            self.flipContainer?.removeFromSuperview()
-            self.flipContainer = nil
-            self.flipAnimator = nil
-            self.flipState = .idle
-        }
-
-        flipAnimator?.startAnimation()
-    }
-
-    // MARK: - Page Navigation
+    // MARK: - Page Management
     func addNewPagePair(initialData: Data? = nil) {
         guard currentIndex + 2 < pages.count else {
             print("❌ Cannot add new page pair at the end.")
@@ -278,11 +89,12 @@ class NotebookSpreadViewController: UIViewController {
         let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
-        print("📄 Insert page pair at \(insertIndex).")
-        autoPageFlip(to: .nextPage)
+        print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
+        // autoPageFlip(to: .nextPage)
+        goToPagePair(to: insertIndex)
     }
 
-    private func goToPagePair(to index: Int) {
+    func goToPagePair(to index: Int) {
         guard index >= 0 && index < pages.count - 1 else {
             print("❌ Index out of bounds: \(index)")
             return
@@ -305,49 +117,24 @@ class NotebookSpreadViewController: UIViewController {
         applyPageShadows()
     }
 
-    func autoPageFlip(to direction: PageTurnDirection = .nextPage) {
-        beginPageFlip(direction: direction)
-        flipAnimator?.stopAnimation(true)
+    func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
+        print(String(format: "🔥 Page flip progress: %.1f", progress), terminator: ", ")
+        let width = pageDelegate?.currentContentWidth() ?? 0 
+        var offset: CGFloat = 0
+        let easedProgress = easeInOutCubic(progress)
 
-        // 提前显示未来的左右页
-        if direction == .nextPage {
-            if currentIndex + 3 < pages.count {
-                let preloadRight = pages[currentIndex + 3]
-                preloadRight.view.frame = rightPageContainer.bounds
-                rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-                rightPageContainer.addSubview(preloadRight.view)
-            }
-        } else {
-            if currentIndex - 2 >= 0 {
-                let preloadLeft = pages[currentIndex - 2]
-                preloadLeft.view.frame = leftPageContainer.bounds
-                leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-                leftPageContainer.addSubview(preloadLeft.view)
-            }
+        if currentIndex == 2 && direction == .lastPage {
+            offset = -width / 4 * easedProgress
+        } else if currentIndex + 4 == pages.count && direction == .nextPage {
+            offset = width / 4 * easedProgress
+        } else if currentIndex == 0 && direction == .nextPage {
+            offset = -width / 4 * (1 - easedProgress)
+        } else if currentIndex == pages.count - 2 && direction == .lastPage {
+            offset = width / 4 * (1 - easedProgress)
         }
-        self.backSnapshot?.isHidden = false
-        self.frontSnapshot?.isHidden = true
-
-        flipAnimator = UIViewPropertyAnimator(duration: 0.6, curve: .easeInOut) {
-            var t = CATransform3DIdentity
-            t.m34 = -1.0 / 1500
-            self.flipContainer?.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
-            self.frontSnapshot?.isHidden = true
-            self.backSnapshot?.isHidden = false
-            self.updateProgressOffset(direction: direction, progress: 1.0)
-        }
-
-        flipAnimator?.addCompletion { _ in
-            self.goToPagePair(to: self.currentIndex + 2)
-            self.flipContainer?.removeFromSuperview()
-            self.flipContainer = nil
-            self.flipAnimator = nil
-            self.flipState = .idle
-        }
-
-        flipAnimator?.startAnimation()
+        onProgressChanged?(offset)
     }
-    
+
     // MARK: - Appearance
     private func applyPageShadows() {
         pages.enumerated().forEach { index, page in
@@ -398,5 +185,21 @@ class NotebookSpreadViewController: UIViewController {
         if currentIndex + 1 < pages.count {
             pages[currentIndex + 1].redo()
         }
+    }
+
+    // MARK: - Interfaces
+    var totalPages: Int { pages.count }
+    var currentPageIndex: Int { currentIndex }
+
+    func currentPagePair() -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
+        guard currentIndex >= 0, currentIndex + 1 < pages.count else { return nil }
+        print("🔌 Return page pair \(currentIndex), \(currentIndex + 1).")
+        return (pages[currentIndex], pages[currentIndex + 1])
+    }
+
+    func pagePair(at index: Int) -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
+        guard index >= 0, index + 1 < pages.count else { return nil }
+        print("🔌 Return page pair \(index), \(index + 1).")
+        return (pages[index], pages[index + 1])
     }
 }
