@@ -22,6 +22,19 @@ class NotebookSpreadViewController: UIViewController {
     private var backSnapshot: UIView?
     private var flipAnimator: UIViewPropertyAnimator?
 
+    private enum FlipState {
+        case idle
+        case flippingToNext
+        case flippingToLast
+
+        var direction: PageTurnDirection? {
+            switch self {
+            case .flippingToNext: return .nextPage
+            case .flippingToLast: return .lastPage
+            case .idle: return nil
+            }
+        }
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
         setupPageContainers()
@@ -80,14 +93,12 @@ class NotebookSpreadViewController: UIViewController {
             updatePageFlip(direction: direction, progress: progress)
         case .ended, .cancelled:
             lastProgress = nil
-            if flipState != .idle {
-                if abs(velocity.x) > 800 || abs(progress) > 0.5 {
-                    print("🚩 Complete page flip - progress \(format(progress))")
-                    completeFlipAnimation(direction: direction, progress: progress)
-                } else {
-                    print("🚩 Cancel page flip - progress \(format(progress))")
-                    cancelFlipAnimation(direction: direction, progress: progress)
-                }
+            if abs(velocity.x) > 800 || abs(progress) > 0.5 {
+                print("🚩 Complete page flip - progress \(format(progress))")
+                completeFlipAnimation(direction: direction, progress: progress)
+            } else {
+                print("🚩 Cancel page flip - progress \(format(progress))")
+                cancelFlipAnimation(direction: direction, progress: progress)
             }
         default:
             break
