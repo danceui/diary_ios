@@ -117,9 +117,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("📐 scrollView.contentOffset: \(formatPoint(scrollView.contentOffset))")
         print("📐 scrollView.zoomScale: \(format(scrollView.zoomScale))")
         print("📐 containerView.frame: \(formatRect(containerView.frame))")
-        print("📐 containerView.bounds: \(formatRect(containerView.bounds))")
-        print("📐 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
-        print("📐 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
+        // print("📐 containerView.bounds: \(formatRect(containerView.bounds))")
+        // print("📐 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
+        // print("📐 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
         print("================")
     }
 }

@@ -8,7 +8,8 @@ protocol NotebookSpreadViewControllerDelegate: AnyObject {
 class NotebookSpreadViewController: UIViewController {
     private var pages: [NotebookPageViewController] = []
     private var currentIndex: Int = 0
-    private var isAnimating = false
+    private var flipState: FlipState = .idle
+    private var lastProgress: CGFloat?
 
     private var leftPageContainer = UIView()
     private var rightPageContainer = UIView()
@@ -19,7 +20,6 @@ class NotebookSpreadViewController: UIViewController {
     private var flipContainer: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
-    private var lastProgress: CGFloat?
     private var flipAnimator: UIViewPropertyAnimator?
 
     override func viewDidLoad() {
@@ -63,18 +63,31 @@ class NotebookSpreadViewController: UIViewController {
 
         switch gesture.state {
         case .changed:
-            // 不允许progress正负号变化
-            if let last = lastProgress, (last > 0 && progress < 0) || (last < 0 && progress > 0) { return }
+            // 不允许 progress 正负号变化
+            if let l = lastProgress, (l > 0 && progress < 0) || (l < 0 && progress > 0) { 
+                print("❌ Progress sign changed. Cancel Flip.")
+                cancelFlipAnimation(direction: l > 0 ? .nextPage : .lastPage, progress: 0)
+                return 
+            }
             lastProgress = progress
 
-            if flipContainer == nil { beginPageFlip(direction: direction) }
+            if flipState == .idle {
+                print("🚩 Begin page flip - \(direction)")
+                beginPageFlip(direction: direction)
+                flipState = direction == .nextPage ? .flippingToNext : .flippingToLast
+            }
+            print("🚩 Update page flip - progress \(format(progress))")
             updatePageFlip(direction: direction, progress: progress)
         case .ended, .cancelled:
             lastProgress = nil
-            if abs(velocity.x) > 800 || abs(progress) > 0.5 {
-                completeFlipAnimation(direction: direction, progress: progress)
-            } else {
-                cancelFlipAnimation(direction: direction, progress: progress)
+            if flipState != .idle {
+                if abs(velocity.x) > 800 || abs(progress) > 0.5 {
+                    print("🚩 Complete page flip - progress \(format(progress))")
+                    completeFlipAnimation(direction: direction, progress: progress)
+                } else {
+                    print("🚩 Cancel page flip - progress \(format(progress))")
+                    cancelFlipAnimation(direction: direction, progress: progress)
+                }
             }
         default:
             break
@@ -83,20 +96,19 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - Page Flip Animation
     private func beginPageFlip(direction: PageTurnDirection) {
-        guard !isAnimating else { 
-            print("⚠️ Animating, ignore pan.")
-            return 
-        }
-
         let newIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
         guard newIndex >= 0, newIndex + 1 < pages.count else {
             print("❌ Invalid target index: \(newIndex)")
             return
         }
 
-        isAnimating = true
+        // 强制清理旧状态
+        flipAnimator?.stopAnimation(true)
+        flipAnimator = nil
         flipContainer?.removeFromSuperview()
-        print("📌 Pan began. Flipping to page pair \(newIndex), \(newIndex + 1)")
+        flipContainer = nil
+        flipState = direction == .nextPage ? .flippingToNext : .flippingToLast
+        // print("📌 Pan began. Flipping to page pair \(newIndex), \(newIndex + 1)")
 
         // 获取翻页前后的页面
         let flippingPage = (direction == .nextPage) ? pages[currentIndex + 1] : pages[currentIndex]
@@ -170,7 +182,7 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     private func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
-        print(String(format: "🔥 progress: %.1f", progress), terminator: " ")
+        print(String(format: "🔥 Page flip progress: %.1f", progress), terminator: ", ")
         let width = pageDelegate?.currentContentWidth() ?? 0 
         var offset: CGFloat = 0
         let easedProgress = easeInOutCubic(progress)
@@ -194,7 +206,6 @@ class NotebookSpreadViewController: UIViewController {
 
         let remainingProgress = 1 - abs(progress)
         let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
-        let finalAngle: CGFloat = .pi
 
         // 停止上一个动画
         flipAnimator?.stopAnimation(true)
@@ -203,7 +214,7 @@ class NotebookSpreadViewController: UIViewController {
         flipAnimator = UIViewPropertyAnimator(duration: 0.3 + remainingProgress * 0.2, curve: .easeOut) {
             var t = CATransform3DIdentity
             t.m34 = -1.0 / 1000
-            flipContainer.layer.transform = CATransform3DRotate(t, finalAngle, 0, 1, 0)
+            flipContainer.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
             self.frontSnapshot?.isHidden = true
             self.backSnapshot?.isHidden = false
             self.updateProgressOffset(direction: direction, progress: 1.0)
@@ -214,7 +225,7 @@ class NotebookSpreadViewController: UIViewController {
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.flipAnimator = nil
-            self.isAnimating = false
+            self.flipState = .idle
         }
 
         flipAnimator?.startAnimation()
@@ -223,7 +234,6 @@ class NotebookSpreadViewController: UIViewController {
     private func cancelFlipAnimation(direction: PageTurnDirection,
                                     progress: CGFloat) {
         guard let flipContainer = flipContainer else { return }
-
         flipAnimator?.stopAnimation(true)
 
         flipAnimator = UIViewPropertyAnimator(duration: 0.2 + 0.2 * abs(progress), curve: .easeOut) {
@@ -240,7 +250,7 @@ class NotebookSpreadViewController: UIViewController {
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.flipAnimator = nil
-            self.isAnimating = false
+            self.flipState = .idle
         }
 
         flipAnimator?.startAnimation()
@@ -285,11 +295,6 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     func autoPageFlip(to direction: PageTurnDirection = .nextPage) {
-        guard !isAnimating else {
-            print("⚠️ Animating, ignore auto flip.")
-            return
-        }
-
         beginPageFlip(direction: direction)
         flipAnimator?.stopAnimation(true)
 
@@ -311,7 +316,7 @@ class NotebookSpreadViewController: UIViewController {
         }
         self.backSnapshot?.isHidden = false
         self.frontSnapshot?.isHidden = true
-        
+
         flipAnimator = UIViewPropertyAnimator(duration: 0.6, curve: .easeInOut) {
             var t = CATransform3DIdentity
             t.m34 = -1.0 / 1500
@@ -326,7 +331,7 @@ class NotebookSpreadViewController: UIViewController {
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
             self.flipAnimator = nil
-            self.isAnimating = false
+            self.flipState = .idle
         }
 
         flipAnimator?.startAnimation()
