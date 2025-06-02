@@ -7,16 +7,14 @@ protocol NotebookSpreadViewControllerDelegate: AnyObject {
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIViewController {
     private var pages: [NotebookPageViewController] = []
+    private var flipController: FlipAnimatorController!
+    
     var currentIndex: Int = 0
-
-    private var leftPageContainer = UIView()
-    private var rightPageContainer = UIView()
+    var leftPageContainer = UIView()
+    var rightPageContainer = UIView()
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
-
-    private var flipController: FlipAnimatorController!
-
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,17 +59,17 @@ class NotebookSpreadViewController: UIViewController {
         switch gesture.state {
         case .changed:
             if !flipController.state.isFlipping {
-                print("🚩 Begin page flip - \(direction)")
+                // print("🚩 Begin page flip - \(direction)")
                 flipController.begin(direction: direction)
             }
-            print("🚩 Update page flip - progress \(format(progress))")
+            // print("🚩 Update page flip - progress \(format(progress))")
             flipController.update(direction: direction, progress: progress)
         case .ended, .cancelled:
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
-                print("🚩 Complete page flip - progress \(format(progress))")
+                // print("🚩 Complete page flip - progress \(format(progress))")
                 flipController.complete(direction: direction)
             } else {
-                print("🚩 Cancel page flip - progress \(format(progress))")
+                // print("🚩 Cancel page flip - progress \(format(progress))")
                 flipController.cancel(direction: direction)
             }
         default:
@@ -189,9 +187,7 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     // MARK: - Interfaces
-    var totalPages: Int { pages.count }
-    var currentPageIndex: Int { currentIndex }
-
+    var totalPages: Int {pages.count}
     func currentPagePair() -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
         guard currentIndex >= 0, currentIndex + 1 < pages.count else { return nil }
         print("🔌 Return current page pair \(currentIndex), \(currentIndex + 1).")

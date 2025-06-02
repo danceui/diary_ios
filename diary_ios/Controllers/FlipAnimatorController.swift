@@ -20,6 +20,25 @@ class FlipAnimatorController {
               let targetPagePair = host.pagePair(at: newIndex) else { return }
         print("🎮 Control animation begin - target \(newIndex), \(newIndex + 1)")
 
+        // 提前显示未来的左右页
+        switch direction {
+        case .nextPage:
+            if let preloadPair = host.pagePair(at: host.currentIndex + 2) {
+                let right = preloadPair.right
+                right.view.frame = host.rightPageContainer.bounds
+                host.rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
+                host.rightPageContainer.addSubview(right.view)
+            }
+
+        case .lastPage:
+            if let preloadPair = host.pagePair(at: host.currentIndex - 2) {
+                let left = preloadPair.left
+                left.view.frame = host.leftPageContainer.bounds
+                host.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+                host.leftPageContainer.addSubview(left.view)
+            }
+        }
+        
         let container = UIView(frame: CGRect(x: direction == .nextPage ? host.view.bounds.width / 2 : 0, 
                                                 y: 0, 
                                                 width: host.view.bounds.width / 2, 
@@ -104,6 +123,7 @@ class FlipAnimatorController {
         }
 
         animator?.addCompletion { _ in
+            host.goToPagePair(to: host.currentIndex)
             self.cleanup()
         }
         animator?.startAnimation()
