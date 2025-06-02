@@ -5,6 +5,8 @@ class FlipAnimatorController {
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
+    var displayLink: CADisplayLink?
+    var hasSwitchedSnapshot = false
     var state: FlipState = .idle
 
     init(host: NotebookSpreadViewController) {
@@ -84,27 +86,56 @@ class FlipAnimatorController {
         state = direction == .nextPage ? .flippingToNext : .flippingToLast
     }
 
-    func complete(direction: PageTurnDirection) {
+    func complete(direction: PageTurnDirection, progress: CGFloat) {
         guard let host = host, let container = container else { return }
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
 
         animator?.stopAnimation(true)
-        print("🎮 Control animation complete.")
+        print("🎮 Control animation complete - progress \(format(progress))")
 
+        // 初始化 animator 但不播放
         animator = UIViewPropertyAnimator(duration: 0.4, curve: .easeOut) {
             var t = CATransform3DIdentity
             t.m34 = -1.0 / 1000
             container.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
-            self.frontSnapshot?.isHidden = true
-            self.backSnapshot?.isHidden = false
             host.updateProgressOffset(direction: direction, progress: 1.0)
         }
+        animator?.pauseAnimation()
+        animator?.fractionComplete = progress
+
+        // 接手动画时，progress 是否过半
+        hasSwitchedSnapshot = false
+        if progress >= 0.5 {
+            frontSnapshot?.isHidden = true
+            backSnapshot?.isHidden = false
+            hasSwitchedSnapshot = true
+        }
+
+        // 播放剩余动画
+        animator?.continueAnimation(withTimingParameters: nil, durationFactor: 1.0 - progress)
+        startMonitoringProgress()
 
         animator?.addCompletion { _ in
             host.goToPagePair(to: newIndex)
             self.cleanup()
         }
         animator?.startAnimation()
+    }
+
+    func startMonitoringProgress() {
+        displayLink = CADisplayLink(target: self, selector: #selector(handleProgress))
+        displayLink?.add(to: .main, forMode: .common)
+    }
+
+    @objc func handleProgress() {
+        guard let animator = animator else { return }
+        let currentProgress = animator.fractionComplete
+        if currentProgress >= 0.5, !hasSwitchedSnapshot {
+            print("🎧 Progress > 0.5, switch snapshot.")
+            self.frontSnapshot?.isHidden = true
+            self.backSnapshot?.isHidden = false
+            hasSwitchedSnapshot = true
+        }
     }
 
     func cancel(direction: PageTurnDirection) {
@@ -138,6 +169,8 @@ class FlipAnimatorController {
         container = nil
         frontSnapshot = nil
         backSnapshot = nil
+        displayLink?.invalidate()
+        displayLink = nil
         state = .idle
     }
 }
