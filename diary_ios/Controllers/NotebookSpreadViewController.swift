@@ -63,7 +63,7 @@ class NotebookSpreadViewController: UIViewController {
                 lockedDirection = direction
             } else if direction != lockedDirection {
                 print("❌ Progress sign reversed.")
-                flipController.cleanup()
+                flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001)
                 return
             }
             if !flipController.state.isFlipping {
@@ -126,7 +126,6 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
-        print(String(format: "🔥 Page flip progress: %.1f", progress), terminator: ", ")
         let width = pageDelegate?.currentContentWidth() ?? 0 
         var offset: CGFloat = 0
         let easedProgress = easeInOutCubic(progress)

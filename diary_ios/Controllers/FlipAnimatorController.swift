@@ -5,7 +5,7 @@ class FlipAnimatorController {
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
-    private var lastProgress: CGFloat?
+    private var lastProgressForTesting: CGFloat?
     var state: FlipState = .idle
 
     init(host: NotebookSpreadViewController) {
@@ -77,14 +77,14 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
-        if let last = lastProgress {
+        if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print("🎮 Control animation update - progress \(format(progress))")
-                lastProgress = progress
+                lastProgressForTesting = progress
             }
         } else {
             print("🎮 Control animation update - progress \(format(progress))")
-            lastProgress = progress
+            lastProgressForTesting = progress
         }
 
         frontSnapshot?.isHidden = abs(progress) >= 0.5
@@ -134,6 +134,14 @@ class FlipAnimatorController {
 
     func cancel(direction: PageTurnDirection, progress: CGFloat) {
         guard let host = host else { return }
+        if abs(progress) < 0.002 {
+            print("🎮 Control animation cancel (progress < 0.002).")
+            host.goToPagePair(to: host.currentIndex)
+            self.cleanup()
+            return
+        }
+
+        print("🎮 Control animation cancel.")
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -178,7 +186,7 @@ class FlipAnimatorController {
         container = nil
         frontSnapshot = nil
         backSnapshot = nil
-        lastProgress = nil
+        lastProgressForTesting = nil
         state = .idle
     }
 }
