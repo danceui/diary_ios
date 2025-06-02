@@ -5,6 +5,7 @@ class FlipAnimatorController {
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
+    private var lastProgress: CGFloat?
     var state: FlipState = .idle
 
     init(host: NotebookSpreadViewController) {
@@ -76,7 +77,16 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
-        print("🎮 Control animation update - progress \(format(progress))")
+        if let last = lastProgress {
+            if format(last) != format(progress) {
+                print("🎮 Control animation update - progress \(format(progress))")
+                lastProgress = progress
+            }
+        } else {
+            print("🎮 Control animation update - progress \(format(progress))")
+            lastProgress = progress
+        }
+
         frontSnapshot?.isHidden = abs(progress) >= 0.5
         backSnapshot?.isHidden = abs(progress) < 0.5
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
@@ -168,6 +178,7 @@ class FlipAnimatorController {
         container = nil
         frontSnapshot = nil
         backSnapshot = nil
+        lastProgress = nil
         state = .idle
     }
 }

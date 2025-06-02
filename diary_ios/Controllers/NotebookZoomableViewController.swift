@@ -94,7 +94,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         }
         layoutAnimator?.startAnimation()
 
-        print("roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(containerView.center))")
+        print("📐 roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(containerView.center))")
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
@@ -111,7 +111,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Debug Info
     private func printLayoutInfo(context: String) {
-        print("\(context)")
+        print("=======", terminator: " ")
+        print("\(context)", terminator: " ")
+        print("=======")
         print("📐 scrollView.frame: \(formatRect(scrollView.frame))")
         print("📐 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
         print("📐 scrollView.contentOffset: \(formatPoint(scrollView.contentOffset))")
@@ -120,7 +122,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         // print("📐 containerView.bounds: \(formatRect(containerView.bounds))")
         // print("📐 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
         // print("📐 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
-        print("================")
+        print("=======================")
     }
 }
 
