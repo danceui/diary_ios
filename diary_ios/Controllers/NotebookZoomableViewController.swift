@@ -67,6 +67,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - Layout
+    private var layoutAnimator: UIViewPropertyAnimator?
+
     private func centerContent(roleXOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = containerView.frame.size
@@ -77,19 +79,21 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             x: contentSize.width / 2 + offsetX + roleXOffset,
             y: contentSize.height / 2 + offsetY
         )
-        // 自适应动画时长
+
+        // 计算距离，设置动态时长
         let distance = hypot(containerView.center.x - targetCenter.x,
-                     containerView.center.y - targetCenter.y)
-        let duration = min(max(0.15, Double(distance / 500)), 0.5) // 动态范围 0.15～0.5 秒
-        // initialSpringVelocity = 0.8 会让手指松开后动得更有惯性感
-        UIView.animate(withDuration: duration,
-                    delay: 0,
-                    usingSpringWithDamping: 0.5,
-                    initialSpringVelocity: 0.5,
-                    options: [.curveLinear],
-                    animations: {
+                            containerView.center.y - targetCenter.y)
+        let duration = min(max(0.15, Double(distance / 500)), 0.5)
+
+        // 停止任何已有动画
+        layoutAnimator?.stopAnimation(true)
+
+        // 创建 spring 动画器
+        layoutAnimator = UIViewPropertyAnimator(duration: duration, dampingRatio: 0.5) {
             self.containerView.center = targetCenter
-        })
+        }
+        layoutAnimator?.startAnimation()
+
         printLayoutInfo(context: "roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(containerView.center))")
     }
 

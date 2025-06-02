@@ -20,6 +20,7 @@ class NotebookSpreadViewController: UIViewController {
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var lastProgress: CGFloat?
+    private var flipAnimator: UIViewPropertyAnimator?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -71,7 +72,7 @@ class NotebookSpreadViewController: UIViewController {
         case .ended, .cancelled:
             lastProgress = nil
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
-                completeFlipAnimation(direction: direction, progress: progress, velocity: velocity.x)
+                completeFlipAnimation(direction: direction, progress: progress)
             } else {
                 cancelFlipAnimation(direction: direction, progress: progress)
             }
@@ -132,7 +133,7 @@ class NotebookSpreadViewController: UIViewController {
             return
         }
 
-        // 提前显示未来的左右页
+        // 预加载左右页
         if direction == .nextPage {
             if currentIndex + 3 < pages.count {
                 let preloadRight = pages[currentIndex + 3]
@@ -155,15 +156,16 @@ class NotebookSpreadViewController: UIViewController {
         flipContainer.layer.transform = CATransform3DRotate(t, angle, 0, 1, 0)
         // print(String(format: "📌 Pan changed. 📐 Rotating progress: %.1f, angle: %.1f.", progress, angle))
         
-        if abs(progress) > 0.5 {
-            frontSnapshot?.isHidden = true
-            backSnapshot?.isHidden = false
-            // print("▪️ Show backSnapshot, hide frontSnapshot.")
-        } else {
+        if abs(progress) < 0.5 {
             frontSnapshot?.isHidden = false
             backSnapshot?.isHidden = true
             // print("🔸 Show frontSnapshot, hide backSnapshot.")
+        } else {
+            frontSnapshot?.isHidden = true
+            backSnapshot?.isHidden = false
+            // print("▪️ Show backSnapshot, hide frontSnapshot.")
         }
+
         updateProgressOffset(direction: direction, progress: abs(progress))
     }
 
@@ -186,85 +188,62 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     // MARK: - Animation Completion
-    private func completePageFlip(direction: PageTurnDirection, progress: CGFloat) {
-        guard let flipContainer = flipContainer else { return }
-
-        let shouldFlip = abs(progress) > 0.5
-        let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
-        
-        UIView.animate(withDuration: 0.3, animations: {
-            var t = CATransform3DIdentity
-            t.m34 = -1.0 / 1000
-            let angle: CGFloat = shouldFlip ? .pi : 0
-            flipContainer.layer.transform = CATransform3DRotate(t, angle, 0, 1, 0)
-        }, completion: { _ in
-            print("📌 Pan completed.", terminator:" ")
-            if shouldFlip {
-                self.updateProgressOffset(direction: direction, progress: 1.0)
-                self.goToPagePair(to: targetIndex)
-            } else {
-                self.updateProgressOffset(direction: direction, progress: 0.0)
-                self.goToPagePair(to: self.currentIndex)
-            }
-            self.flipContainer?.removeFromSuperview()
-            self.flipContainer = nil
-            self.isAnimating = false
-        })
-    }
-
     private func completeFlipAnimation(direction: PageTurnDirection,
-                                    progress: CGFloat,
-                                    velocity: CGFloat) {
+                                    progress: CGFloat) {
         guard let flipContainer = flipContainer else { return }
 
         let remainingProgress = 1 - abs(progress)
-        let duration = TimeInterval(0.2 + 0.3 * Double(remainingProgress)) // 可调参数
         let targetIndex = direction == .nextPage ? currentIndex + 2 : currentIndex - 2
+        let finalAngle: CGFloat = .pi
 
-        UIView.animate(withDuration: duration,
-                    delay: 0,
-                    usingSpringWithDamping: 1.0,
-                    initialSpringVelocity: abs(velocity / 1000),
-                    options: [.curveEaseOut],
-                    animations: {
+        // 停止上一个动画
+        flipAnimator?.stopAnimation(true)
+
+        // 创建动画器
+        flipAnimator = UIViewPropertyAnimator(duration: 0.3 + remainingProgress * 0.2, curve: .easeOut) {
             var t = CATransform3DIdentity
             t.m34 = -1.0 / 1000
-            flipContainer.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
-            self.updateProgressOffset(direction: direction, progress: 1.0)
+            flipContainer.layer.transform = CATransform3DRotate(t, finalAngle, 0, 1, 0)
             self.frontSnapshot?.isHidden = true
             self.backSnapshot?.isHidden = false
-        }, completion: { _ in
+            self.updateProgressOffset(direction: direction, progress: 1.0)
+        }
+
+        flipAnimator?.addCompletion { _ in
             self.goToPagePair(to: targetIndex)
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
+            self.flipAnimator = nil
             self.isAnimating = false
-        })
+        }
+
+        flipAnimator?.startAnimation()
     }
 
     private func cancelFlipAnimation(direction: PageTurnDirection,
                                     progress: CGFloat) {
         guard let flipContainer = flipContainer else { return }
 
-        let duration = TimeInterval(0.2 + 0.2 * Double(abs(progress))) // 可调参数
+        flipAnimator?.stopAnimation(true)
 
-        UIView.animate(withDuration: duration,
-                    delay: 0,
-                    usingSpringWithDamping: 1.0,
-                    initialSpringVelocity: 0.5,
-                    options: [.curveEaseOut],
-                    animations: {
+        flipAnimator = UIViewPropertyAnimator(duration: 0.2 + 0.2 * abs(progress), curve: .easeOut) {
             var t = CATransform3DIdentity
             t.m34 = -1.0 / 1500
             flipContainer.layer.transform = CATransform3DRotate(t, 0, 0, 1, 0)
             self.updateProgressOffset(direction: direction, progress: 0.0)
             self.frontSnapshot?.isHidden = false
             self.backSnapshot?.isHidden = true
-        }, completion: { _ in
+        }
+
+        flipAnimator?.addCompletion { _ in
             self.goToPagePair(to: self.currentIndex)
             self.flipContainer?.removeFromSuperview()
             self.flipContainer = nil
+            self.flipAnimator = nil
             self.isAnimating = false
-        })
+        }
+
+        flipAnimator?.startAnimation()
     }
 
     // MARK: - Page Navigation
@@ -305,29 +284,52 @@ class NotebookSpreadViewController: UIViewController {
         applyPageShadows()
     }
 
-    func autoPageFlip(to direction: PageTurnDirection) {
+    func autoPageFlip(to direction: PageTurnDirection = .nextPage) {
         guard !isAnimating else {
-            print("⚠️ Animating, ignore pan.")
-            return 
+            print("⚠️ Animating, ignore auto flip.")
+            return
         }
 
         beginPageFlip(direction: direction)
+        flipAnimator?.stopAnimation(true)
 
-        // 模拟从 0 到 1 的翻页过程
-        let totalFrames = Int(0.6 / (1.0 / 60.0))
-        var currentFrame = 0
-
-        Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { timer in
-            currentFrame += 1
-            let progress = CGFloat(currentFrame) / CGFloat(totalFrames)
-            let flippedProgress = direction == .nextPage ? -progress : progress
-            self.updatePageFlip(direction: direction, progress: flippedProgress)
-
-            if currentFrame >= totalFrames {
-                timer.invalidate()
-                self.completePageFlip(direction: .nextPage, progress: flippedProgress)
+        // 提前显示未来的左右页
+        if direction == .nextPage {
+            if currentIndex + 3 < pages.count {
+                let preloadRight = pages[currentIndex + 3]
+                preloadRight.view.frame = rightPageContainer.bounds
+                rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
+                rightPageContainer.addSubview(preloadRight.view)
+            }
+        } else {
+            if currentIndex - 2 >= 0 {
+                let preloadLeft = pages[currentIndex - 2]
+                preloadLeft.view.frame = leftPageContainer.bounds
+                leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+                leftPageContainer.addSubview(preloadLeft.view)
             }
         }
+        self.backSnapshot?.isHidden = false
+        self.frontSnapshot?.isHidden = true
+        
+        flipAnimator = UIViewPropertyAnimator(duration: 0.6, curve: .easeInOut) {
+            var t = CATransform3DIdentity
+            t.m34 = -1.0 / 1500
+            self.flipContainer?.layer.transform = CATransform3DRotate(t, .pi, 0, 1, 0)
+            self.frontSnapshot?.isHidden = true
+            self.backSnapshot?.isHidden = false
+            self.updateProgressOffset(direction: direction, progress: 1.0)
+        }
+
+        flipAnimator?.addCompletion { _ in
+            self.goToPagePair(to: self.currentIndex + 2)
+            self.flipContainer?.removeFromSuperview()
+            self.flipContainer = nil
+            self.flipAnimator = nil
+            self.isAnimating = false
+        }
+
+        flipAnimator?.startAnimation()
     }
     
     // MARK: - Appearance
