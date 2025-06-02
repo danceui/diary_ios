@@ -89,8 +89,8 @@ class FlipAnimatorController {
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
-        let target: CGFloat = currentProgress >= 0 ? 1.0 : -1.0
-        let delta = target - currentProgress
+        let target: CGFloat =  progress >= 0 ? 1.0 : -1.0
+        let delta = target - progress
         var predictedProgress: [CGFloat] = []
 
         for i in 1...steps {
@@ -122,26 +122,40 @@ class FlipAnimatorController {
         }
     }
 
-    func cancel(direction: PageTurnDirection) {
-        guard let host = host, let container = container else { return }
-
-        animator?.stopAnimation(true)
-        print("🎮 Control animation cancel.")
-
-        animator = UIViewPropertyAnimator(duration: 0.3, curve: .easeOut) {
-            var t = CATransform3DIdentity
-            t.m34 = -1.0 / 1500
-            container.layer.transform = CATransform3DRotate(t, 0, 0, 1, 0)
-            self.frontSnapshot?.isHidden = false
-            self.backSnapshot?.isHidden = true
-            host.updateProgressOffset(direction: direction, progress: 0.0)
+    func cancel(direction: PageTurnDirection, progress: CGFloat) {
+        guard let host = host else { return }
+        let duration: TimeInterval = 0.4
+        let steps = 30
+        let interval = duration / Double(steps)
+        let delta = -progress
+        var predictedProgress: [CGFloat] = []
+        
+        for i in 1...steps {
+            let t = CGFloat(i) / CGFloat(steps)
+            let easedT = 1 - pow(1 - t, 2)  // ease-out curve
+            let interpolated = progress + delta * easedT
+            predictedProgress.append(interpolated)
         }
 
-        animator?.addCompletion { _ in
-            host.goToPagePair(to: host.currentIndex)
-            self.cleanup()
+        var i = 0
+        Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
+            if i >= predictedProgress.count {
+                timer.invalidate()
+                host.goToPagePair(to: host.currentIndex)
+                self.cleanup()
+                return
+            }
+
+            let p = predictedProgress[i]
+            self.update(direction: direction, progress: p)
+
+            if abs(p) < 0.5 {
+                self.frontSnapshot?.isHidden = false
+                self.backSnapshot?.isHidden = true
+            }
+
+            i += 1
         }
-        animator?.startAnimation()
     }
 
     func cleanup() {

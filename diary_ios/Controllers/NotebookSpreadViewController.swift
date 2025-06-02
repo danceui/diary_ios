@@ -70,7 +70,7 @@ class NotebookSpreadViewController: UIViewController {
                 flipController.complete(direction: direction, progress: progress, velocity: velocity.x)
             } else {
                 // print("🚩 Cancel page flip - progress \(format(progress))")
-                flipController.cancel(direction: direction)
+                flipController.cancel(direction: direction, progress: progress)
             }
         default:
             break
