@@ -67,7 +67,7 @@ class NotebookSpreadViewController: UIViewController {
         case .ended, .cancelled:
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
                 // print("🚩 Complete page flip - progress \(format(progress))")
-                flipController.complete(direction: direction, progress: progress)
+                flipController.complete(direction: direction, progress: progress, velocity: velocity.x)
             } else {
                 // print("🚩 Cancel page flip - progress \(format(progress))")
                 flipController.cancel(direction: direction)
