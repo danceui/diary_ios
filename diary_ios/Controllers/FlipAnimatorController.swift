@@ -17,29 +17,30 @@ class FlipAnimatorController {
         cleanup()
 
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        guard let currentPagePair = host.currentPagePair(),
-              let targetPagePair = host.pagePair(at: newIndex) else { return }
+        guard let currentPair = host.currentPagePair(),
+          let targetPair = host.pagePair(at: newIndex) else { return }
+
         print("🎮 Control animation begin - target \(newIndex), \(newIndex + 1)")
 
-        // 提前显示未来的左右页
-        switch direction {
-        case .nextPage:
-            if let preloadPair = host.pagePair(at: host.currentIndex + 2) {
-                let right = preloadPair.right
-                right.view.frame = host.rightPageContainer.bounds
-                host.rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-                host.rightPageContainer.addSubview(right.view)
-            }
-
-        case .lastPage:
-            if let preloadPair = host.pagePair(at: host.currentIndex - 2) {
-                let left = preloadPair.left
-                left.view.frame = host.leftPageContainer.bounds
-                host.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-                host.leftPageContainer.addSubview(left.view)
-            }
+        guard let currentLeftSnapshot = currentPair.left.view.snapshotView(afterScreenUpdates: true),
+            let currentRightSnapshot = currentPair.right.view.snapshotView(afterScreenUpdates: true),
+            let targetLeftSnapshot = targetPair.left.view.snapshotView(afterScreenUpdates: true),
+            let targetRightSnapshot = targetPair.right.view.snapshotView(afterScreenUpdates: true) else {
+            print("❌ Snapshot generation failed.")
+            return
         }
-        
+
+        currentLeftSnapshot.frame = host.leftPageContainer.bounds
+        currentRightSnapshot.frame = host.rightPageContainer.bounds
+        targetLeftSnapshot.frame = host.leftPageContainer.bounds
+        targetRightSnapshot.frame = host.rightPageContainer.bounds
+
+        host.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+        host.leftPageContainer.addSubview(currentLeftSnapshot)
+
+        host.rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
+        host.rightPageContainer.addSubview(targetRightSnapshot)
+
         let container = UIView(frame: CGRect(x: direction == .nextPage ? host.view.bounds.width / 2 : 0, 
                                                 y: 0, 
                                                 width: host.view.bounds.width / 2, 
@@ -48,25 +49,21 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: host.view.bounds.width / 2, y: host.view.bounds.height / 2)
         container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
-        
         host.view.addSubview(container)
         self.container = container
 
-        let fromPage = direction == .nextPage ? currentPagePair.right : currentPagePair.left
-        let toPage = direction == .nextPage ? targetPagePair.left : targetPagePair.right
-        guard let front = fromPage.view.snapshotView(afterScreenUpdates: true),
-            let back = toPage.view.snapshotView(afterScreenUpdates: true) else { return }
-
+        let front = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
+        let back = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
+        backSnapshot = back
+        frontSnapshot = front
         front.frame = container.bounds
         back.frame = container.bounds
         back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
+        back.isHidden = true
+        front.isHidden = false
         container.addSubview(back)
         container.addSubview(front)
 
-        backSnapshot = back
-        frontSnapshot = front
-        back.isHidden = true
-        front.isHidden = false
         state = direction == .nextPage ? .flippingToNext : .flippingToLast
     }
 
