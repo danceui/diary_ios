@@ -1,17 +1,15 @@
 import UIKit
 class FlipAnimatorController {
     private weak var host: NotebookSpreadViewController?
-    private var state: FlipState = .idle
     private var animator: UIViewPropertyAnimator?
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
+    var state: FlipState = .idle
 
     init(host: NotebookSpreadViewController) {
         self.host = host
     }
-
-    var currentState: FlipState { state }
 
     func begin(direction: PageTurnDirection) {
         guard let host = host, !state.isFlipping else { return }
@@ -30,7 +28,9 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: host.view.bounds.width / 2, y: host.view.bounds.height / 2)
         container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
+        
         host.view.addSubview(container)
+        self.container = container
 
         let fromPage = direction == .nextPage ? currentPagePair.right : currentPagePair.left
         let toPage = direction == .nextPage ? targetPagePair.left : targetPagePair.right
@@ -47,7 +47,7 @@ class FlipAnimatorController {
         frontSnapshot = front
         back.isHidden = true
         front.isHidden = false
-        state = direction == .nextPage ? .flippingToNext(progress: 0) : .flippingToLast(progress: 0)
+        state = direction == .nextPage ? .flippingToNext : .flippingToLast
     }
 
     func update(direction: PageTurnDirection, progress: CGFloat) {
@@ -55,15 +55,14 @@ class FlipAnimatorController {
 
         var t = CATransform3DIdentity
         t.m34 = -1.0 / 1500
-        let angle = progress * .pi
-        container.layer.transform = CATransform3DRotate(t, angle, 0, 1, 0)
+        container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
-        print("🎮 Control animation update - angle \(format(angle))")
+        print("🎮 Control animation update - progress \(format(progress))")
         frontSnapshot?.isHidden = abs(progress) >= 0.5
         backSnapshot?.isHidden = abs(progress) < 0.5
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
 
-        state = direction == .nextPage ? .flippingToNext(progress: abs(progress)) : .flippingToLast(progress: abs(progress))
+        state = direction == .nextPage ? .flippingToNext : .flippingToLast
     }
 
     func complete(direction: PageTurnDirection) {

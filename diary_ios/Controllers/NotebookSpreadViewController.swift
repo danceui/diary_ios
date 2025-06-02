@@ -59,10 +59,11 @@ class NotebookSpreadViewController: UIViewController {
         let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
 
         switch gesture.state {
-        case .began:
-            print("🚩 Begin page flip - \(direction)")
-            flipController.begin(direction: direction)
         case .changed:
+            if !flipController.state.isFlipping {
+                print("🚩 Begin page flip - \(direction)")
+                flipController.begin(direction: direction)
+            }
             print("🚩 Update page flip - progress \(format(progress))")
             flipController.update(direction: direction, progress: progress)
         case .ended, .cancelled:
@@ -193,7 +194,7 @@ class NotebookSpreadViewController: UIViewController {
 
     func currentPagePair() -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
         guard currentIndex >= 0, currentIndex + 1 < pages.count else { return nil }
-        print("🔌 Return page pair \(currentIndex), \(currentIndex + 1).")
+        print("🔌 Return current page pair \(currentIndex), \(currentIndex + 1).")
         return (pages[currentIndex], pages[currentIndex + 1])
     }
 
