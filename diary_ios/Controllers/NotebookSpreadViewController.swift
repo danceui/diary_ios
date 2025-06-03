@@ -65,7 +65,7 @@ class NotebookSpreadViewController: UIViewController {
                 flipController.begin(direction: direction, type: .manual)
             } else if direction != lockedDirection {
                 print("✋ Cancel page flip: Progress sign reversed.")
-                flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001)
+                flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001, type: .manual)
                 return
             }
             print("✋ Update page flip: progress \(format(progress)).")
@@ -73,11 +73,11 @@ class NotebookSpreadViewController: UIViewController {
         case .ended, .cancelled:
             lockedDirection = nil
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
-                // print("✋ Complete page flip - progress \(format(progress)).")
-                flipController.complete(direction: direction, progress: progress)
+                print("✋ Complete page flip - progress \(format(progress)).")
+                flipController.complete(direction: direction, progress: progress, type: .manual)
             } else {
-                // print("✋ Cancel page flip - progress \(format(progress)).")
-                flipController.cancel(direction: direction, progress: progress)
+                print("✋ Cancel page flip - progress \(format(progress)).")
+                flipController.cancel(direction: direction, progress: progress, type: .manual)
             }
         default:
             break
@@ -96,15 +96,15 @@ class NotebookSpreadViewController: UIViewController {
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
-        // flipController.autoAnimating(direction: .nextPage)
+        flipController.autoFlip(direction: .nextPage)
     }
 
     func goToPagePair(to index: Int) {
         guard index >= 0 && index < pages.count - 1 else {
-            print("❌ Index out of bounds: \(index)")
+            print("❌ Index out of bounds: \(index).")
             return
         }
-        print("▶️ Go to page pair \(index), \(index + 1)")
+        print("▶️ Go to page pair \(index), \(index + 1).")
 
         let leftPage = pages[index]
         let rightPage = pages[index + 1]

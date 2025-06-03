@@ -28,9 +28,9 @@ class FlipAnimatorController {
 
         switch type {
         case .manual:
-            state = .manualDragging
+            state = .manualFlipping
         case .auto:
-            state = .autoAnimating
+            state = .autoFlipping
         }
         
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
@@ -93,7 +93,7 @@ class FlipAnimatorController {
 
     func update(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, messageForTesting: String = "") {
         guard let container = container else { return }
-        guard (type == .manual && state == .manualDragging) || (type == .auto && state == .manualRemaining) else {
+        guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
             print(messageForTesting + "❌ Cannot update this animation [type: \(type), state: \(state)].")
             return
         }
@@ -117,12 +117,13 @@ class FlipAnimatorController {
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
     }
 
-    func complete(direction: PageTurnDirection, progress: CGFloat) {
-        guard state == .manualDragging || state == .autoAnimating else {
-            print("❌ Cannot complete animation [state=\(state)]")
+    func complete(direction: PageTurnDirection, progress: CGFloat, type: AnimationType) {
+        guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
+            print("❌ Cannot complete this animation [type: \(type), state: \(state)].")
             return
         }
-        state = .manualRemaining
+
+        state = .autoFlipping
         
         let duration: TimeInterval = 0.4
         let steps = 30
@@ -150,7 +151,7 @@ class FlipAnimatorController {
                 return
             }
             let p = predictedProgress[i]
-            
+
             let m = "🔘 Complete called update. "
             self.update(direction: direction, progress: p, type: .auto, messageForTesting: m)
 
@@ -163,13 +164,13 @@ class FlipAnimatorController {
         }
     }
 
-    func cancel(direction: PageTurnDirection, progress: CGFloat) {
+    func cancel(direction: PageTurnDirection, progress: CGFloat, type: AnimationType) {
         guard let host = host else { return }
-        guard state == .manualDragging || state == .autoAnimating else {
-            print("❌ Cannot cancel [state: \(state)].")
+        guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
+            print("❌ Cannot cancel this animation [type: \(type), state: \(state)].")
             return
         }
-
+        
         if abs(progress) < 0.002 {
             print("🔘 Cancel animation [progress < 0.002].")
             host.goToPagePair(to: host.currentIndex)
@@ -178,7 +179,7 @@ class FlipAnimatorController {
             return
         }
 
-        state = .manualRemaining
+        state = .autoFlipping
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -215,11 +216,10 @@ class FlipAnimatorController {
         }
     }
 
-    func startAutoAnimating(direction: PageTurnDirection) {
-        let req = FlipRequest(direction: direction, type: .auto)
-        begin(direction: req.direction, type: req.type)
+    func autoFlip(direction: PageTurnDirection) {
+        begin(direction: direction, type: .auto)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1)
+            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1, type: .auto)
         }
     }
 
@@ -242,20 +242,19 @@ class FlipAnimatorController {
 
         if let next = pendingFlips.first {
             pendingFlips.removeFirst()
-            print("⏰ Next flip [direction: \(next.direction), type: \(next.type)]", terminator: " ")
+            print("⏰ Next flip [direction: \(next.direction), type: \(next.type)]")
             // 用 dispatch async 确保 goToPagePair 完全更新完毕后再开始动画
             DispatchQueue.main.async {
                 switch next.type {
                 case .manual:
                     self.begin(direction: next.direction, type: .auto)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                        self.complete(direction: next.direction, progress: (next.direction == .nextPage ? -0.1 : 0.1)
-                        )
+                        self.complete(direction: next.direction, progress: next.direction == .nextPage ? -0.1 : 0.1, type: .auto)
                     }
                 case .auto:
                     self.begin(direction: next.direction, type: .auto)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                        self.complete(direction: next.direction, progress: next.direction == .nextPage ? -0.1 : 0.1)
+                        self.complete(direction: next.direction, progress: next.direction == .nextPage ? -0.1 : 0.1, type: .auto)
                     }
                 }
             }
