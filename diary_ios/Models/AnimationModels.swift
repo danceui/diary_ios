@@ -11,3 +11,13 @@ enum AnimationState {
     /// 由 autoFlip(...) 触发的自动翻页动画（内置插值/定时器驱动）
     case autoAnimating
 }
+
+enum AnimationType {
+    case manual   // 「手势」请求
+    case auto     // 「代码自动」请求
+}
+
+struct FlipRequest {
+    let direction: PageTurnDirection
+    let type: AnimationType
+}

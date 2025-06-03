@@ -61,22 +61,22 @@ class NotebookSpreadViewController: UIViewController {
         case .changed:
             if lockedDirection == nil {
                 lockedDirection = direction
-                print("🚩 Begin page flip: progress \(format(progress)).", terminator: " ")
-                flipController.begin(direction: direction)
+                print("✋ Begin page flip: progress \(format(progress)).", terminator: " ")
+                flipController.begin(direction: direction, type: .manual)
             } else if direction != lockedDirection {
-                print("🚩 Cancel page flip: Progress sign reversed.", terminator: " ")
+                print("✋ Cancel page flip: Progress sign reversed.", terminator: " ")
                 flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001)
                 return
             }
-            print("🚩 Update page flip: progress \(format(progress)).", terminator: " ")
-            flipController.update(direction: direction, progress: progress)
+            print("✋ Update page flip: progress \(format(progress)).", terminator: " ")
+            flipController.update(direction: direction, progress: progress, type: .manual)
         case .ended, .cancelled:
             lockedDirection = nil
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
-                // print("🚩 Complete page flip - progress \(format(progress)).", terminator: " ")
+                // print("✋ Complete page flip - progress \(format(progress)).", terminator: " ")
                 flipController.complete(direction: direction, progress: progress)
             } else {
-                // print("🚩 Cancel page flip - progress \(format(progress)).", terminator: " ")
+                // print("✋ Cancel page flip - progress \(format(progress)).", terminator: " ")
                 flipController.cancel(direction: direction, progress: progress)
             }
         default:
@@ -96,7 +96,7 @@ class NotebookSpreadViewController: UIViewController {
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
-        flipController.addPageAnimation()
+        // flipController.autoAnimating(direction: .nextPage)
     }
 
     func goToPagePair(to index: Int) {
