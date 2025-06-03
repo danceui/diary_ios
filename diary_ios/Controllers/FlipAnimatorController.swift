@@ -10,6 +10,7 @@ class FlipAnimatorController {
     private var lastProgressForTesting: CGFloat?
 
     private var pendingFlips: [FlipRequest] = []
+    var isAnimating: Bool { return state != .idle }
 
     init(host: NotebookSpreadViewController) {
         self.host = host

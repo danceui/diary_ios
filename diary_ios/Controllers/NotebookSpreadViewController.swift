@@ -9,6 +9,7 @@ class NotebookSpreadViewController: UIViewController {
     private var pages: [NotebookPageViewController] = []
     private var flipController: FlipAnimatorController!
     private var lockedDirection: PageTurnDirection?
+    private var lastProgressForTesting: CGFloat?
     
     var currentIndex: Int = 0
     var leftPageContainer = UIView()
@@ -68,7 +69,17 @@ class NotebookSpreadViewController: UIViewController {
                 flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001, type: .manual)
                 return
             }
-            print("✋ Update page flip: progress \(format(progress)).")
+
+            if let last = lastProgressForTesting {
+                if format(last) != format(progress) {
+                    print("✋ Update page flip: progress \(format(progress)).")
+                    lastProgressForTesting = progress
+                }
+            } else {
+                print("✋ Update page flip: progress \(format(progress)).")
+                lastProgressForTesting = progress
+            }
+
             flipController.update(direction: direction, progress: progress, type: .manual)
         case .ended, .cancelled:
             lockedDirection = nil
@@ -86,8 +97,13 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - Page Management
     func addNewPagePair(initialData: Data? = nil) {
+        if flipController.isAnimating {
+            print("❌ Cannot add page during animation.")
+            return
+        }
+
         guard currentIndex + 2 < pages.count else {
-            print("❌ Cannot add new page pair at the end.")
+            print("❌ Cannot add page at the end.")
             return
         }
 
