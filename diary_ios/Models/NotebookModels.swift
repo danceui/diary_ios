@@ -30,16 +30,3 @@ enum PageTurnDirection {
     case nextPage
     case lastPage
 }
-
-enum FlipState {
-    case idle
-    case flippingToNext
-    case flippingToLast
-
-    var isFlipping: Bool {
-        switch self {
-        case .idle: return false
-        default: return true
-        }
-    }
-}

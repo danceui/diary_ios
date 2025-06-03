@@ -193,13 +193,13 @@ class NotebookSpreadViewController: UIViewController {
     var totalPages: Int {pages.count}
     func currentPagePair() -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
         guard currentIndex >= 0, currentIndex + 1 < pages.count else { return nil }
-        print("🔌 Return current page pair \(currentIndex), \(currentIndex + 1).")
+        print("☕️ Return current page pair \(currentIndex), \(currentIndex + 1).")
         return (pages[currentIndex], pages[currentIndex + 1])
     }
 
     func pagePair(at index: Int) -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
         guard index >= 0, index + 1 < pages.count else { return nil }
-        print("🔌 Return page pair \(index), \(index + 1).")
+        print("☕️ Return page pair \(index), \(index + 1).")
         return (pages[index], pages[index + 1])
     }
 }

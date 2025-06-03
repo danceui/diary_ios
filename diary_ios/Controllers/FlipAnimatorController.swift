@@ -7,30 +7,38 @@ class FlipAnimatorController {
     private var backSnapshot: UIView?
     private var lastProgressForTesting: CGFloat?
 
+    private var isAnimating: Bool = false
+    private var isAutoAnimating: Bool = false
     private var pendingFlips: [PageTurnDirection] = []
-    var state: FlipState = .idle
 
     init(host: NotebookSpreadViewController) {
         self.host = host
     }
 
     func begin(direction: PageTurnDirection) {
-        guard let host = host, !state.isFlipping else { 
-            print("⏰ Gesture began. Animation ongoing, enqueue \(direction).")
+        guard let host = host else { return }
+        if isAnimating { 
+            print("⏰ Gesture began. Animation ongoing, enqueue \(direction).", terminator: " ")
             pendingFlips.append(direction)
             return
         }
 
+        isAnimating = true
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        print("🎮 Control animation begin - target \(newIndex), \(newIndex + 1).", terminator: " ")
-        cleanup()
+        print("🔘 Control animation begin: target \(newIndex), \(newIndex + 1).", terminator: " ")
+
+        cleanupViews()
         guard let currentPair = host.currentPagePair(),
-          let targetPair = host.pagePair(at: newIndex) else { return }
+          let targetPair = host.pagePair(at: newIndex) else {
+            isAnimating = false
+            return
+        }
 
         guard let currentLeftSnapshot = currentPair.left.view.snapshotView(afterScreenUpdates: true),
             let currentRightSnapshot = currentPair.right.view.snapshotView(afterScreenUpdates: true),
             let targetLeftSnapshot = targetPair.left.view.snapshotView(afterScreenUpdates: true),
             let targetRightSnapshot = targetPair.right.view.snapshotView(afterScreenUpdates: true) else {
+            isAnimating = false
             print("❌ Snapshot generation failed.")
             return
         }
@@ -72,12 +80,10 @@ class FlipAnimatorController {
         front.isHidden = false
         container.addSubview(back)
         container.addSubview(front)
-
-        state = direction == .nextPage ? .flippingToNext : .flippingToLast
     }
 
     func update(direction: PageTurnDirection, progress: CGFloat) {
-        guard let container = container else { return }
+        guard let container = container, !isAutoAnimating else { return }
 
         var t = CATransform3DIdentity
         t.m34 = -1.0 / 1500
@@ -85,22 +91,37 @@ class FlipAnimatorController {
 
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
-                print("🎮 Control animation update - progress \(format(progress))")
+                print("🔘 Control animation update: progress \(format(progress))")
                 lastProgressForTesting = progress
             }
         } else {
-            print("🎮 Control animation update - progress \(format(progress))")
+            print("🔘 Control animation update: progress \(format(progress))")
             lastProgressForTesting = progress
         }
 
         frontSnapshot?.isHidden = abs(progress) >= 0.5
         backSnapshot?.isHidden = abs(progress) < 0.5
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
+    }
 
-        state = direction == .nextPage ? .flippingToNext : .flippingToLast
+    func autoFlip(direction: PageTurnDirection) {
+        if isAnimating {
+            print("⏰ Auto flip. Animation ongoing, enqueue \(direction)")
+            pendingFlips.append(direction)
+            return
+        }
+
+        print("🎵 Auto flip animation.")
+        isAutoAnimating = true
+        begin(direction: direction)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1)
+        }
     }
 
     func complete(direction: PageTurnDirection, progress: CGFloat) {
+        guard let container = container, !isAutoAnimating else { return }
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -120,14 +141,15 @@ class FlipAnimatorController {
         Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
             if i >= predictedProgress.count {
                 timer.invalidate()
-                print("🎮 Control animation complete.", terminator: " ")
-                self.cleanup()
+                print("🔘 Control animation complete.", terminator: " ")
+                self.cleanupViews()
+                self.cleanupAnimations()
                 self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
                 return
             }
 
             let p = predictedProgress[i]
-            print("🎮 Complete called update.", terminator: " ")
+            print("🔘 Complete called update.", terminator: " ")
             self.update(direction: direction, progress: p)
 
             if abs(p) >= 0.5 {
@@ -139,27 +161,13 @@ class FlipAnimatorController {
         }
     }
 
-    func autoFlip(direction: PageTurnDirection) {
-        if state.isFlipping {
-            print("⏰ Auto flip. Animation ongoing, enqueue \(direction)")
-            pendingFlips.append(direction)
-            return
-        }
-
-        print("🎮 Auto flip animation.")
-        begin(direction: direction)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1)
-        }
-    }
-
     func cancel(direction: PageTurnDirection, progress: CGFloat) {
         guard let host = host else { return }
         if abs(progress) < 0.002 {
-            print("🎮 Control animation cancel (progress < 0.002).")
+            print("🔘 Control animation cancel (progress < 0.002).")
             host.goToPagePair(to: host.currentIndex)
-            self.cleanup()
+            self.cleanupViews()
+            self.cleanupAnimations()
             return
         }
 
@@ -181,8 +189,9 @@ class FlipAnimatorController {
             if i >= predictedProgress.count {
                 timer.invalidate()
                 host.goToPagePair(to: host.currentIndex)
-                print("🎮 Control animation cancel.", terminator: " ")
-                self.cleanup()
+                print("🔘 Control animation cancel.", terminator: " ")
+                self.cleanupViews()
+                self.cleanupAnimations()
                 return
             }
 
@@ -198,8 +207,22 @@ class FlipAnimatorController {
         }
     }
 
-    func cleanup() {
-        print("🧹 Clean all animations.")
+    func cleanupAnimations() {
+        print("🧹 Animation reset and dequeue.")
+        isAnimating = false
+        isAutoAnimating = false
+
+        if let nextFlip = pendingFlips.first {
+            pendingFlips.removeFirst()
+            print("⏰ Next flip from queue: \(nextFlip)")
+            DispatchQueue.main.async {
+                self.autoFlip(direction: nextFlip)
+            }
+        }
+    }
+
+    private func cleanupViews() {
+        print("🧹 Clean views.")
         animator?.stopAnimation(true)
         animator = nil
         container?.removeFromSuperview()
@@ -209,14 +232,5 @@ class FlipAnimatorController {
         frontSnapshot = nil
         backSnapshot = nil
         lastProgressForTesting = nil
-        state = .idle
-
-        if let nextFlip = pendingFlips.first {
-            pendingFlips.removeFirst()
-            print("⏰ Next flip from queue: \(nextFlip)")
-            DispatchQueue.main.async {
-                self.autoFlip(direction: nextFlip)
-            }
-        }
     }
 }
