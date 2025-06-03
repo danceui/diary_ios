@@ -2,13 +2,12 @@ import UIKit
 class FlipAnimatorController {
     private weak var host: NotebookSpreadViewController?
     private var animator: UIViewPropertyAnimator?
+    private var state: AnimationState = .idle
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var lastProgressForTesting: CGFloat?
 
-    private var isAnimating: Bool = false
-    private var isAutoAnimating: Bool = false
     private var pendingFlips: [PageTurnDirection] = []
 
     init(host: NotebookSpreadViewController) {
@@ -17,20 +16,21 @@ class FlipAnimatorController {
 
     func begin(direction: PageTurnDirection) {
         guard let host = host else { return }
-        if isAnimating { 
+        // 只有 idle 状态才允许从头搭建视图
+        guard state == .idle else {
+            // 如果不在闲置状态，就将请求入队，稍后自动触发
             print("⏰ Gesture began. Animation ongoing, enqueue \(direction).", terminator: " ")
             pendingFlips.append(direction)
             return
         }
 
-        isAnimating = true
+        state = .manualDragging
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
         print("🔘 Control animation begin: target \(newIndex), \(newIndex + 1).", terminator: " ")
 
         cleanupViews()
         guard let currentPair = host.currentPagePair(),
           let targetPair = host.pagePair(at: newIndex) else {
-            isAnimating = false
             return
         }
 
@@ -38,7 +38,6 @@ class FlipAnimatorController {
             let currentRightSnapshot = currentPair.right.view.snapshotView(afterScreenUpdates: true),
             let targetLeftSnapshot = targetPair.left.view.snapshotView(afterScreenUpdates: true),
             let targetRightSnapshot = targetPair.right.view.snapshotView(afterScreenUpdates: true) else {
-            isAnimating = false
             print("❌ Snapshot generation failed.")
             return
         }
@@ -83,7 +82,9 @@ class FlipAnimatorController {
     }
 
     func update(direction: PageTurnDirection, progress: CGFloat) {
-        guard let container = container, !isAutoAnimating else { return }
+        guard let container = container else { return }
+        // 仅在“手势拖拽”阶段才允许 update
+        guard state == .manualDragging else { return }
 
         var t = CATransform3DIdentity
         t.m34 = -1.0 / 1500
@@ -105,15 +106,18 @@ class FlipAnimatorController {
     }
 
     func autoFlip(direction: PageTurnDirection) {
-        if isAnimating {
+        // 只有 idle 状态才允许立刻开始自动翻页
+        guard state == .idle else {
             print("⏰ Auto flip. Animation ongoing, enqueue \(direction)")
             pendingFlips.append(direction)
             return
         }
 
         print("🎵 Auto flip animation.")
-        isAutoAnimating = true
+        state = .autoAnimating
         begin(direction: direction)
+        // 由于 begin() 会把 state 设为 .manualDragging，这里要立刻再覆盖成 autoAnimating
+        state = .autoAnimating
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1)
@@ -121,7 +125,10 @@ class FlipAnimatorController {
     }
 
     func complete(direction: PageTurnDirection, progress: CGFloat) {
-        guard let container = container, !isAutoAnimating else { return }
+        // 在 manualDragging 或 autoAnimating 阶段，都允许进入“补间”逻辑
+        guard state == .manualDragging || state == .autoAnimating else { return }
+        state = .manualRemaining
+
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -163,6 +170,8 @@ class FlipAnimatorController {
 
     func cancel(direction: PageTurnDirection, progress: CGFloat) {
         guard let host = host else { return }
+        // 仅在“手势拖拽”阶段才允许取消
+        guard state == .manualDragging else { return }
         if abs(progress) < 0.002 {
             print("🔘 Control animation cancel (progress < 0.002).")
             host.goToPagePair(to: host.currentIndex)
@@ -171,6 +180,7 @@ class FlipAnimatorController {
             return
         }
 
+        state = .manualRemaining
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -207,20 +217,6 @@ class FlipAnimatorController {
         }
     }
 
-    func cleanupAnimations() {
-        print("🧹 Animation reset and dequeue.")
-        isAnimating = false
-        isAutoAnimating = false
-
-        if let nextFlip = pendingFlips.first {
-            pendingFlips.removeFirst()
-            print("⏰ Next flip from queue: \(nextFlip)")
-            DispatchQueue.main.async {
-                self.autoFlip(direction: nextFlip)
-            }
-        }
-    }
-
     private func cleanupViews() {
         print("🧹 Clean views.")
         animator?.stopAnimation(true)
@@ -232,5 +228,20 @@ class FlipAnimatorController {
         frontSnapshot = nil
         backSnapshot = nil
         lastProgressForTesting = nil
+    }
+
+    func cleanupAnimations() {
+        print("🧹 Animation reset and dequeue.")
+        animator?.stopAnimation(true)
+        animator = nil
+        state = .idle
+
+        if let nextFlip = pendingFlips.first {
+            pendingFlips.removeFirst()
+            print("⏰ Next flip from queue: \(nextFlip)")
+            DispatchQueue.main.async {
+                self.autoFlip(direction: nextFlip)
+            }
+        }
     }
 }
