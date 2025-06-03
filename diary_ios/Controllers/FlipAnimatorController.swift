@@ -16,13 +16,13 @@ class FlipAnimatorController {
 
     func begin(direction: PageTurnDirection) {
         guard let host = host, !state.isFlipping else { 
-            print("⏰ Animation ongoing, add \(direction) to the queue.")
+            print("⏰ Gesture began. Animation ongoing, enqueue \(direction).")
             pendingFlips.append(direction)
             return
         }
 
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        print("🎮 Control animation begin - target \(newIndex), \(newIndex + 1)", terminator: " ")
+        print("🎮 Control animation begin - target \(newIndex), \(newIndex + 1).", terminator: " ")
         cleanup()
         guard let currentPair = host.currentPagePair(),
           let targetPair = host.pagePair(at: newIndex) else { return }
@@ -120,13 +120,14 @@ class FlipAnimatorController {
         Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
             if i >= predictedProgress.count {
                 timer.invalidate()
-                self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
                 print("🎮 Control animation complete.", terminator: " ")
                 self.cleanup()
+                self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
                 return
             }
 
             let p = predictedProgress[i]
+            print("🎮 Complete called update.", terminator: " ")
             self.update(direction: direction, progress: p)
 
             if abs(p) >= 0.5 {
@@ -135,6 +136,21 @@ class FlipAnimatorController {
             }
 
             i += 1
+        }
+    }
+
+    func autoFlip(direction: PageTurnDirection) {
+        if state.isFlipping {
+            print("⏰ Auto flip. Animation ongoing, enqueue \(direction)")
+            pendingFlips.append(direction)
+            return
+        }
+
+        print("🎮 Auto flip animation.")
+        begin(direction: direction)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1)
         }
     }
 
@@ -194,14 +210,12 @@ class FlipAnimatorController {
         backSnapshot = nil
         lastProgressForTesting = nil
         state = .idle
+
         if let nextFlip = pendingFlips.first {
             pendingFlips.removeFirst()
-            print("⏰ Next flip: \(nextFlip)")
+            print("⏰ Next flip from queue: \(nextFlip)")
             DispatchQueue.main.async {
-                self.begin(direction: nextFlip)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                    self.complete(direction: nextFlip, progress: nextFlip == .nextPage ? -0.1 : 0.1)
-                }
+                self.autoFlip(direction: nextFlip)
             }
         }
     }

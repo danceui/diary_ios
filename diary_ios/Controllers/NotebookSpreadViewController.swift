@@ -94,8 +94,7 @@ class NotebookSpreadViewController: UIViewController {
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
-        flipController.begin(direction: .nextPage)
-        flipController.complete(direction: .nextPage, progress: -0.1)
+        flipController.autoFlip(direction: .nextPage)
     }
 
     func goToPagePair(to index: Int) {
