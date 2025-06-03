@@ -61,14 +61,14 @@ class NotebookSpreadViewController: UIViewController {
         case .changed:
             if lockedDirection == nil {
                 lockedDirection = direction
-                print("🚩 Begin page flip - progress \(format(progress)).", terminator: " ")
+                print("🚩 Begin page flip: progress \(format(progress)).", terminator: " ")
                 flipController.begin(direction: direction)
             } else if direction != lockedDirection {
                 print("🚩 Cancel page flip: Progress sign reversed.", terminator: " ")
                 flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001)
                 return
             }
-            print("🚩 Update page flip - progress \(format(progress)).", terminator: " ")
+            print("🚩 Update page flip: progress \(format(progress)).", terminator: " ")
             flipController.update(direction: direction, progress: progress)
         case .ended, .cancelled:
             lockedDirection = nil
@@ -195,7 +195,7 @@ class NotebookSpreadViewController: UIViewController {
     var totalPages: Int {pages.count}
     func currentPagePair() -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
         guard currentIndex >= 0, currentIndex + 1 < pages.count else { return nil }
-        print("☕️ Return current page pair \(currentIndex), \(currentIndex + 1).")
+        print("☕️ Return current page pair \(currentIndex), \(currentIndex + 1).", terminator: " ")
         return (pages[currentIndex], pages[currentIndex + 1])
     }
 

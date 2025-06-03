@@ -26,7 +26,7 @@ class FlipAnimatorController {
 
         state = .manualDragging
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        print("🔘 Control animation begin: target \(newIndex), \(newIndex + 1).", terminator: " ")
+        print("🔘 Begin animation: target \(newIndex), \(newIndex + 1).", terminator: " ")
 
         cleanupViews()
         guard let currentPair = host.currentPagePair(),
@@ -83,8 +83,10 @@ class FlipAnimatorController {
 
     func update(direction: PageTurnDirection, progress: CGFloat) {
         guard let container = container else { return }
-        // 仅在“手势拖拽”阶段才允许 update
-        guard state == .manualDragging else { return }
+        guard state == .manualDragging || state == .manualRemaining else { 
+            print("❌ Cannot update animation due to auto flip.")
+            return 
+        }
 
         var t = CATransform3DIdentity
         t.m34 = -1.0 / 1500
@@ -92,11 +94,11 @@ class FlipAnimatorController {
 
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
-                print("🔘 Control animation update: progress \(format(progress))")
+                print("🔘 Update animation: progress \(format(progress)).")
                 lastProgressForTesting = progress
             }
         } else {
-            print("🔘 Control animation update: progress \(format(progress))")
+            print("🔘 Update animation: progress \(format(progress)).")
             lastProgressForTesting = progress
         }
 
@@ -108,13 +110,12 @@ class FlipAnimatorController {
     func autoFlip(direction: PageTurnDirection) {
         // 只有 idle 状态才允许立刻开始自动翻页
         guard state == .idle else {
-            print("⏰ Auto flip. Animation ongoing, enqueue \(direction)")
+            print("⏰ Auto flip. Animation ongoing, enqueue \(direction).")
             pendingFlips.append(direction)
             return
         }
 
         print("🎵 Auto flip animation.")
-        state = .autoAnimating
         begin(direction: direction)
         // 由于 begin() 会把 state 设为 .manualDragging，这里要立刻再覆盖成 autoAnimating
         state = .autoAnimating
@@ -126,8 +127,7 @@ class FlipAnimatorController {
 
     func complete(direction: PageTurnDirection, progress: CGFloat) {
         // 在 manualDragging 或 autoAnimating 阶段，都允许进入“补间”逻辑
-        guard state == .manualDragging || state == .autoAnimating else { return }
-        state = .manualRemaining
+        guard state != .idle else { return }
 
         let duration: TimeInterval = 0.4
         let steps = 30
@@ -148,7 +148,7 @@ class FlipAnimatorController {
         Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
             if i >= predictedProgress.count {
                 timer.invalidate()
-                print("🔘 Control animation complete.", terminator: " ")
+                print("🔘 Complete animation.", terminator: " ")
                 self.cleanupViews()
                 self.cleanupAnimations()
                 self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
@@ -170,17 +170,15 @@ class FlipAnimatorController {
 
     func cancel(direction: PageTurnDirection, progress: CGFloat) {
         guard let host = host else { return }
-        // 仅在“手势拖拽”阶段才允许取消
-        guard state == .manualDragging else { return }
+        guard state != .idle else { return }
         if abs(progress) < 0.002 {
-            print("🔘 Control animation cancel (progress < 0.002).")
+            print("🔘 Cancel animation (progress < 0.002).")
             host.goToPagePair(to: host.currentIndex)
             self.cleanupViews()
             self.cleanupAnimations()
             return
         }
 
-        state = .manualRemaining
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -199,7 +197,7 @@ class FlipAnimatorController {
             if i >= predictedProgress.count {
                 timer.invalidate()
                 host.goToPagePair(to: host.currentIndex)
-                print("🔘 Control animation cancel.", terminator: " ")
+                print("🔘 Cancel animation.", terminator: " ")
                 self.cleanupViews()
                 self.cleanupAnimations()
                 return
