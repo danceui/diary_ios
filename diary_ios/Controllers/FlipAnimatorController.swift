@@ -107,24 +107,6 @@ class FlipAnimatorController {
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
     }
 
-    func autoFlip(direction: PageTurnDirection) {
-        // 只有 idle 状态才允许立刻开始自动翻页
-        guard state == .idle else {
-            print("⏰ Auto flip. Animation ongoing, enqueue \(direction).")
-            pendingFlips.append(direction)
-            return
-        }
-
-        print("🎵 Auto flip animation.")
-        begin(direction: direction)
-        // 由于 begin() 会把 state 设为 .manualDragging，这里要立刻再覆盖成 autoAnimating
-        state = .autoAnimating
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1)
-        }
-    }
-
     func complete(direction: PageTurnDirection, progress: CGFloat) {
         // 在 manualDragging 或 autoAnimating 阶段，都允许进入“补间”逻辑
         guard state != .idle else { return }
@@ -215,6 +197,17 @@ class FlipAnimatorController {
         }
     }
 
+    func addPageAnimation(){
+        guard state == .idle else { return }
+        print("🔘 Add page animation.")
+        begin(direction: .nextPage)
+        // 由于 begin() 会把 state 设为 .manualDragging，这里要立刻再覆盖成 autoAnimating
+        state = .autoAnimating
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            self.complete(direction: .nextPage, progress: -0.1)
+        }
+    }
+
     private func cleanupViews() {
         print("🧹 Clean views.")
         animator?.stopAnimation(true)
@@ -237,8 +230,11 @@ class FlipAnimatorController {
         if let nextFlip = pendingFlips.first {
             pendingFlips.removeFirst()
             print("⏰ Next flip from queue: \(nextFlip)")
-            DispatchQueue.main.async {
-                self.autoFlip(direction: nextFlip)
+            begin(direction: nextFlip)
+            // 由于 begin() 会把 state 设为 .manualDragging，这里要立刻再覆盖成 autoAnimating
+            state = .autoAnimating
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                self.complete(direction: nextFlip, progress: nextFlip == .nextPage ? -0.1 : 0.1)
             }
         }
     }
