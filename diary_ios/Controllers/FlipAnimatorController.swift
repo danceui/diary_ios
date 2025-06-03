@@ -6,6 +6,8 @@ class FlipAnimatorController {
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var lastProgressForTesting: CGFloat?
+
+    private var pendingFlips: [PageTurnDirection] = []
     var state: FlipState = .idle
 
     init(host: NotebookSpreadViewController) {
@@ -13,14 +15,17 @@ class FlipAnimatorController {
     }
 
     func begin(direction: PageTurnDirection) {
-        guard let host = host, !state.isFlipping else { return }
-        cleanup()
+        guard let host = host, !state.isFlipping else { 
+            print("⏰ Animation ongoing, add \(direction) to the queue.")
+            pendingFlips.append(direction)
+            return
+        }
 
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
+        print("🎮 Control animation begin - target \(newIndex), \(newIndex + 1)", terminator: " ")
+        cleanup()
         guard let currentPair = host.currentPagePair(),
           let targetPair = host.pagePair(at: newIndex) else { return }
-
-        print("🎮 Control animation begin - target \(newIndex), \(newIndex + 1)")
 
         guard let currentLeftSnapshot = currentPair.left.view.snapshotView(afterScreenUpdates: true),
             let currentRightSnapshot = currentPair.right.view.snapshotView(afterScreenUpdates: true),
@@ -96,7 +101,6 @@ class FlipAnimatorController {
     }
 
     func complete(direction: PageTurnDirection, progress: CGFloat) {
-        print("🎮 Control animation complete.")
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -117,6 +121,7 @@ class FlipAnimatorController {
             if i >= predictedProgress.count {
                 timer.invalidate()
                 self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
+                print("🎮 Control animation complete.", terminator: " ")
                 self.cleanup()
                 return
             }
@@ -142,7 +147,6 @@ class FlipAnimatorController {
             return
         }
 
-        print("🎮 Control animation cancel.")
         let duration: TimeInterval = 0.4
         let steps = 30
         let interval = duration / Double(steps)
@@ -161,6 +165,7 @@ class FlipAnimatorController {
             if i >= predictedProgress.count {
                 timer.invalidate()
                 host.goToPagePair(to: host.currentIndex)
+                print("🎮 Control animation cancel.", terminator: " ")
                 self.cleanup()
                 return
             }
@@ -189,5 +194,15 @@ class FlipAnimatorController {
         backSnapshot = nil
         lastProgressForTesting = nil
         state = .idle
+        if let nextFlip = pendingFlips.first {
+            pendingFlips.removeFirst()
+            print("⏰ Next flip: \(nextFlip)")
+            DispatchQueue.main.async {
+                self.begin(direction: nextFlip)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                    self.complete(direction: nextFlip, progress: nextFlip == .nextPage ? -0.1 : 0.1)
+                }
+            }
+        }
     }
 }

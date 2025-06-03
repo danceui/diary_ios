@@ -61,16 +61,12 @@ class NotebookSpreadViewController: UIViewController {
         case .changed:
             if lockedDirection == nil {
                 lockedDirection = direction
+                flipController.begin(direction: direction)
             } else if direction != lockedDirection {
                 print("❌ Progress sign reversed.")
                 flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001)
                 return
             }
-            if !flipController.state.isFlipping {
-                // print("🚩 Begin page flip - \(direction)")
-                flipController.begin(direction: direction)
-            }
-            // print("🚩 Update page flip - progress \(format(progress))")
             flipController.update(direction: direction, progress: progress)
         case .ended, .cancelled:
             lockedDirection = nil
