@@ -36,10 +36,14 @@ class FlipAnimatorController {
         targetRightSnapshot.frame = host.rightPageContainer.bounds
 
         host.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-        host.leftPageContainer.addSubview(currentLeftSnapshot)
-
         host.rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-        host.rightPageContainer.addSubview(targetRightSnapshot)
+        if direction == .nextPage {
+            host.leftPageContainer.addSubview(currentLeftSnapshot)
+            host.rightPageContainer.addSubview(targetRightSnapshot)
+        } else {
+            host.leftPageContainer.addSubview(targetLeftSnapshot)
+            host.rightPageContainer.addSubview(currentRightSnapshot)
+        }
 
         let container = UIView(frame: CGRect(x: direction == .nextPage ? host.view.bounds.width / 2 : 0, 
                                                 y: 0, 
@@ -91,7 +95,7 @@ class FlipAnimatorController {
         state = direction == .nextPage ? .flippingToNext : .flippingToLast
     }
 
-    func complete(direction: PageTurnDirection, progress: CGFloat, velocity: CGFloat) {
+    func complete(direction: PageTurnDirection, progress: CGFloat) {
         print("🎮 Control animation complete.")
         let duration: TimeInterval = 0.4
         let steps = 30

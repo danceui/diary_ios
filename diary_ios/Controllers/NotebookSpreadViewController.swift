@@ -76,7 +76,7 @@ class NotebookSpreadViewController: UIViewController {
             lockedDirection = nil
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
                 // print("🚩 Complete page flip - progress \(format(progress))")
-                flipController.complete(direction: direction, progress: progress, velocity: velocity.x)
+                flipController.complete(direction: direction, progress: progress)
             } else {
                 // print("🚩 Cancel page flip - progress \(format(progress))")
                 flipController.cancel(direction: direction, progress: progress)
@@ -98,8 +98,7 @@ class NotebookSpreadViewController: UIViewController {
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
-        // autoPageFlip(to: .nextPage)
-        goToPagePair(to: insertIndex)
+        flipController.complete(direction: .nextPage, progress: 0.0)
     }
 
     func goToPagePair(to index: Int) {
