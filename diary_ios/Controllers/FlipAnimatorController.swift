@@ -11,6 +11,8 @@ class FlipAnimatorController {
 
     private var pendingFlips: [FlipRequest] = []
     var isAnimating: Bool { return state != .idle }
+    private let easing: EasingFunction = .exponentialEaseOut
+    private let baseVelocity: CGFloat = 500
 
     init(host: NotebookSpreadViewController) {
         self.host = host
@@ -118,7 +120,7 @@ class FlipAnimatorController {
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
     }
 
-    func complete(direction: PageTurnDirection, progress: CGFloat, type: AnimationType) {
+    func complete(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, velocity: CGFloat) {
         guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
             print("❌ Cannot complete this animation [type: \(type), state: \(state)].")
             return
@@ -126,7 +128,10 @@ class FlipAnimatorController {
 
         state = .autoFlipping
         
-        let duration: TimeInterval = 0.4
+        let baseDuration: TimeInterval = 0.4
+        let speedFactor = max(0.1, min(abs(velocity) / baseVelocity, 3.0))
+        let duration = baseDuration / speedFactor
+
         let steps = 30
         let interval = duration / Double(steps)
         let target = progress >= 0 ? 1.0 : -1.0
@@ -136,7 +141,7 @@ class FlipAnimatorController {
         for i in 1...steps {
             // Ease-out 曲线（模拟减速滑动）: p = 1 - (1 - t)^2
             let t = CGFloat(i) / CGFloat(steps)
-            let easedT = 1 - pow(1 - t, 2)
+            let easedT = easing.apply(t)
             let interpolated = progress + delta * easedT
             predictedProgress.append(interpolated)
         }
@@ -165,7 +170,7 @@ class FlipAnimatorController {
         }
     }
 
-    func cancel(direction: PageTurnDirection, progress: CGFloat, type: AnimationType) {
+    func cancel(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, velocity: CGFloat) {
         guard let host = host else { return }
         guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
             print("❌ Cannot cancel this animation [type: \(type), state: \(state)].")
@@ -181,7 +186,10 @@ class FlipAnimatorController {
         }
 
         state = .autoFlipping
-        let duration: TimeInterval = 0.4
+        let baseDuration: TimeInterval = 0.4
+        let speedFactor = max(0.1, min(abs(velocity) / 1000.0, 3.0))
+        let duration = baseDuration / speedFactor
+
         let steps = 30
         let interval = duration / Double(steps)
         let delta = -progress
@@ -189,7 +197,7 @@ class FlipAnimatorController {
         
         for i in 1...steps {
             let t = CGFloat(i) / CGFloat(steps)
-            let easedT = 1 - pow(1 - t, 2)  // ease-out curve
+            let easedT = easing.apply(t)
             let interpolated = progress + delta * easedT
             predictedProgress.append(interpolated)
         }
@@ -220,7 +228,7 @@ class FlipAnimatorController {
     func autoFlip(direction: PageTurnDirection) {
         begin(direction: direction, type: .auto)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1, type: .auto)
+            self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1, type: .auto, velocity: self.baseVelocity)
         }
     }
 
@@ -250,12 +258,12 @@ class FlipAnimatorController {
                 case .manual:
                     self.begin(direction: next.direction, type: .auto)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                        self.complete(direction: next.direction, progress: next.direction == .nextPage ? -0.1 : 0.1, type: .auto)
+                        self.complete(direction: next.direction, progress: next.direction == .nextPage ? -0.1 : 0.1, type: .auto, velocity: self.baseVelocity)
                     }
                 case .auto:
                     self.begin(direction: next.direction, type: .auto)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                        self.complete(direction: next.direction, progress: next.direction == .nextPage ? -0.1 : 0.1, type: .auto)
+                        self.complete(direction: next.direction, progress: next.direction == .nextPage ? -0.1 : 0.1, type: .auto, velocity: self.baseVelocity)
                     }
                 }
             }

@@ -66,7 +66,7 @@ class NotebookSpreadViewController: UIViewController {
                 flipController.begin(direction: direction, type: .manual)
             } else if direction != lockedDirection {
                 print("✋ Cancel page flip: Progress sign reversed.")
-                flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001, type: .manual)
+                flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001, type: .manual, velocity: 1000)
                 return
             }
 
@@ -85,10 +85,10 @@ class NotebookSpreadViewController: UIViewController {
             lockedDirection = nil
             if abs(velocity.x) > 800 || abs(progress) > 0.5 {
                 print("✋ Complete page flip - progress \(format(progress)).")
-                flipController.complete(direction: direction, progress: progress, type: .manual)
+                flipController.complete(direction: direction, progress: progress, type: .manual, velocity: velocity.x)
             } else {
                 print("✋ Cancel page flip - progress \(format(progress)).")
-                flipController.cancel(direction: direction, progress: progress, type: .manual)
+                flipController.cancel(direction: direction, progress: progress, type: .manual, velocity: velocity.x)
             }
         default:
             break
