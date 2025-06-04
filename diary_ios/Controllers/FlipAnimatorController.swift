@@ -11,8 +11,11 @@ class FlipAnimatorController {
 
     private var pendingFlips: [FlipRequest] = []
     var isAnimating: Bool { return state != .idle }
-    private let easing: EasingFunction = .exponentialEaseOut
-    private let baseVelocity: CGFloat = 500
+
+    // MARK: - constant paramaters
+    private let easing: EasingFunction = .sineEaseOut
+    private let baseVelocity: CGFloat = 1000
+    private let baseDuration: TimeInterval = 0.4
 
     init(host: NotebookSpreadViewController) {
         self.host = host
@@ -128,8 +131,7 @@ class FlipAnimatorController {
 
         state = .autoFlipping
         
-        let baseDuration: TimeInterval = 0.4
-        let speedFactor = max(0.1, min(abs(velocity) / baseVelocity, 3.0))
+        let speedFactor = max(0.1, min(abs(velocity) / baseVelocity, 2.0))
         let duration = baseDuration / speedFactor
 
         let steps = 30

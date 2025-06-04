@@ -22,7 +22,6 @@ enum EasingFunction {
     case easeInOut // 平滑切换
     case cubicEaseOut // 更有重量感
     case sineEaseOut // iOS 风格柔软动画
-    case exponentialEaseOut
     case backEaseOut // 有张力的反馈感
 
     func apply(_ t: CGFloat) -> CGFloat {
@@ -46,9 +45,6 @@ enum EasingFunction {
 
         case .sineEaseOut:
             return sin(t * .pi / 2)
-
-        case .exponentialEaseOut:
-            return t == 1 ? 1 : 1 - pow(2, -10 * t)
 
         case .backEaseOut:
             let c1: CGFloat = 1.70158
