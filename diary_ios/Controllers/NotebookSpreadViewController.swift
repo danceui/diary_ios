@@ -136,6 +136,7 @@ class NotebookSpreadViewController: UIViewController {
 
         currentIndex = index
         applyPageShadows()
+        applyPageStackStyle()
     }
 
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
@@ -157,6 +158,7 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - Appearance
     private func applyPageShadows() {
+        print("✏️ Apply page shadows.")
         pages.enumerated().forEach { index, page in
             page.view.layer.shadowColor = UIColor.black.cgColor
             page.view.layer.shadowOpacity = 0.3
@@ -183,6 +185,33 @@ class NotebookSpreadViewController: UIViewController {
         }
     }
 
+    private func applyPageStackStyle() {
+        print("✏️ Apply page stack style.")
+        for (index, page) in pages.enumerated() {
+            let delta = CGFloat(index - currentIndex)
+            let anchorShift = max(-0.02, min(0.02, delta * 0.005)) // 控制 anchorPoint 偏移
+            let rotationAngle = delta * 0.015 // 控制小角度旋转
+            let zIndex = -abs(delta) // 控制页面图层顺序
+
+            // 设置 anchorPoint 和 position
+            let newAnchorX = 0.5 + anchorShift
+            page.view.layer.anchorPoint = CGPoint(x: newAnchorX, y: 0.5)
+            page.view.layer.position = CGPoint(x: page.view.frame.midX, y: page.view.frame.midY)
+
+            // 设置轻微旋转和深度
+            var t = CATransform3DIdentity
+            t.m34 = -1.0 / 1500
+            page.view.layer.zPosition = zIndex
+            page.view.layer.transform = CATransform3DRotate(t, rotationAngle, 0, 1, 0)
+        }
+    }
+
+    private func applyDebugBorder(to page: NotebookPageViewController, color: UIColor = .systemBlue) {
+        page.view.layer.borderColor = color.cgColor
+        page.view.layer.borderWidth = 2
+        page.view.layer.cornerRadius = 4
+    }
+    
     func exportAllDrawings() -> [Data] {
         return pages.map { $0.exportDrawing() }
     }
