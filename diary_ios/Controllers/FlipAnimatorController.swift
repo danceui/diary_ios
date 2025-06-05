@@ -15,6 +15,8 @@ class FlipAnimatorController {
     // MARK: - constant paramaters
     private let easing: EasingFunction = .sineEaseOut
     private let baseVelocity: CGFloat = 1000
+    private let minSpeedFactor: CGFloat = 1
+    private let maxSpeedFactor: CGFloat = 1.5
     private let baseDuration: TimeInterval = 0.4
 
     init(host: NotebookSpreadViewController) {
@@ -103,7 +105,7 @@ class FlipAnimatorController {
             print(messageForTesting + "❌ Cannot update this animation [type: \(type), state: \(state)].")
             return
         }
-
+        
         var t = CATransform3DIdentity
         t.m34 = -1.0 / 1500
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
@@ -128,10 +130,10 @@ class FlipAnimatorController {
             print("❌ Cannot complete this animation [type: \(type), state: \(state)].")
             return
         }
-
+        self.host?.view.transform = .identity
         state = .autoFlipping
         
-        let speedFactor = max(0.1, min(abs(velocity) / baseVelocity, 2.0))
+        let speedFactor = max(minSpeedFactor, min(abs(velocity) / baseVelocity, maxSpeedFactor))
         let duration = baseDuration / speedFactor
 
         let steps = 30
@@ -178,7 +180,8 @@ class FlipAnimatorController {
             print("❌ Cannot cancel this animation [type: \(type), state: \(state)].")
             return
         }
-        
+        self.host?.view.transform = .identity
+
         if abs(progress) < 0.002 {
             print("🔘 Cancel animation [progress < 0.002].")
             host.goToPagePair(to: host.currentIndex)
@@ -189,7 +192,7 @@ class FlipAnimatorController {
 
         state = .autoFlipping
         let baseDuration: TimeInterval = 0.4
-        let speedFactor = max(0.1, min(abs(velocity) / 1000.0, 3.0))
+        let speedFactor = max(minSpeedFactor, min(abs(velocity) / baseVelocity, maxSpeedFactor))
         let duration = baseDuration / speedFactor
 
         let steps = 30
