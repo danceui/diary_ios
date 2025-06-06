@@ -49,22 +49,33 @@ class NotebookSpreadViewController: UIViewController {
         goToPagePair(to: 0)
     }
 
+    private func setupGestureRecognizers() {
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        view.addGestureRecognizer(panGesture)
+    }
+
+    // MARK: - Layout & Visibility
     private func updatePagesContainer() {
         print("📖 Update pages container...")
 
-        let offsetCount = max((pages.count - 2)/2, 0)
+        let offsetCount = max((pages.count - 2) / 2, 0)
         offsets = Array(repeating: 0, count: offsetCount)
-        offsets[0] = CGFloat(1-offsetCount)/2.0
+        offsets[0] = CGFloat(1 - offsetCount) / 2.0
         for i in 1..<offsetCount {
-            offsets[i] = offsets[i-1] + 1
+            offsets[i] = offsets[i - 1] + 1
         }
         print("📖 Offsets: \(offsets)")
-        
+
         pagesContainer.subviews.forEach { $0.removeFromSuperview() }
-        for (index, page) in pages.enumerated() {
+        for (index, pageContainer) in offsets.enumerated() {
             page.view.frame = frameOfSinglePage(at: index)
             if page.view.superview == nil {
                 pagesContainer.addSubview(page.view)
+            }
+            if index == currentIndex || index == currentIndex + 1 {
+                page.view.isHidden = false
+            } else {
+                page.view.isHidden = true
             }
         }
     }
@@ -78,7 +89,8 @@ class NotebookSpreadViewController: UIViewController {
                 return (index + 1) / 2 - 1
             }
         }()
-        let baseX: CGFloat = isLeft ? 0 : view.bounds.width / 2
+        // let baseX: CGFloat = isLeft ? 0 : view.bounds.width / 2
+        let baseX: CGFloat = view.bounds.width / 2
         let extraOffset: CGFloat = {
             if offsetIndex >= 0 && offsetIndex < offsets.count {
                 return offsets[offsetIndex] * baseOffset
@@ -87,13 +99,8 @@ class NotebookSpreadViewController: UIViewController {
             }
         }()
         let finalX = baseX + extraOffset
-        print("Extra offset of page \(index): \(extraOffset)")
+        print("🎯 Final offset of page \(index): \(finalX)")
         return CGRect(x: finalX, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
-    }
-
-    private func setupGestureRecognizers() {
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        view.addGestureRecognizer(panGesture)
     }
 
     // MARK: - Gesture Handling
@@ -167,7 +174,10 @@ class NotebookSpreadViewController: UIViewController {
             print("❌ Index out of bounds: \(index).")
             return
         }
+
         currentIndex = index
+        updatePagesContainer()
+
         let leftPage = pages[index]
         let rightPage = pages[index + 1]
         pagesContainer.bringSubviewToFront(leftPage.view)

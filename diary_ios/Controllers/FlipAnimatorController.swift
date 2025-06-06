@@ -66,17 +66,14 @@ class FlipAnimatorController {
         pagesContainer.subviews
             .filter { $0.tag == 999 }
             .forEach { $0.removeFromSuperview() }
-        let flippingFrame = CGRect(
-            x: frontFrame.minX,
-            y: frontFrame.minY,
-            width: host.view.bounds.width / 2,
-            height: host.view.bounds.height
-        )
-        let container = UIView(frame: flippingFrame)
+        let container = UIView(frame: CGRect(x: direction == .nextPage ? host.view.bounds.width / 2 : 0, 
+                                                y: 0, 
+                                                width: host.view.bounds.width / 2, 
+                                                height: host.view.bounds.height))
         container.clipsToBounds = true
         container.tag = 999
         container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: flippingFrame.midX, y: flippingFrame.midY)
+        container.layer.position = CGPoint(x: host.view.bounds.width / 2, y: host.view.bounds.height / 2)
         container.layer.transform.m34 = -1.0 / 1500
         
         pagesContainer.addSubview(container)
