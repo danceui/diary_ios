@@ -33,70 +33,66 @@ class FlipAnimatorController {
         }
         print("🔘 Begin animation [state: \(state), type: \(type)].", terminator: " ")
         cleanupViews()
-
-        switch type {
-        case .manual:
-            state = .manualFlipping
-        case .auto:
-            state = .autoFlipping
-        }
+        state = (type == .manual ? .manualFlipping : .autoFlipping)
         
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-
-        guard let currentPair = host.currentPagePair(),
-          let targetPair = host.pagePair(at: newIndex) else {
+        guard let currentPair = host.currentPagePair(), let targetPair = host.pagePair(at: newIndex) 
+        else {
             state = .idle
             return
         }
 
-        guard let currentLeftSnapshot = currentPair.left.view.snapshotView(afterScreenUpdates: true),
-            let currentRightSnapshot = currentPair.right.view.snapshotView(afterScreenUpdates: true),
-            let targetLeftSnapshot = targetPair.left.view.snapshotView(afterScreenUpdates: true),
-            let targetRightSnapshot = targetPair.right.view.snapshotView(afterScreenUpdates: true) else {
+        let (frontView, backView): (UIView, UIView) = {
+            if direction == .nextPage {
+                return (currentPair.right.view, targetPair.left.view)
+            } else {
+                return (currentPair.left.view, targetPair.right.view)
+            }
+        }()
+
+        guard let front = frontView.snapshotView(afterScreenUpdates: true), let back = backView.snapshotView(afterScreenUpdates: true)
+        else {
             print("❌ Snapshot generation failed.")
             state = .idle
             return
         }
 
-        currentLeftSnapshot.frame = host.leftPageContainer.bounds
-        currentRightSnapshot.frame = host.rightPageContainer.bounds
-        targetLeftSnapshot.frame = host.leftPageContainer.bounds
-        targetRightSnapshot.frame = host.rightPageContainer.bounds
+        let pagesContainer = host.pagesContainer
+        let frontFrame = host.frameOfSinglePage(at: (direction == .nextPage ? host.currentIndex + 1 : host.currentIndex))
+        let backFrame = host.frameOfSinglePage(at: (direction == .nextPage ? newIndex : newIndex + 1))
+        front.frame = frontFrame
+        back.frame  = backFrame
 
-        host.leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-        host.rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-
-        if direction == .nextPage {
-            host.leftPageContainer.addSubview(currentLeftSnapshot)
-            host.rightPageContainer.addSubview(targetRightSnapshot)
-        } else {
-            host.leftPageContainer.addSubview(targetLeftSnapshot)
-            host.rightPageContainer.addSubview(currentRightSnapshot)
-        }
-
-        let container = UIView(frame: CGRect(x: direction == .nextPage ? host.view.bounds.width / 2 : 0, 
-                                                y: 0, 
-                                                width: host.view.bounds.width / 2, 
-                                                height: host.view.bounds.height))
-        container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: host.view.bounds.width / 2, y: host.view.bounds.height / 2)
+        pagesContainer.subviews
+            .filter { $0.tag == 999 }
+            .forEach { $0.removeFromSuperview() }
+        let flippingFrame = CGRect(
+            x: frontFrame.minX,
+            y: frontFrame.minY,
+            width: host.view.bounds.width / 2,
+            height: host.view.bounds.height
+        )
+        let container = UIView(frame: flippingFrame)
         container.clipsToBounds = true
+        container.tag = 999
+        container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
+        container.layer.position = CGPoint(x: flippingFrame.midX, y: flippingFrame.midY)
         container.layer.transform.m34 = -1.0 / 1500
-        host.view.addSubview(container)
+        
+        pagesContainer.addSubview(container)
         self.container = container
-
-        let front = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
-        let back = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
-        backSnapshot = back
-        frontSnapshot = front
         
         front.frame = container.bounds
         back.frame = container.bounds
         back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
         back.isHidden = true
         front.isHidden = false
+        front.tag = 999
+        back.tag  = 999
         container.addSubview(back)
         container.addSubview(front)
+        self.frontSnapshot = front
+        self.backSnapshot  = back
     }
 
     func update(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, messageForTesting: String = "") {

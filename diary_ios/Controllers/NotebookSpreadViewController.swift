@@ -7,16 +7,19 @@ protocol NotebookSpreadViewControllerDelegate: AnyObject {
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIViewController {
     private var pages: [NotebookPageViewController] = []
+    private var offsets: [CGFloat] = []
     private var flipController: FlipAnimatorController!
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
     
     var currentIndex: Int = 0
-    var leftPageContainer = UIView()
-    var rightPageContainer = UIView()
+    var pagesContainer = UIView()
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
+
+    // MARK: - Constants
+    private let baseOffset: CGFloat = 5
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,10 +31,9 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - Setup
     private func setupPageContainers() {
-        leftPageContainer.frame = CGRect(x: 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
-        rightPageContainer.frame = CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
-        view.addSubview(leftPageContainer)
-        view.addSubview(rightPageContainer)
+        pagesContainer.frame = view.bounds
+        pagesContainer.backgroundColor = .clear
+        view.addSubview(pagesContainer)
     }
 
     private func setupInitialPages() {
@@ -43,7 +45,50 @@ class NotebookSpreadViewController: UIViewController {
             NotebookPageViewController(pageIndex: 4, role: .back),
             NotebookPageViewController(pageIndex: 5, role: .empty)
         ]
+        updatePagesContainer()
         goToPagePair(to: 0)
+    }
+
+    private func updatePagesContainer() {
+        print("📖 Update pages container...")
+
+        let offsetCount = max((pages.count - 2)/2, 0)
+        offsets = Array(repeating: 0, count: offsetCount)
+        offsets[0] = CGFloat(1-offsetCount)/2.0
+        for i in 1..<offsetCount {
+            offsets[i] = offsets[i-1] + 1
+        }
+        print("📖 Offsets: \(offsets)")
+        
+        pagesContainer.subviews.forEach { $0.removeFromSuperview() }
+        for (index, page) in pages.enumerated() {
+            page.view.frame = frameOfSinglePage(at: index)
+            if page.view.superview == nil {
+                pagesContainer.addSubview(page.view)
+            }
+        }
+    }
+
+    func frameOfSinglePage(at index: Int) -> CGRect {
+        let isLeft = (index % 2 == 0)
+        let offsetIndex: Int = {
+            if isLeft {
+                return index / 2 - 1
+            } else {
+                return (index + 1) / 2 - 1
+            }
+        }()
+        let baseX: CGFloat = isLeft ? 0 : view.bounds.width / 2
+        let extraOffset: CGFloat = {
+            if offsetIndex >= 0 && offsetIndex < offsets.count {
+                return offsets[offsetIndex] * baseOffset
+            } else {
+                return 0
+            }
+        }()
+        let finalX = baseX + extraOffset
+        print("Extra offset of page \(index): \(extraOffset)")
+        return CGRect(x: finalX, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
     }
 
     private func setupGestureRecognizers() {
@@ -110,7 +155,9 @@ class NotebookSpreadViewController: UIViewController {
         let insertIndex = currentIndex + 2
         let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
+
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
+        updatePagesContainer()
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
         flipController.autoFlip(direction: .nextPage)
     }
@@ -120,21 +167,13 @@ class NotebookSpreadViewController: UIViewController {
             print("❌ Index out of bounds: \(index).")
             return
         }
-        print("▶️ Go to page pair \(index), \(index + 1).")
-
+        currentIndex = index
         let leftPage = pages[index]
         let rightPage = pages[index + 1]
+        pagesContainer.bringSubviewToFront(leftPage.view)
+        pagesContainer.bringSubviewToFront(rightPage.view)
+        print("▶️ Go to page pair \(index), \(index + 1).")
 
-        leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-        rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-
-        leftPage.view.frame = leftPageContainer.bounds
-        rightPage.view.frame = rightPageContainer.bounds
-
-        leftPageContainer.addSubview(leftPage.view)
-        rightPageContainer.addSubview(rightPage.view)
-
-        currentIndex = index
         applyPageShadows()
         applyPageStackStyle()
     }
@@ -159,57 +198,68 @@ class NotebookSpreadViewController: UIViewController {
     // MARK: - Appearance
     private func applyPageShadows() {
         print("✏️ Apply page shadows.")
-        pages.enumerated().forEach { index, page in
-            page.view.layer.shadowColor = UIColor.black.cgColor
-            page.view.layer.shadowOpacity = 0.3
-            page.view.layer.shadowRadius = 5
-            page.view.layer.shadowOffset = CGSize(width: 0, height: 1)
+        for (index, pageVC) in pages.enumerated() {
+            pageVC.view.layer.shadowColor = UIColor.black.cgColor
+            pageVC.view.layer.shadowOpacity = 0.3
+            pageVC.view.layer.shadowRadius = 5
+            pageVC.view.layer.shadowOffset = CGSize(width: 0, height: 1)
 
             if index == currentIndex {
-                page.view.layer.shadowPath = UIBezierPath(rect: CGRect(
-                    x: page.view.bounds.width - 10,
-                    y: 0,
-                    width: 10,
-                    height: page.view.bounds.height
-                )).cgPath
+                // 左页阴影靠右侧 10px
+                pageVC.view.layer.shadowPath = UIBezierPath(
+                    rect: CGRect(
+                        x: pageVC.view.bounds.width - 10,
+                        y: 0,
+                        width: 10,
+                        height: pageVC.view.bounds.height
+                    )
+                ).cgPath
             } else if index == currentIndex + 1 {
-                page.view.layer.shadowPath = UIBezierPath(rect: CGRect(
-                    x: 0,
-                    y: 0,
-                    width: 10,
-                    height: page.view.bounds.height
-                )).cgPath
+                // 右页阴影靠左侧 10px
+                pageVC.view.layer.shadowPath = UIBezierPath(
+                    rect: CGRect(
+                        x: 0,
+                        y: 0,
+                        width: 10,
+                        height: pageVC.view.bounds.height
+                    )
+                ).cgPath
             } else {
-                page.view.layer.shadowPath = nil
+                pageVC.view.layer.shadowPath = nil
             }
         }
     }
 
     private func applyPageStackStyle() {
         print("✏️ Apply page stack style.")
-        for (index, page) in pages.enumerated() {
+        for (index, pageVC) in pages.enumerated() {
             let delta = CGFloat(index - currentIndex)
-            let anchorShift = max(-0.02, min(0.02, delta * 0.005)) // 控制 anchorPoint 偏移
-            let rotationAngle = delta * 0.015 // 控制小角度旋转
-            let zIndex = -abs(delta) // 控制页面图层顺序
+            // 根据 delta 计算微小的 anchorPoint 偏移和绕 Y 轴旋转角度
+            let anchorShift = max(-0.02, min(0.02, delta * 0.005))
+            let rotationAngle = delta * 0.015
+            let zPos = -abs(delta)
 
-            // 设置 anchorPoint 和 position
-            let newAnchorX = 0.5 + anchorShift
-            page.view.layer.anchorPoint = CGPoint(x: newAnchorX, y: 0.5)
-            page.view.layer.position = CGPoint(x: page.view.frame.midX, y: page.view.frame.midY)
+            // 左页：anchorX 基本在 1.0，右页：anchorX 基本在 0.0；再加上微小偏移
+            let isLeftPage = (index % 2 == 0)
+            let baseAnchorX: CGFloat = isLeftPage ? 1.0 : 0.0
+            let newAnchorX = baseAnchorX + anchorShift
+            pageVC.view.layer.anchorPoint = CGPoint(x: newAnchorX, y: 0.5)
 
-            // 设置轻微旋转和深度
-            var t = CATransform3DIdentity
-            t.m34 = -1.0 / 1500
-            page.view.layer.zPosition = zIndex
-            page.view.layer.transform = CATransform3DRotate(t, rotationAngle, 0, 1, 0)
+            // anchorPoint 改了以后，要把 position 拉回 frame 的中心，否则会“漂移”
+            pageVC.view.layer.position = CGPoint(
+                x: pageVC.view.frame.midX,
+                y: pageVC.view.frame.midY
+            )
+
+            // 3D 透视：如果在 setupPageContainers() 里没有设置 sublayerTransform 的 m34，
+            // 可以在这里单独针对每个页面设置一下
+            var transform = CATransform3DIdentity
+            transform.m34 = -1.0 / 1500
+            pageVC.view.layer.transform = CATransform3DRotate(transform, rotationAngle, 0, 1, 0)
+
+            // zPosition 决定渲染的层级：delta 越小，zPosition 越高
+            pageVC.view.layer.zPosition = zPos
         }
-    }
-
-    private func applyDebugBorder(to page: NotebookPageViewController, color: UIColor = .systemBlue) {
-        page.view.layer.borderColor = color.cgColor
-        page.view.layer.borderWidth = 2
-        page.view.layer.cornerRadius = 4
     }
     
     func exportAllDrawings() -> [Data] {
