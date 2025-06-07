@@ -58,10 +58,6 @@ class FlipAnimatorController {
         }
 
         let pagesContainer = host.pagesContainer
-        let frontFrame = host.frameOfSinglePage(at: (direction == .nextPage ? host.currentIndex + 1 : host.currentIndex))
-        let backFrame = host.frameOfSinglePage(at: (direction == .nextPage ? newIndex : newIndex + 1))
-        front.frame = frontFrame
-        back.frame  = backFrame
 
         pagesContainer.subviews
             .filter { $0.tag == 999 }
