@@ -41,7 +41,6 @@ class NotebookSpreadViewController: UIViewController {
             NotebookPageViewController(pageIndex: 4, role: .back),
             NotebookPageViewController(pageIndex: 5, role: .empty)
         ]
-        goToPagePair(to: 0)
     }
 
     private func setupGestureRecognizers() {
@@ -59,7 +58,6 @@ class NotebookSpreadViewController: UIViewController {
             offsets[i] = offsets[i - 1] + 1
         }
         print("📖 New offsets: \(offsets)")
-        if currentIndex == 0 || currentIndex == pages.count - 2 { return }
 
         // 确定要展开的容器
         let offsetIndex: Int = currentIndex / 2 - 1
@@ -72,7 +70,7 @@ class NotebookSpreadViewController: UIViewController {
                 let thisPage = pages[(i + 1) * 2]
                 thisPage.view.frame = thisContainer.bounds
                 thisContainer.addSubview(thisPage.view)
-                print("📖 Offset index: \(i). Contain page \((i + 1) * 2). Origin X: \(originX).")
+                print("📖 Offset index: \(i). Contain left page \((i + 1) * 2). Origin X: \(originX).")
             }
             else {
                 let originX = view.bounds.width / 2 + offsets[i] * baseOffset
@@ -80,7 +78,7 @@ class NotebookSpreadViewController: UIViewController {
                 let thisPage = pages[(i + 1) * 2 - 1]
                 thisPage.view.frame = thisContainer.bounds
                 thisContainer.addSubview(thisPage.view)
-                print("📖 Offset index: \(i). Contain page \((i + 1) * 2 - 1). Origin X: \(originX).")
+                print("📖 Offset index: \(i). Contain right page \((i + 1) * 2 - 1). Origin X: \(originX).")
             }
             view.addSubview(thisContainer)
             pageContainers.append(thisContainer)
