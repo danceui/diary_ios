@@ -11,7 +11,7 @@ class NotebookSpreadViewController: UIViewController {
     private var lastProgressForTesting: CGFloat?
     
     var pages: [NotebookPageViewController] = []
-    var currentIndex: Int = 0
+    var currentIndex: Int = 2
 
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
@@ -21,7 +21,7 @@ class NotebookSpreadViewController: UIViewController {
     var onProgressChanged: ((CGFloat) -> Void)?
 
     // MARK: - Constants
-    private let baseOffset = 5
+    private let baseOffset: CGFloat = 5
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,19 +51,40 @@ class NotebookSpreadViewController: UIViewController {
 
     private func updatePageContainers() {
         containerCount = (pageCount - 2) / 2
+
+        // 计算纸张偏移量
         offsets = Array(repeating: 0, count: containerCount)
         offsets[0] = CGFloat(1 - containerCount) / 2.0
         for i in 1..<containerCount {
             offsets[i] = offsets[i - 1] + 1
         }
         print("📖 New offsets: \(offsets)")
+        if currentIndex == 0 || currentIndex == pages.count - 2 { return }
 
-        for containerIndex in 0..<containerCount {
+        // 确定要展开的容器
+        let offsetIndex: Int = currentIndex / 2 - 1
+        for i in 0..<containerCount {
             let thisContainer = UIView()
-            let originX = CGFloat(containerIndex) * view.bounds.width / 2
-            thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
+            // 确定每个容器的位置
+            if i <= offsetIndex {
+                let originX = offsets[i] * baseOffset
+                thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
+                let thisPage = pages[(i + 1) * 2]
+                thisPage.view.frame = thisContainer.bounds
+                thisContainer.addSubview(thisPage.view)
+                print("📖 Offset index: \(i). Contain page \((i + 1) * 2). Origin X: \(originX).")
+            }
+            else {
+                let originX = view.bounds.width / 2 + offsets[i] * baseOffset
+                thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
+                let thisPage = pages[(i + 1) * 2 - 1]
+                thisPage.view.frame = thisContainer.bounds
+                thisContainer.addSubview(thisPage.view)
+                print("📖 Offset index: \(i). Contain page \((i + 1) * 2 - 1). Origin X: \(originX).")
+            }
             view.addSubview(thisContainer)
             pageContainers.append(thisContainer)
+
         }
     }
 
@@ -127,7 +148,7 @@ class NotebookSpreadViewController: UIViewController {
         let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
-        // updatePageContainers()
+        updatePageContainers()
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
         flipController.autoFlip(direction: .nextPage)
     }
@@ -138,16 +159,8 @@ class NotebookSpreadViewController: UIViewController {
             return
         }
         print("▶️ Go to page pair \(index), \(index + 1).")
-
-        for (containerIndex, container) in pageContainers.enumerated() {
-            container.subviews.forEach { $0.removeFromSuperview() }
-            let pageIndex = index + containerIndex
-            let page = pages[pageIndex]
-            page.view.frame = container.bounds
-            container.addSubview(page.view)
-        }
-
         currentIndex = index
+        updatePageContainers()
         applyPageShadows()
     }
 
