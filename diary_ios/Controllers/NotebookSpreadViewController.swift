@@ -14,7 +14,7 @@ class NotebookSpreadViewController: UIViewController {
     var currentIndex: Int = 0
 
     var pageContainers: [UIView] = []
-    var containerCount: Int = 0
+    var containerCount: Int = 2
     var offsets: [CGFloat] = []
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
@@ -26,8 +26,8 @@ class NotebookSpreadViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         flipController = FlipAnimatorController(host: self)
-        updatePageContainers()
         setupInitialPages()
+        updatePageContainers()
         setupGestureRecognizers()
     }
 
@@ -50,7 +50,7 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     private func updatePageContainers() {
-        containerCount: Int = (pageCount - 2) / 2
+        containerCount = (pageCount - 2) / 2
         offsets = Array(repeating: 0, count: containerCount)
         offsets[0] = CGFloat(1 - containerCount) / 2.0
         for i in 1..<containerCount {
@@ -127,7 +127,7 @@ class NotebookSpreadViewController: UIViewController {
         let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
-        updatePageContainers()
+        // updatePageContainers()
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
         flipController.autoFlip(direction: .nextPage)
     }
