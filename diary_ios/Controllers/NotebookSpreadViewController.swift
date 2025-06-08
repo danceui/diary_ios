@@ -51,7 +51,7 @@ class NotebookSpreadViewController: UIViewController {
     private func updatePageContainers() {
         pageContainers.forEach { $0.removeFromSuperview() }
         pageContainers.removeAll()
-        guard currentIndex >= 0 && currentIndex <= pageCount - 2 else {
+        guard currentIndex >= 2 && currentIndex <= pageCount - 4 else {
             print("❌ Page index invalid.")
             return
         }
