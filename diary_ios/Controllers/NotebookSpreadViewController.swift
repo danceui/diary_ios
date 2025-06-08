@@ -61,28 +61,29 @@ class NotebookSpreadViewController: UIViewController {
 
         // 确定要展开的容器
         let offsetIndex: Int = currentIndex / 2 - 1
-        for i in 0..<containerCount {
+        // 确定每个容器的位置
+        for i in 0...offsetIndex {
             let thisContainer = UIView()
-            // 确定每个容器的位置
-            if i <= offsetIndex {
-                let originX = offsets[i] * baseOffset
-                thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
-                let thisPage = pages[(i + 1) * 2]
-                thisPage.view.frame = thisContainer.bounds
-                thisContainer.addSubview(thisPage.view)
-                print("📖 Offset index: \(i). Contain left page \((i + 1) * 2). Origin X: \(originX).")
-            }
-            else {
-                let originX = view.bounds.width / 2 + offsets[i] * baseOffset
-                thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
-                let thisPage = pages[(i + 1) * 2 - 1]
-                thisPage.view.frame = thisContainer.bounds
-                thisContainer.addSubview(thisPage.view)
-                print("📖 Offset index: \(i). Contain right page \((i + 1) * 2 - 1). Origin X: \(originX).")
-            }
+            let originX = offsets[i] * baseOffset
+            thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
+            let thisPage = pages[(i + 1) * 2]
+            thisPage.view.frame = thisContainer.bounds
+            thisContainer.addSubview(thisPage.view)
+            print("📖 Offset index: \(i). Contain left page \((i + 1) * 2). Origin X: \(originX).")
             view.addSubview(thisContainer)
             pageContainers.append(thisContainer)
-
+        }
+        let range = offsetIndex + 1...containerCount - 1
+        for i in range.reversed() {
+            let thisContainer = UIView()
+            let originX = view.bounds.width / 2 + offsets[i] * baseOffset
+            thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
+            let thisPage = pages[(i + 1) * 2 - 1]
+            thisPage.view.frame = thisContainer.bounds
+            thisContainer.addSubview(thisPage.view)
+            print("📖 Offset index: \(i). Contain right page \((i + 1) * 2 - 1). Origin X: \(originX).")
+            view.addSubview(thisContainer)
+            pageContainers.append(thisContainer)
         }
     }
 

@@ -22,7 +22,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         }
         if pageRole != .empty {
             self.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
-            self.view.layer.borderColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 1).cgColor
+            self.view.layer.borderColor = UIColor.black.cgColor
             self.view.layer.borderWidth = 2
         }
     }
