@@ -49,18 +49,31 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     private func updatePageContainers() {
+        guard currentIndex >= 0 && currentIndex <= pageCount - 2 else {
+            print("❌ Page index invalid.")
+            return 
+        }
+        pageContainers.forEach { $0.removeFromSuperview() }
+        pageContainers.removeAll()
         containerCount = (pageCount - 2) / 2
+        guard containerCount > 0 else {
+            print("❌ Container count == 0.")
+            return 
+        }
 
         // 计算纸张偏移量
         offsets = Array(repeating: 0, count: containerCount)
         offsets[0] = CGFloat(1 - containerCount) / 2.0
-        for i in 1..<containerCount {
-            offsets[i] = offsets[i - 1] + 1
-        }
+        for i in 1..<containerCount { offsets[i] = offsets[i - 1] + 1 }
         print("📖 New offsets: \(offsets)")
 
         // 确定要展开的容器
         let offsetIndex: Int = currentIndex / 2 - 1
+        guard offsetIndex >= 0 && offsetIndex <= containerCount - 1 else {
+            print("❌ Offset index invalid.")
+            return 
+        }
+        
         // 确定每个容器的位置
         for i in 0...offsetIndex {
             let thisContainer = UIView()
