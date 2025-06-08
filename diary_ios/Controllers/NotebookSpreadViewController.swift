@@ -6,34 +6,32 @@ protocol NotebookSpreadViewControllerDelegate: AnyObject {
 
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIViewController {
-    private var pages: [NotebookPageViewController] = []
     private var flipController: FlipAnimatorController!
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
     
+    var pages: [NotebookPageViewController] = []
     var currentIndex: Int = 0
-    var leftPageContainer = UIView()
-    var rightPageContainer = UIView()
+
+    var pageContainers: [UIView] = []
+    var containerCount: Int = 0
+    var offsets: [CGFloat] = []
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
 
+    // MARK: - Constants
+    private let baseOffset = 5
+
     override func viewDidLoad() {
         super.viewDidLoad()
         flipController = FlipAnimatorController(host: self)
-        setupPageContainers()
+        updatePageContainers()
         setupInitialPages()
         setupGestureRecognizers()
     }
 
     // MARK: - Setup
-    private func setupPageContainers() {
-        leftPageContainer.frame = CGRect(x: 0, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
-        rightPageContainer.frame = CGRect(x: view.bounds.width / 2, y: 0, width: view.bounds.width / 2, height: view.bounds.height)
-        view.addSubview(leftPageContainer)
-        view.addSubview(rightPageContainer)
-    }
-
     private func setupInitialPages() {
         pages = [
             NotebookPageViewController(pageIndex: 0, role: .empty),
@@ -49,6 +47,24 @@ class NotebookSpreadViewController: UIViewController {
     private func setupGestureRecognizers() {
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         view.addGestureRecognizer(panGesture)
+    }
+
+    private func updatePageContainers() {
+        containerCount: Int = (pageCount - 2) / 2
+        offsets = Array(repeating: 0, count: containerCount)
+        offsets[0] = CGFloat(1 - containerCount) / 2.0
+        for i in 1..<containerCount {
+            offsets[i] = offsets[i - 1] + 1
+        }
+        print("📖 New offsets: \(offsets)")
+
+        for containerIndex in 0..<containerCount {
+            let thisContainer = UIView()
+            let originX = CGFloat(containerIndex) * view.bounds.width / 2
+            thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
+            view.addSubview(thisContainer)
+            pageContainers.append(thisContainer)
+        }
     }
 
     // MARK: - Gesture Handling
@@ -111,6 +127,7 @@ class NotebookSpreadViewController: UIViewController {
         let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
         let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
+        updatePageContainers()
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
         flipController.autoFlip(direction: .nextPage)
     }
@@ -122,17 +139,13 @@ class NotebookSpreadViewController: UIViewController {
         }
         print("▶️ Go to page pair \(index), \(index + 1).")
 
-        let leftPage = pages[index]
-        let rightPage = pages[index + 1]
-
-        leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-        rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-
-        leftPage.view.frame = leftPageContainer.bounds
-        rightPage.view.frame = rightPageContainer.bounds
-
-        leftPageContainer.addSubview(leftPage.view)
-        rightPageContainer.addSubview(rightPage.view)
+        for (containerIndex, container) in pageContainers.enumerated() {
+            container.subviews.forEach { $0.removeFromSuperview() }
+            let pageIndex = index + containerIndex
+            let page = pages[pageIndex]
+            page.view.frame = container.bounds
+            container.addSubview(page.view)
+        }
 
         currentIndex = index
         applyPageShadows()
@@ -208,16 +221,5 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     // MARK: - Interfaces
-    var totalPages: Int {pages.count}
-    func currentPagePair() -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
-        guard currentIndex >= 0, currentIndex + 1 < pages.count else { return nil }
-        print("☕️ Return current page pair \(currentIndex), \(currentIndex + 1).", terminator: " ")
-        return (pages[currentIndex], pages[currentIndex + 1])
-    }
-
-    func pagePair(at index: Int) -> (left: NotebookPageViewController, right: NotebookPageViewController)? {
-        guard index >= 0, index + 1 < pages.count else { return nil }
-        print("☕️ Return page pair \(index), \(index + 1).")
-        return (pages[index], pages[index + 1])
-    }
+    var pageCount: Int {pages.count}
 }
