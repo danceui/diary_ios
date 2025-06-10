@@ -87,14 +87,20 @@ class NotebookSpreadViewController: UIViewController {
         // 按视图顺序添加视图
         // 特殊处理封面和背页
         if currentIndex == 0 {
-            pageContainers[1].subviews.forEach { $0.removeFromSuperview() }
-            pageContainers[1].addSubview(pages[1].view)
-            view.addSubview(pageContainers[1])
+            let thisContainer = pageContainers[1]
+            let thisPage = pages[1]
+            thisContainer.subviews.forEach { $0.removeFromSuperview() }
+            thisPage.view.frame = thisContainer.bounds
+            thisContainer.addSubview(thisPage.view)
+            view.addSubview(thisContainer)
         }
         else if currentIndex == pageCount - 2 {
-            pageContainers.last!.subviews.forEach { $0.removeFromSuperview() }
-            pageContainers.last!.addSubview(pages[1].view)
-            view.addSubview(pageContainers.last!)
+            let thisContainer = pageContainers.last!
+            let thisPage = pages[pageCount - 2]
+            thisContainer.subviews.forEach { $0.removeFromSuperview() }
+            thisPage.view.frame = thisContainer.bounds
+            thisContainer.addSubview(thisPage.view)
+            view.addSubview(thisContainer)
         }
         else {
             for i in 0...offsetIndex {
