@@ -51,29 +51,6 @@ class NotebookSpreadViewController: UIViewController {
     private func updatePageContainers() {
         pageContainers.forEach { $0.removeFromSuperview() }
         pageContainers.removeAll()
-
-        if currentIndex == 0 {
-            let coverContainer = UIView(frame: view.bounds)
-            let coverPage = pages[1]
-            coverPage.view.frame = coverContainer.bounds
-            coverContainer.addSubview(coverPage.view)
-            view.addSubview(coverContainer)
-            pageContainers = [coverContainer]
-            print("📖 Show cover page.")
-            return
-        }
-        
-        if currentIndex == pageCount - 2 {
-            let backContainer = UIView(frame: view.bounds)
-            let backPage = pages[pageCount - 2]
-            backPage.view.frame = backContainer.bounds
-            backContainer.addSubview(backPage.view)
-            view.addSubview(backContainer)
-            pageContainers = [backContainer]
-            print("📖 Show back page.")
-            return
-        }
-    
         containerCount = (pageCount - 2) / 2
         guard containerCount > 0 else {
             print("❌ Container count = 0.")
@@ -93,7 +70,7 @@ class NotebookSpreadViewController: UIViewController {
             return 
         }
         
-        // 确定每个容器的位置
+        // 确定每个容器的位置和内容
         for i in 0...containerCount - 1 {
             let thisContainer = UIView()
             let thisPageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
@@ -103,15 +80,30 @@ class NotebookSpreadViewController: UIViewController {
             let thisPage = pages[thisPageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
-            print("📖 Offset index: \(i). Contain \(i <= offsetIndex ? "left" : "right") page \(thisPageIndex). Origin X: \(originX).")
+            print("📖 Offset index \(i). Contain \(i <= offsetIndex ? "left" : "right") page \(thisPageIndex). Origin X: \(originX).")
             pageContainers.append(thisContainer)
         }
-        for i in 0...offsetIndex {
-            view.addSubview(pageContainers[i])
+
+        // 按视图顺序添加视图
+        // 特殊处理封面和背页
+        if currentIndex == 0 {
+            pageContainers[1].subviews.forEach { $0.removeFromSuperview() }
+            pageContainers[1].addSubview(pages[1].view)
+            view.addSubview(pageContainers[1])
         }
-        let range = offsetIndex + 1...containerCount - 1
-        for i in range.reversed() {
-            view.addSubview(pageContainers[i])
+        else if currentIndex == pageCount - 2 {
+            pageContainers.last!.subviews.forEach { $0.removeFromSuperview() }
+            pageContainers.last!.addSubview(pages[1].view)
+            view.addSubview(pageContainers.last!)
+        }
+        else {
+            for i in 0...offsetIndex {
+                view.addSubview(pageContainers[i])
+            }
+            let range = offsetIndex + 1...containerCount - 1
+            for i in range.reversed() {
+                view.addSubview(pageContainers[i])
+            }
         }
     }
 

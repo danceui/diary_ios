@@ -53,10 +53,12 @@ class FlipAnimatorController {
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
         print("🔘 Begin animation [state: \(state), type: \(type), offsetIndex: \(offsetIndex)].", terminator: " ")
         // 把要旋转的view改为静态的snapshot
-        if direction == .nextPage {
-            host.pageContainers[offsetIndex + 1].subviews.forEach { $0.removeFromSuperview() }
-        } else {
-            host.pageContainers[offsetIndex].subviews.forEach { $0.removeFromSuperview() }
+        if targetIndex > 0, targetIndex < host.pageCount - 2 {
+            if direction == .nextPage {
+                host.pageContainers[offsetIndex + 1].subviews.forEach { $0.removeFromSuperview() }
+            } else {
+                host.pageContainers[offsetIndex].subviews.forEach { $0.removeFromSuperview() }
+            }
         }
 
         let container = UIView()
