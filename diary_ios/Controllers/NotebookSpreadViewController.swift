@@ -51,10 +51,29 @@ class NotebookSpreadViewController: UIViewController {
     private func updatePageContainers() {
         pageContainers.forEach { $0.removeFromSuperview() }
         pageContainers.removeAll()
-        guard currentIndex >= 2 && currentIndex <= pageCount - 4 else {
-            print("❌ Page index invalid.")
+
+        if currentIndex == 0 {
+            let coverContainer = UIView(frame: view.bounds)
+            let coverPage = pages[1]
+            coverPage.view.frame = coverContainer.bounds
+            coverContainer.addSubview(coverPage.view)
+            view.addSubview(coverContainer)
+            pageContainers = [coverContainer]
+            print("📖 Show cover page.")
             return
         }
+        
+        if currentIndex == pageCount - 2 {
+            let backContainer = UIView(frame: view.bounds)
+            let backPage = pages[pageCount - 2]
+            backPage.view.frame = backContainer.bounds
+            backContainer.addSubview(backPage.view)
+            view.addSubview(backContainer)
+            pageContainers = [backContainer]
+            print("📖 Show back page.")
+            return
+        }
+    
         containerCount = (pageCount - 2) / 2
         guard containerCount > 0 else {
             print("❌ Container count = 0.")
@@ -70,7 +89,7 @@ class NotebookSpreadViewController: UIViewController {
         // 确定要展开的容器
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
         guard offsetIndex >= 0 && offsetIndex <= containerCount - 1 else {
-            print("❌ Offset index invalid.")
+            print("❌ Offset index \(offsetIndex) invalid.")
             return 
         }
         

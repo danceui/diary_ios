@@ -31,42 +31,32 @@ class FlipAnimatorController {
             pendingFlips.append(.init(direction: direction, type: .auto))
             return
         }
-        print("🔘 Begin animation [state: \(state), type: \(type)].", terminator: " ")
         cleanupViews()
         
-        let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        guard host.currentIndex >= 2, host.currentIndex <= host.pageCount - 4, 
-                newIndex >= 2, newIndex <= host.pageCount - 4 else {
-            print("❌ Page index invalid.")
+        let targetIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
+        guard host.currentIndex >= 0, host.currentIndex <= host.pageCount - 2, 
+                targetIndex >= 0, targetIndex <= host.pageCount - 2 else {
+            print("❌ Page index invalid. Current index \(host.currentIndex). Target index \(targetIndex)")
             state = .idle
             return
         }
-        let offsetIndex = host.currentIndex / 2 - 1
-        let (leftPageContainer, rightPageContainer) = (host.pageContainers[offsetIndex], host.pageContainers[offsetIndex + 1])
 
         guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
             let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
-            let targetLeftSnapshot = host.pages[newIndex].view.snapshotView(afterScreenUpdates: true),
-            let targetRightSnapshot = host.pages[newIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
+            let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
+            let targetRightSnapshot = host.pages[targetIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
             print("❌ Snapshot generation failed.")
             state = .idle
             return
         }
 
-        currentLeftSnapshot.frame = leftPageContainer.bounds
-        currentRightSnapshot.frame = rightPageContainer.bounds
-        targetLeftSnapshot.frame = leftPageContainer.bounds
-        targetRightSnapshot.frame = rightPageContainer.bounds
-
-        leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
-        rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
-
+        let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
+        print("🔘 Begin animation [state: \(state), type: \(type), offsetIndex: \(offsetIndex)].", terminator: " ")
+        // 把要旋转的view改为静态的snapshot
         if direction == .nextPage {
-            leftPageContainer.addSubview(currentLeftSnapshot)
-            rightPageContainer.addSubview(targetRightSnapshot)
+            host.pageContainers[offsetIndex + 1].subviews.forEach { $0.removeFromSuperview() }
         } else {
-            leftPageContainer.addSubview(targetLeftSnapshot)
-            rightPageContainer.addSubview(currentRightSnapshot)
+            host.pageContainers[offsetIndex].subviews.forEach { $0.removeFromSuperview() }
         }
 
         let container = UIView()
@@ -76,21 +66,21 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, y: containerFrame.midY)
         container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
-        host.view.addSubview(container)
-        self.container = container
 
-        let front = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
-        let back = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
-        backSnapshot = back
-        frontSnapshot = front
-        
-        front.frame = container.bounds
-        back.frame = container.bounds
-        back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
-        back.isHidden = true
-        front.isHidden = false
-        container.addSubview(back)
-        container.addSubview(front)
+        let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
+        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
+        frontSnapshot.frame = container.bounds
+        backSnapshot.frame = container.bounds
+        backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
+        backSnapshot.isHidden = true
+        frontSnapshot.isHidden = false
+
+        host.view.addSubview(container)
+        container.addSubview(backSnapshot)
+        container.addSubview(frontSnapshot)
+        self.backSnapshot = backSnapshot
+        self.frontSnapshot = frontSnapshot
+        self.container = container
 
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
