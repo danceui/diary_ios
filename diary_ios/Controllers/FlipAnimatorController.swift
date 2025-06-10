@@ -35,12 +35,14 @@ class FlipAnimatorController {
         cleanupViews()
         
         let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        guard host.currentIndex >= 0, host.currentIndex + 1 < host.pageCount, 
-                newIndex >= 0, newIndex + 1 < host.pageCount else {
+        guard host.currentIndex >= 2, host.currentIndex <= host.pageCount - 4, 
+                newIndex >= 2, newIndex <= host.pageCount - 4 else {
+            print("❌ Page index invalid.")
             state = .idle
             return
         }
-        let (leftPageContainer, rightPageContainer) = (host.pageContainers[0], host.pageContainers[1])
+        let offsetIndex = host.currentIndex / 2 - 1
+        let (leftPageContainer, rightPageContainer) = (host.pageContainers[offsetIndex], host.pageContainers[offsetIndex + 1])
 
         guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
             let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
@@ -67,12 +69,11 @@ class FlipAnimatorController {
             rightPageContainer.addSubview(currentRightSnapshot)
         }
 
-        let container = UIView(frame: CGRect(x: direction == .nextPage ? host.view.bounds.width / 2 : 0, 
-                                                y: 0, 
-                                                width: host.view.bounds.width / 2, 
-                                                height: host.view.bounds.height))
+        let container = UIView()
+        let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
+        container.bounds = CGRect(origin: .zero, size: containerFrame.size)
         container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: host.view.bounds.width / 2, y: host.view.bounds.height / 2)
+        container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, y: containerFrame.midY)
         container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
         host.view.addSubview(container)
