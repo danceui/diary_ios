@@ -49,60 +49,77 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     private func updatePageContainers() {
+        // 清空 pageContainers
         pageContainers.forEach { $0.removeFromSuperview() }
         pageContainers.removeAll()
+
+        // 重新计算 pageContainers
         containerCount = (pageCount - 2) / 2
         guard containerCount > 0 else {
             print("❌ Container count = 0.")
             return 
         }
 
-        // 计算纸张偏移量
+        // 计算每个 pageContainer 的相对 offset
         offsets = Array(repeating: 0, count: containerCount)
         offsets[0] = CGFloat(1 - containerCount) / 2.0
         for i in 1..<containerCount { offsets[i] = offsets[i - 1] + 1 }
         print("📖 New offsets: \(offsets)")
 
-        // 确定要展开的容器
+        // 根据 currentIndex 确定要展开的 pageContainer
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
         guard offsetIndex >= 0 && offsetIndex <= containerCount - 1 else {
             print("❌ Offset index \(offsetIndex) invalid.")
             return 
         }
+        var baseX: CGFloat
+        var pageIndex: Int
         
-        // 确定每个容器的位置和内容
+        // 确定每个 pageContainer 的位置和内容
         for i in 0...containerCount - 1 {
+            // 确定这个容器的位置
             let thisContainer = UIView()
-            let thisPageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
-            let baseX = i <= offsetIndex ? 0 : view.bounds.width / 2
+            baseX = i <= offsetIndex ? 0 : view.bounds.width / 2
+            if i == 0, currentIndex == 0 {
+                baseX = view.bounds.width / 2
+            } else if i == containerCount - 1, currentIndex == pageCount - 2 {
+                baseX = 0
+            }
             let originX = offsets[i] * baseOffset + baseX
             thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
-            let thisPage = pages[thisPageIndex]
+            // 确定这个容器的内容
+            pageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
+            if i == 0, currentIndex == 0 {
+                pageIndex = 1
+            } else if i == containerCount - 1, currentIndex == pageCount - 2 {
+                pageIndex = pageCount - 2
+            }
+            let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
-            print("📖 Offset index \(i). Contain \(i <= offsetIndex ? "left" : "right") page \(thisPageIndex). Origin X: \(originX).")
+            print("📖 PageContainer \(i) contains page \(pageIndex). Origin X: \(originX).")
             pageContainers.append(thisContainer)
         }
 
-        // 按视图顺序添加视图
-        // 特殊处理封面和背页
-        if currentIndex == 0 {
-            let thisContainer = pageContainers[1]
-            let thisPage = pages[1]
-            thisContainer.subviews.forEach { $0.removeFromSuperview() }
-            thisPage.view.frame = thisContainer.bounds
-            thisContainer.addSubview(thisPage.view)
-            view.addSubview(thisContainer)
-        }
-        else if currentIndex == pageCount - 2 {
-            let thisContainer = pageContainers.last!
-            let thisPage = pages[pageCount - 2]
-            thisContainer.subviews.forEach { $0.removeFromSuperview() }
-            thisPage.view.frame = thisContainer.bounds
-            thisContainer.addSubview(thisPage.view)
-            view.addSubview(thisContainer)
-        }
-        else {
+        // // 按视图顺序添加视图
+        // // 特殊处理封面和背页
+        // if currentIndex == 0 {
+        //     let thisContainer = pageContainers[1]
+        //     let thisPage = pages[1]
+        //     thisContainer.subviews.forEach { $0.removeFromSuperview() }
+        //     thisPage.view.frame = thisContainer.bounds
+        //     thisContainer.addSubview(thisPage.view)
+        //     view.addSubview(thisContainer)
+        // }
+        // else if currentIndex == pageCount - 2 {
+        //     let thisContainer = pageContainers[containerCount - 2]
+        //     let thisPage = pages[pageCount - 2]
+        //     thisContainer.subviews.forEach { $0.removeFromSuperview() }
+        //     thisPage.view.frame = thisContainer.bounds
+        //     thisContainer.addSubview(thisPage.view)
+        //     view.addSubview(thisContainer)
+        // }
+        // else {
             for i in 0...offsetIndex {
                 view.addSubview(pageContainers[i])
             }
@@ -110,7 +127,7 @@ class NotebookSpreadViewController: UIViewController {
             for i in range.reversed() {
                 view.addSubview(pageContainers[i])
             }
-        }
+        // }
     }
 
     // MARK: - Gesture Handling

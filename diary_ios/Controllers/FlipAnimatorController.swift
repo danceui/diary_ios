@@ -51,7 +51,7 @@ class FlipAnimatorController {
         }
 
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
-        print("🔘 Begin animation [state: \(state), type: \(type), offsetIndex: \(offsetIndex)].", terminator: " ")
+        print("🔘 Begin animation [state: \(state), type: \(type), offsetIndex: \(offsetIndex)].")
         // 把要旋转的view改为静态的snapshot
         if targetIndex > 0, targetIndex < host.pageCount - 2 {
             if direction == .nextPage {
