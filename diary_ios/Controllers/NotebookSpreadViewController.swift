@@ -101,33 +101,20 @@ class NotebookSpreadViewController: UIViewController {
             pageContainers.append(thisContainer)
         }
 
-        // // 按视图顺序添加视图
-        // // 特殊处理封面和背页
-        // if currentIndex == 0 {
-        //     let thisContainer = pageContainers[1]
-        //     let thisPage = pages[1]
-        //     thisContainer.subviews.forEach { $0.removeFromSuperview() }
-        //     thisPage.view.frame = thisContainer.bounds
-        //     thisContainer.addSubview(thisPage.view)
-        //     view.addSubview(thisContainer)
-        // }
-        // else if currentIndex == pageCount - 2 {
-        //     let thisContainer = pageContainers[containerCount - 2]
-        //     let thisPage = pages[pageCount - 2]
-        //     thisContainer.subviews.forEach { $0.removeFromSuperview() }
-        //     thisPage.view.frame = thisContainer.bounds
-        //     thisContainer.addSubview(thisPage.view)
-        //     view.addSubview(thisContainer)
-        // }
-        // else {
-            for i in 0...offsetIndex {
-                view.addSubview(pageContainers[i])
-            }
-            let range = offsetIndex + 1...containerCount - 1
-            for i in range.reversed() {
-                view.addSubview(pageContainers[i])
-            }
-        // }
+        // 按视图顺序添加视图
+        for i in 0...offsetIndex {
+            view.addSubview(pageContainers[i])
+        }
+        for i in stride(from: containerCount - 1, through: offsetIndex + 1, by: -1) where offsetIndex + 1 <= containerCount - 1 {
+            view.addSubview(pageContainers[i])
+        }
+        // 特殊处理封面和背页
+        if currentIndex == 0 {
+            view.addSubview(pageContainers[0])
+        }
+        else if currentIndex == pageCount - 2 {
+            view.addSubview(pageContainers.last!)
+        }
     }
 
     // MARK: - Gesture Handling
