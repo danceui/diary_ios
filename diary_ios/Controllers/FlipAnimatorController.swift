@@ -74,7 +74,8 @@ class FlipAnimatorController {
         let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
         container.bounds = CGRect(origin: .zero, size: containerFrame.size)
         container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, y: containerFrame.midY)
+        container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
+                                            y: containerFrame.origin.y + containerFrame.midY)
         container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
 
