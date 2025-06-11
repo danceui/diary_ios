@@ -11,6 +11,7 @@ class NotebookSpreadViewController: UIViewController {
     private var lastProgressForTesting: CGFloat?
     
     var pages: [NotebookPageViewController] = []
+    var pageCount: Int {pages.count}
     var currentIndex: Int = 2
 
     var pageContainers: [UIView] = []
@@ -64,7 +65,7 @@ class NotebookSpreadViewController: UIViewController {
         offsets = Array(repeating: 0, count: containerCount)
         offsets[0] = CGFloat(1 - containerCount) / 2.0
         for i in 1..<containerCount { offsets[i] = offsets[i - 1] + 1 }
-        print("📖 New offsets: \(offsets)")
+        print("📖 Updated pageContainer offsets: \(offsets)")
 
         // 根据 currentIndex 确定要展开的 pageContainer
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
@@ -261,7 +262,4 @@ class NotebookSpreadViewController: UIViewController {
             pages[currentIndex + 1].redo()
         }
     }
-
-    // MARK: - Interfaces
-    var pageCount: Int {pages.count}
 }

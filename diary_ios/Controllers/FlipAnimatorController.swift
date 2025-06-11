@@ -51,16 +51,25 @@ class FlipAnimatorController {
         }
 
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
-        print("🔘 Begin animation [state: \(state), type: \(type), offsetIndex: \(offsetIndex)].")
-        // 把要旋转的view改为静态的snapshot
-        if targetIndex > 0, targetIndex < host.pageCount - 2 {
-            if direction == .nextPage {
-                host.pageContainers[offsetIndex + 1].subviews.forEach { $0.removeFromSuperview() }
+        var offsetIndexToRemove: Int
+        // 隐藏即将旋转的 pageContainer view
+        if direction == .nextPage {
+            if host.currentIndex == 0 {
+                offsetIndexToRemove = 0
             } else {
-                host.pageContainers[offsetIndex].subviews.forEach { $0.removeFromSuperview() }
+                offsetIndexToRemove = offsetIndex + 1
+            }
+        } else {
+            if host.currentIndex == host.pageCount - 2 {
+                offsetIndexToRemove = host.containerCount - 1
+            } else {
+                offsetIndexToRemove = offsetIndex
             }
         }
+        host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
+        print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
 
+        // 创建临时 conatiner, 包含 pageContainer view 快照
         let container = UIView()
         let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
         container.bounds = CGRect(origin: .zero, size: containerFrame.size)
@@ -142,7 +151,7 @@ class FlipAnimatorController {
         Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
             if i >= predictedProgress.count {
                 timer.invalidate()
-                print("🔘 Complete animation [state: \(self.state)].")
+                print("🔘 Complete animation [state was \(self.state)].")
                 self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
                 self.cleanupViews()
                 self.cleanupAnimations()
