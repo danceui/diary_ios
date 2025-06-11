@@ -31,61 +31,69 @@ class FlipAnimatorController {
             pendingFlips.append(.init(direction: direction, type: .auto))
             return
         }
-        print("🔘 Begin animation [state: \(state), type: \(type)].", terminator: " ")
         cleanupViews()
-        state = (type == .manual ? .manualFlipping : .autoFlipping)
         
-        let newIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        guard let currentPair = host.currentPagePair(), let targetPair = host.pagePair(at: newIndex) 
-        else {
+        let targetIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
+        guard host.currentIndex >= 0, host.currentIndex <= host.pageCount - 2, 
+                targetIndex >= 0, targetIndex <= host.pageCount - 2 else {
+            print("❌ Page index invalid. Current index \(host.currentIndex). Target index \(targetIndex)")
             state = .idle
             return
         }
 
-        let (frontView, backView): (UIView, UIView) = {
-            if direction == .nextPage {
-                return (currentPair.right.view, targetPair.left.view)
-            } else {
-                return (currentPair.left.view, targetPair.right.view)
-            }
-        }()
-
-        guard let front = frontView.snapshotView(afterScreenUpdates: true), let back = backView.snapshotView(afterScreenUpdates: true)
-        else {
+        guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
+            let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
+            let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
+            let targetRightSnapshot = host.pages[targetIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
             print("❌ Snapshot generation failed.")
             state = .idle
             return
         }
 
-        let pagesContainer = host.pagesContainer
+        let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
+        var offsetIndexToRemove: Int
+        // 隐藏即将旋转的 pageContainer view
+        if direction == .nextPage {
+            if host.currentIndex == 0 {
+                offsetIndexToRemove = 0
+            } else {
+                offsetIndexToRemove = offsetIndex + 1
+            }
+        } else {
+            if host.currentIndex == host.pageCount - 2 {
+                offsetIndexToRemove = host.containerCount - 1
+            } else {
+                offsetIndexToRemove = offsetIndex
+            }
+        }
+        host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
+        print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
 
-        pagesContainer.subviews
-            .filter { $0.tag == 999 }
-            .forEach { $0.removeFromSuperview() }
-        let container = UIView(frame: CGRect(x: direction == .nextPage ? host.view.bounds.width / 2 : 0, 
-                                                y: 0, 
-                                                width: host.view.bounds.width / 2, 
-                                                height: host.view.bounds.height))
-        container.clipsToBounds = true
-        container.tag = 999
+        // 创建临时 conatiner, 包含 pageContainer view 快照
+        let container = UIView()
+        let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
+        container.bounds = CGRect(origin: .zero, size: containerFrame.size)
         container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: host.view.bounds.width / 2, y: host.view.bounds.height / 2)
+        container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, y: containerFrame.midY)
+        container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
-        
-        pagesContainer.addSubview(container)
+
+        let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
+        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
+        frontSnapshot.frame = container.bounds
+        backSnapshot.frame = container.bounds
+        backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
+        backSnapshot.isHidden = true
+        frontSnapshot.isHidden = false
+
+        host.view.addSubview(container)
+        container.addSubview(backSnapshot)
+        container.addSubview(frontSnapshot)
+        self.backSnapshot = backSnapshot
+        self.frontSnapshot = frontSnapshot
         self.container = container
-        
-        front.frame = container.bounds
-        back.frame = container.bounds
-        back.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
-        back.isHidden = true
-        front.isHidden = false
-        front.tag = 999
-        back.tag  = 999
-        container.addSubview(back)
-        container.addSubview(front)
-        self.frontSnapshot = front
-        self.backSnapshot  = back
+
+        state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
     func update(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, messageForTesting: String = "") {
@@ -143,7 +151,7 @@ class FlipAnimatorController {
         Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
             if i >= predictedProgress.count {
                 timer.invalidate()
-                print("🔘 Complete animation [state: \(self.state)].")
+                print("🔘 Complete animation [state was \(self.state)].")
                 self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
                 self.cleanupViews()
                 self.cleanupAnimations()
