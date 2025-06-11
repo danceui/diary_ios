@@ -16,7 +16,8 @@ class NotebookSpreadViewController: UIViewController {
 
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
-    var offsets: [CGFloat] = []
+    var offsetsX: [CGFloat] = []
+    var offsetsY: [CGFloat] = []
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
@@ -61,18 +62,32 @@ class NotebookSpreadViewController: UIViewController {
             return 
         }
 
-        // 计算每个 pageContainer 的相对 offset
-        offsets = Array(repeating: 0, count: containerCount)
-        offsets[0] = CGFloat(1 - containerCount) / 2.0
-        for i in 1..<containerCount { offsets[i] = offsets[i - 1] + 1 }
-        print("📖 Updated pageContainer offsets: \(offsets)")
-
         // 根据 currentIndex 确定要展开的 pageContainer
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
         guard offsetIndex >= 0 && offsetIndex <= containerCount - 1 else {
             print("❌ Offset index \(offsetIndex) invalid.")
             return 
         }
+
+        // 计算每个 pageContainer 的相对 offset
+        offsetsX = Array(repeating: 0, count: containerCount)
+        offsetsX[0] = CGFloat(1 - containerCount) / 2.0
+        for i in 1..<containerCount { offsetsX[i] = offsetsX[i - 1] + 1 }
+        offsetsY = Array(repeating: 0, count: containerCount)
+        if currentIndex == 0 {
+            offsetsY[offsetIndex] = 0
+            for i in stride(from: offsetIndex + 1, through: containerCount - 1, by: 1) where offsetIndex + 1 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
+        } else if currentIndex == pageCount - 2 {
+            offsetsY[offsetIndex] = 0
+            for i in stride(from: offsetIndex - 1, through: 0, by: -1) where offsetIndex - 1 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
+        } else {
+            offsetsY[offsetIndex] = 0
+            offsetsY[offsetIndex + 1] = 0
+            for i in stride(from: offsetIndex + 2, through: containerCount - 1, by: 1) where offsetIndex + 2 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
+            for i in stride(from: offsetIndex - 1, through: 0, by: -1) where offsetIndex - 1 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
+        }
+        print("📖 Updated pageContainer offsetsX: \(offsetsX), offsetsY: \(offsetsY).")
+
         var baseX: CGFloat
         var pageIndex: Int
         
@@ -86,8 +101,8 @@ class NotebookSpreadViewController: UIViewController {
             } else if i == containerCount - 1, currentIndex == pageCount - 2 {
                 baseX = 0
             }
-            let originX = offsets[i] * baseOffset + baseX
-            thisContainer.frame = CGRect(x: originX, y:0, width: view.bounds.width / 2, height: view.bounds.height)
+            let originX = offsetsX[i] * baseOffset + baseX
+            thisContainer.frame = CGRect(x: originX, y: offsetsY[i] * baseOffset, width: view.bounds.width / 2, height: view.bounds.height)
             // 确定这个容器的内容
             pageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
             if i == 0, currentIndex == 0 {
