@@ -76,15 +76,27 @@ class NotebookSpreadViewController: UIViewController {
         offsetsY = Array(repeating: 0, count: containerCount)
         if currentIndex == 0 {
             offsetsY[offsetIndex] = 0
-            for i in stride(from: offsetIndex + 1, through: containerCount - 1, by: 1) where offsetIndex + 1 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
+            if offsetIndex + 1 <= containerCount - 1 {
+                offsetsY[offsetIndex + 1] = 0
+            }
+            for i in stride(from: offsetIndex + 2, through: containerCount - 1, by: 1) where offsetIndex + 2 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
         } else if currentIndex == pageCount - 2 {
             offsetsY[offsetIndex] = 0
-            for i in stride(from: offsetIndex - 1, through: 0, by: -1) where offsetIndex - 1 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
+            if offsetIndex - 1 >= 0 {
+                offsetsY[offsetIndex - 1] = 0
+            }
+            for i in stride(from: offsetIndex - 2, through: 0, by: -1) where offsetIndex - 2 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
         } else {
+            if offsetIndex - 1 >= 0 {
+                offsetsY[offsetIndex - 1] = 0
+            }
             offsetsY[offsetIndex] = 0
             offsetsY[offsetIndex + 1] = 0
-            for i in stride(from: offsetIndex + 2, through: containerCount - 1, by: 1) where offsetIndex + 2 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
-            for i in stride(from: offsetIndex - 1, through: 0, by: -1) where offsetIndex - 1 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
+            if offsetIndex + 2 <= containerCount - 1 {
+                offsetsY[offsetIndex + 2] = 0
+            }
+            for i in stride(from: offsetIndex + 3, through: containerCount - 1, by: 1) where offsetIndex + 3 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
+            for i in stride(from: offsetIndex - 2, through: 0, by: -1) where offsetIndex - 2 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
         }
         print("📖 Updated pageContainer offsetsX: \(offsetsX), offsetsY: \(offsetsY).")
 
