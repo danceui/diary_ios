@@ -40,7 +40,8 @@ class FlipAnimatorController {
             state = .idle
             return
         }
-
+        host.fromOffsetsY = host.computeOffsetsY(pageIndex: host.currentIndex) ?? []
+        host.toOffsetsY = host.computeOffsetsY(pageIndex: targetIndex) ?? []
         guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
             let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
             let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
@@ -108,19 +109,23 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
+        var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
                 lastProgressForTesting = progress
+                hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
             lastProgressForTesting = progress
+            hostShouldPrint = true
         }
 
         frontSnapshot?.isHidden = abs(progress) >= 0.5
         backSnapshot?.isHidden = abs(progress) < 0.5
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
+        host?.updateStackTransforms(progress: abs(progress), shouldPrint: hostShouldPrint) 
     }
 
     func complete(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, velocity: CGFloat) {

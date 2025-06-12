@@ -17,7 +17,8 @@ class NotebookSpreadViewController: UIViewController {
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
     var offsetsX: [CGFloat] = []
-    var offsetsY: [CGFloat] = []
+    var fromOffsetsY: [CGFloat] = []
+    var toOffsetsY: [CGFloat] = []
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
@@ -69,36 +70,8 @@ class NotebookSpreadViewController: UIViewController {
             return 
         }
 
-        // 计算每个 pageContainer 的相对 offset
-        offsetsX = Array(repeating: 0, count: containerCount)
-        offsetsX[0] = CGFloat(1 - containerCount) / 2.0
-        for i in 1..<containerCount { offsetsX[i] = offsetsX[i - 1] + 1 }
-        offsetsY = Array(repeating: 0, count: containerCount)
-        if currentIndex == 0 {
-            offsetsY[offsetIndex] = 0
-            if offsetIndex + 1 <= containerCount - 1 {
-                offsetsY[offsetIndex + 1] = 0
-            }
-            for i in stride(from: offsetIndex + 2, through: containerCount - 1, by: 1) where offsetIndex + 2 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
-        } else if currentIndex == pageCount - 2 {
-            offsetsY[offsetIndex] = 0
-            if offsetIndex - 1 >= 0 {
-                offsetsY[offsetIndex - 1] = 0
-            }
-            for i in stride(from: offsetIndex - 2, through: 0, by: -1) where offsetIndex - 2 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
-        } else {
-            if offsetIndex - 1 >= 0 {
-                offsetsY[offsetIndex - 1] = 0
-            }
-            offsetsY[offsetIndex] = 0
-            offsetsY[offsetIndex + 1] = 0
-            if offsetIndex + 2 <= containerCount - 1 {
-                offsetsY[offsetIndex + 2] = 0
-            }
-            for i in stride(from: offsetIndex + 3, through: containerCount - 1, by: 1) where offsetIndex + 3 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
-            for i in stride(from: offsetIndex - 2, through: 0, by: -1) where offsetIndex - 2 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
-        }
-        print("📖 Updated pageContainer offsetsX: \(offsetsX), offsetsY: \(offsetsY).")
+        offsetsX = computeOffsetsX()
+        let offsetsY = computeOffsetsY(pageIndex: currentIndex)
 
         var baseX: CGFloat
         var pageIndex: Int
@@ -114,7 +87,9 @@ class NotebookSpreadViewController: UIViewController {
                 baseX = 0
             }
             let originX = offsetsX[i] * baseOffset + baseX
-            thisContainer.frame = CGRect(x: originX, y: offsetsY[i] * baseOffset, width: view.bounds.width / 2, height: view.bounds.height)
+            let originY = offsetsY[i]
+            thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
+
             // 确定这个容器的内容
             pageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
             if i == 0, currentIndex == 0 {
@@ -125,7 +100,7 @@ class NotebookSpreadViewController: UIViewController {
             let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
-            print("📖 PageContainer \(i) contains page \(pageIndex). Origin X: \(originX).")
+            print("   📖 PageContainer \(i): OriginX = \(originX), page \(pageIndex).")
             pageContainers.append(thisContainer)
         }
 
@@ -221,6 +196,7 @@ class NotebookSpreadViewController: UIViewController {
         applyPageShadows()
     }
 
+    // MARK: - Progress Related Functions
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
         let width = pageDelegate?.currentContentWidth() ?? 0 
         var offset: CGFloat = 0
@@ -238,7 +214,39 @@ class NotebookSpreadViewController: UIViewController {
         onProgressChanged?(offset)
     }
 
-    // MARK: - Appearance
+    func computeOffsetsY(pageIndex i: Int) -> [CGFloat] {
+        let centerIndex = min(max(0, i / 2 - 1), containerCount - 1)
+        var offsets = Array(repeating: CGFloat(0), count: containerCount)
+        for i in 0..<containerCount {
+            let depth = i <= centerIndex ? (centerIndex - i) : (i - centerIndex - 1)
+            offsets[i] = CGFloat(depth) * baseOffset
+        }
+        return offsets
+    }
+    
+    func computeOffsetsX() -> [CGFloat] {
+        guard containerCount > 0 else { return [] }
+        var offsets = Array(repeating: CGFloat(0), count: containerCount)
+        offsets[0] = CGFloat(1 - containerCount) / 2.0
+        for i in 1..<containerCount {
+            offsets[i] = offsets[i - 1] + 1
+        }
+        return offsets
+    }
+
+    func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
+        guard fromOffsetsY.count == toOffsetsY.count else { return }
+        let easedProgress = abs(progress)
+        for (i, container) in pageContainers.enumerated() {
+            guard i < fromOffsetsY.count else { continue }
+            let fromY = fromOffsetsY[i]
+            let toY = toOffsetsY[i]
+            let dy = fromY + (toY - fromY) * easedProgress
+            if shouldPrint { print("   📖 PageContainer \(i): OriginY = \(format(dy)).")}
+            container.transform = CGAffineTransform(translationX: 0, y: dy)
+        }
+    }
+
     private func applyPageShadows() {
         pages.enumerated().forEach { index, page in
             page.view.layer.shadowColor = UIColor.black.cgColor
