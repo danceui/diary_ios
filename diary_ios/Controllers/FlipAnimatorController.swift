@@ -8,16 +8,17 @@ class FlipAnimatorController {
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var lastProgressForTesting: CGFloat?
+    
+    private let baseVelocity = FlipConstants.baseVelocity
+    private let baseDuration = FlipConstants.baseDuration
+    private let progressThreshold = FlipConstants.progressThreshold
+    private let velocityThreshold = FlipConstants.velocityThreshold
+    private let minSpeedFactor = FlipConstants.minSpeedFactor
+    private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
 
     private var pendingFlips: [FlipRequest] = []
-    var isAnimating: Bool { return state != .idle }
-
-    // MARK: - constant paramaters
     private let easing: EasingFunction = .sineEaseOut
-    private let baseVelocity: CGFloat = 1000
-    private let minSpeedFactor: CGFloat = 1
-    private let maxSpeedFactor: CGFloat = 1.5
-    private let baseDuration: TimeInterval = 0.4
+    var isAnimating: Bool { return state != .idle }
 
     init(host: NotebookSpreadViewController) {
         self.host = host
@@ -40,8 +41,8 @@ class FlipAnimatorController {
             state = .idle
             return
         }
-        host.fromOffsetsY = host.computeOffsetsY(pageIndex: host.currentIndex) ?? []
-        host.toOffsetsY = host.computeOffsetsY(pageIndex: targetIndex) ?? []
+        host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentIndex) ?? []
+        host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex) ?? []
         guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
             let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
             let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
@@ -122,8 +123,8 @@ class FlipAnimatorController {
             hostShouldPrint = true
         }
 
-        frontSnapshot?.isHidden = abs(progress) >= 0.5
-        backSnapshot?.isHidden = abs(progress) < 0.5
+        frontSnapshot?.isHidden = abs(progress) >= progressThreshold
+        backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
         host?.updateStackTransforms(progress: abs(progress), shouldPrint: hostShouldPrint) 
     }
@@ -168,7 +169,7 @@ class FlipAnimatorController {
             let m = "🔘 Complete called update. "
             self.update(direction: direction, progress: p, type: .auto, messageForTesting: m)
 
-            if abs(p) >= 0.5 {
+            if abs(p) >= self.progressThreshold {
                 self.frontSnapshot?.isHidden = true
                 self.backSnapshot?.isHidden = false
             }
@@ -224,7 +225,7 @@ class FlipAnimatorController {
             let p = predictedProgress[i]
             self.update(direction: direction, progress: p, type: .auto)
 
-            if abs(p) < 0.5 {
+            if abs(p) < self.progressThreshold {
                 self.frontSnapshot?.isHidden = false
                 self.backSnapshot?.isHidden = true
             }

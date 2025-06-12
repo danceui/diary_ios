@@ -1,4 +1,18 @@
 import UIKit
+
+struct FlipConstants {
+    static let baseVelocity: CGFloat = 1000
+    static let baseDuration: TimeInterval = 0.4
+    static let progressThreshold: CGFloat = 0.499
+    static let velocityThreshold: CGFloat = 800
+    static let minSpeedFactor: CGFloat = 1
+    static let maxSpeedFactor: CGFloat = 1.5
+}
+
+struct StackConstants {
+    static let baseOffset: CGFloat = 5
+}
+
 enum AnimationState {
     case idle
     case manualFlipping

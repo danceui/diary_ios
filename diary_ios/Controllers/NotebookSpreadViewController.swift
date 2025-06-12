@@ -10,21 +10,22 @@ class NotebookSpreadViewController: UIViewController {
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
     
+    private let baseOffset = StackConstants.baseOffset
+    private let progressThreshold = FlipConstants.progressThreshold
+    private let velocityThreshold = FlipConstants.velocityThreshold
+    
     var pages: [NotebookPageViewController] = []
     var pageCount: Int {pages.count}
     var currentIndex: Int = 2
 
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
-    var offsetsX: [CGFloat] = []
-    var fromOffsetsY: [CGFloat] = []
-    var toOffsetsY: [CGFloat] = []
+    var XOffsets: [CGFloat] = []
+    var fromYOffsets: [CGFloat] = []
+    var toYOffsets: [CGFloat] = []
 
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
-
-    // MARK: - Constants
-    private let baseOffset: CGFloat = 5
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -70,14 +71,14 @@ class NotebookSpreadViewController: UIViewController {
             return 
         }
 
-        offsetsX = computeOffsetsX()
-        let offsetsY = computeOffsetsY(pageIndex: currentIndex)
+        XOffsets = computeXOffsets()
+        let offsetsY = computeYOffsets(pageIndex: currentIndex)
 
         var baseX: CGFloat
         var pageIndex: Int
         
         // 确定每个 pageContainer 的位置和内容
-        print("   📖 OriginX: [", terminator: " ")
+        print("   📐 OriginX: [", terminator: " ")
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
@@ -87,7 +88,7 @@ class NotebookSpreadViewController: UIViewController {
             } else if i == containerCount - 1, currentIndex == pageCount - 2 {
                 baseX = 0
             }
-            let originX = offsetsX[i] * baseOffset + baseX
+            let originX = XOffsets[i] * baseOffset + baseX
             let originY = offsetsY[i]
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
 
@@ -154,7 +155,7 @@ class NotebookSpreadViewController: UIViewController {
             flipController.update(direction: direction, progress: progress, type: .manual)
         case .ended, .cancelled:
             lockedDirection = nil
-            if abs(velocity.x) > 800 || abs(progress) > 0.5 {
+            if abs(velocity.x) > velocityThreshold || abs(progress) > progressThreshold {
                 print("✋ Complete page flip - progress \(format(progress)).")
                 flipController.complete(direction: direction, progress: progress, type: .manual, velocity: velocity.x)
             } else {
@@ -216,7 +217,7 @@ class NotebookSpreadViewController: UIViewController {
         onProgressChanged?(offset)
     }
 
-    func computeOffsetsY(pageIndex i: Int) -> [CGFloat] {
+    func computeYOffsets(pageIndex i: Int) -> [CGFloat] {
         let centerIndex = min(max(0, i / 2 - 1), containerCount - 1)
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
         for i in 0..<containerCount {
@@ -226,7 +227,7 @@ class NotebookSpreadViewController: UIViewController {
         return offsets
     }
     
-    func computeOffsetsX() -> [CGFloat] {
+    func computeXOffsets() -> [CGFloat] {
         guard containerCount > 0 else { return [] }
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
         offsets[0] = CGFloat(1 - containerCount) / 2.0
@@ -237,15 +238,15 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
-        guard fromOffsetsY.count == toOffsetsY.count else { return }
+        guard fromYOffsets.count == toYOffsets.count else { return }
         let easedProgress = abs(progress)
-        if shouldPrint { print("   📖 OffsetsY: [", terminator: " ")}
+        if shouldPrint { print("   📐 OriginY: [", terminator: " ")}
         for (i, container) in pageContainers.enumerated() {
-            guard i < fromOffsetsY.count else { continue }
-            let fromY = fromOffsetsY[i]
-            let toY = toOffsetsY[i]
+            guard i < fromYOffsets.count else { continue }
+            let fromY = fromYOffsets[i]
+            let toY = toYOffsets[i]
             let dy = (toY - fromY) * easedProgress
-            if shouldPrint { print("\(format(dy))"), terminator: " "}
+            if shouldPrint { print("\(format(fromY + dy))", terminator: " ")}
             container.transform = CGAffineTransform(translationX: 0, y: dy)
         }
         if shouldPrint { print("].")}
