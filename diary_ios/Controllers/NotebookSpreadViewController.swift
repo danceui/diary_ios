@@ -77,6 +77,7 @@ class NotebookSpreadViewController: UIViewController {
         var pageIndex: Int
         
         // 确定每个 pageContainer 的位置和内容
+        print("   📖 OriginX: [", terminator: " ")
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
@@ -100,9 +101,10 @@ class NotebookSpreadViewController: UIViewController {
             let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
-            print("   📖 PageContainer \(i): OriginX = \(originX), page \(pageIndex).")
+            print("\(originX)", terminator: " ")
             pageContainers.append(thisContainer)
         }
+        print("].")
 
         // 按视图顺序添加视图
         for i in 0...offsetIndex {
@@ -237,14 +239,16 @@ class NotebookSpreadViewController: UIViewController {
     func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
         guard fromOffsetsY.count == toOffsetsY.count else { return }
         let easedProgress = abs(progress)
+        if shouldPrint { print("   📖 OffsetsY: [", terminator: " ")}
         for (i, container) in pageContainers.enumerated() {
             guard i < fromOffsetsY.count else { continue }
             let fromY = fromOffsetsY[i]
             let toY = toOffsetsY[i]
-            let dy = fromY + (toY - fromY) * easedProgress
-            if shouldPrint { print("   📖 PageContainer \(i): OriginY = \(format(dy)).")}
+            let dy = (toY - fromY) * easedProgress
+            if shouldPrint { print("\(format(dy))"), terminator: " "}
             container.transform = CGAffineTransform(translationX: 0, y: dy)
         }
+        if shouldPrint { print("].")}
     }
 
     private func applyPageShadows() {
