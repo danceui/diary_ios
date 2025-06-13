@@ -239,7 +239,7 @@ class NotebookSpreadViewController: UIViewController {
 
     func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
         guard fromYOffsets.count == toYOffsets.count else { return }
-        let easedProgress = abs(progress)
+        let easedProgress = easeInOutCubic(abs(progress))
         if shouldPrint { print("   📐 OriginY: [", terminator: " ")}
         for (i, container) in pageContainers.enumerated() {
             guard i < fromYOffsets.count else { continue }
