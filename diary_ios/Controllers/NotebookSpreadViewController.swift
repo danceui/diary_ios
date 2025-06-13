@@ -9,6 +9,8 @@ class NotebookSpreadViewController: UIViewController {
     private var flipController: FlipAnimatorController!
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
+    private var centerBindingEdge: UIView?
+    private var bottomBindingBar: UIView?
     
     private let baseOffset = StackConstants.baseOffset
     private let progressThreshold = FlipConstants.progressThreshold
@@ -17,7 +19,6 @@ class NotebookSpreadViewController: UIViewController {
     var pages: [NotebookPageViewController] = []
     var pageCount: Int {pages.count}
     var currentIndex: Int = 2
-
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
     var XOffsets: [CGFloat] = []
@@ -215,6 +216,8 @@ class NotebookSpreadViewController: UIViewController {
             offset = width / 4 * (1 - easedProgress)
         }
         onProgressChanged?(offset)
+        addCenterBindingEdge()
+        addBottomBindingBar()
     }
 
     func computeYOffsets(pageIndex i: Int) -> [CGFloat] {
@@ -252,6 +255,7 @@ class NotebookSpreadViewController: UIViewController {
         if shouldPrint { print("].")}
     }
 
+    // MARK: - Notebook Appearance
     private func applyPageShadows() {
         pages.enumerated().forEach { index, page in
             page.view.layer.shadowColor = UIColor.black.cgColor
@@ -277,6 +281,68 @@ class NotebookSpreadViewController: UIViewController {
                 page.view.layer.shadowPath = nil
             }
         }
+    }
+
+    private func addCenterBindingEdge() {
+        print("📖 Add binding edge.")
+        // 先移除旧的装订视图
+        centerBindingEdge?.removeFromSuperview()
+
+        let bindingWidth: CGFloat = 12
+        let contentHeight = view.bounds.height
+        let contentWidth = view.bounds.width
+        let x = contentWidth / 2 - bindingWidth / 2
+
+        let bindingView = UIView(frame: CGRect(x: x, y: 0, width: bindingWidth, height: contentHeight))
+        bindingView.backgroundColor = UIColor.darkGray
+
+        // 添加圆角 + 阴影提升质感
+        bindingView.layer.cornerRadius = bindingWidth / 2
+        bindingView.layer.shadowColor = UIColor.black.cgColor
+        bindingView.layer.shadowOpacity = 0.15
+        bindingView.layer.shadowRadius = 2
+        bindingView.layer.shadowOffset = CGSize(width: 0, height: 2)
+
+        // 可选：金属渐变层
+        let gradient = CAGradientLayer()
+        gradient.frame = bindingView.bounds
+        gradient.colors = [
+            UIColor(white: 0.25, alpha: 1).cgColor,
+            UIColor(white: 0.4, alpha: 1).cgColor,
+            UIColor(white: 0.25, alpha: 1).cgColor
+        ]
+        gradient.startPoint = CGPoint(x: 0, y: 0.5)
+        gradient.endPoint = CGPoint(x: 1, y: 0.5)
+        bindingView.layer.insertSublayer(gradient, at: 0)
+
+        view.addSubview(bindingView)
+        centerBindingEdge = bindingView
+    }
+
+    private func addBottomBindingBar() {
+        print("📖 Add binding bar.")
+        bottomBindingBar?.removeFromSuperview()
+
+        // 查找最底部页面的位置（Y最大值）
+        guard let lowestContainer = pageContainers.max(by: { $0.frame.origin.y < $1.frame.origin.y }) else {
+            return
+        }
+
+        let barHeight: CGFloat = 10
+        let barY = lowestContainer.frame.maxY - barHeight / 2  // 稍微盖住一点底部
+        let bar = UIView(frame: CGRect(x: 0, y: barY, width: view.bounds.width, height: barHeight))
+        bar.backgroundColor = UIColor.darkGray
+
+        // 可选：圆角和阴影
+        bar.layer.cornerRadius = 5
+        bar.layer.shadowColor = UIColor.black.cgColor
+        bar.layer.shadowOpacity = 0.1
+        bar.layer.shadowRadius = 2
+        bar.layer.shadowOffset = CGSize(width: 0, height: -1)
+
+        view.addSubview(bar)
+        view.bringSubviewToFront(bar)
+        bottomBindingBar = bar
     }
 
     func exportAllDrawings() -> [Data] {
