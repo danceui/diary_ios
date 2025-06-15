@@ -7,8 +7,6 @@ class FlipAnimatorController {
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
-    private var frontThicknessLayer: CALayer?
-    private var backThicknessLayer: CALayer?
     private var lastProgressForTesting: CGFloat?
     
     private let baseVelocity = FlipConstants.baseVelocity
@@ -17,8 +15,6 @@ class FlipAnimatorController {
     private let velocityThreshold = FlipConstants.velocityThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
-    private let epsilon = FlipConstants.epsilon
-    private let thicknessScaleSensitivity = FlipConstants.thicknessScaleSensitivity
 
     private var pendingFlips: [FlipRequest] = []
     private let easing: EasingFunction = .sineEaseOut
@@ -28,7 +24,6 @@ class FlipAnimatorController {
         self.host = host
     }
 
-    // MARK: - 动画开始、更新、结束
     func begin(direction: PageTurnDirection, type: AnimationType) {
         guard let host = host else { return }
         
@@ -57,9 +52,9 @@ class FlipAnimatorController {
             return
         }
 
-        // 隐藏即将旋转的 pageContainer view
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
         var offsetIndexToRemove: Int
+        // 隐藏即将旋转的 pageContainer view
         if direction == .nextPage {
             if host.currentIndex == 0 {
                 offsetIndexToRemove = 0
@@ -76,7 +71,7 @@ class FlipAnimatorController {
         host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
         print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
 
-        // 创建临时 conatiner 用来翻转
+        // 创建临时 conatiner, 包含 pageContainer view 快照
         let container = UIView()
         let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
         container.bounds = CGRect(origin: .zero, size: containerFrame.size)
@@ -86,7 +81,6 @@ class FlipAnimatorController {
         container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
 
-        // 给 container 添加页面快照
         let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
         let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
         frontSnapshot.frame = container.bounds
@@ -95,20 +89,11 @@ class FlipAnimatorController {
         backSnapshot.isHidden = true
         frontSnapshot.isHidden = false
 
-        // 给页面加上厚度
-        let frontDepthView = makeDepthView(for: frontSnapshot, isLeftPage: direction == .lastPage)
-        let backDepthView = makeDepthView(for: backSnapshot, isLeftPage: direction == .nextPage)
-        frontSnapshot.addSubview(frontDepthView)
-        backSnapshot.addSubview(backDepthView)
-
-        // 按照视图顺序添加
         host.view.addSubview(container)
         container.addSubview(backSnapshot)
         container.addSubview(frontSnapshot)
         self.backSnapshot = backSnapshot
         self.frontSnapshot = frontSnapshot
-        self.frontThicknessLayer = frontThickness
-        self.backThicknessLayer = backThickness
         self.container = container
 
         state = (type == .manual) ? .manualFlipping : .autoFlipping
@@ -125,24 +110,15 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
-        // 控制页面厚度显示
-        let thickness = max(sin(abs(progress) * .pi), epsilon)
-        let thicknessScale = 1 + thicknessScaleSensitivity * thickness
-        frontThicknessLayer?.transform = CATransform3DMakeScale(thicknessScale, 1, 1)
-        backThicknessLayer?.transform = CATransform3DMakeScale(thicknessScale, 1, 1)
-
-        // 输出信息
         var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   📐 PageThickness scale: \(thicknessScale).")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   📐 PageThickness scale: \(thicknessScale).")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
@@ -265,43 +241,16 @@ class FlipAnimatorController {
         }
     }
 
-    // MARK: - 辅助函数
-    private func makeDepthView(for snapshot: UIView, isLeftPage: Bool) -> UIView {
-        let depthWidth: CGFloat = 2
-        let depthView = UIView()
-        depthView.backgroundColor = UIColor.black.withAlphaComponent(0.2)
-        
-        let height = snapshot.bounds.height
-        let x = isLeftPage ? -depthWidth : snapshot.bounds.width
-        depthView.frame = CGRect(x: x, y: 0, width: depthWidth, height: height)
-        
-        // 关键：设置 anchorPoint 和 position 使其在旋转时不变形
-        depthView.layer.anchorPoint = CGPoint(x: isLeftPage ? 1 : 0, y: 0.5)
-        depthView.layer.position = CGPoint(x: isLeftPage ? 0 : snapshot.bounds.width, y: height / 2)
-        
-        // 防止 90 度时被裁掉
-        depthView.layer.isDoubleSided = true
-        return depthView
-    }
-
-    // MARK: - 清理
     private func cleanupViews() {
         print("🧹 Cleanup views.")
         animator?.stopAnimation(true)
         animator = nil
-        
         container?.removeFromSuperview()
         frontSnapshot?.removeFromSuperview()
         backSnapshot?.removeFromSuperview()
+        container = nil
         frontSnapshot = nil
         backSnapshot = nil
-
-        frontThicknessLayer?.removeFromSuperlayer()
-        backThicknessLayer?.removeFromSuperlayer()
-        frontThicknessLayer = nil
-        backThicknessLayer = nil
-
-        container = nil
         lastProgressForTesting = nil
     }
 
