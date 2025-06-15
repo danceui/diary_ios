@@ -17,6 +17,8 @@ class FlipAnimatorController {
     private let velocityThreshold = FlipConstants.velocityThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
+    private let epsilon = FlipConstants.epsilon
+    private let thicknessScaleSensitivity = FlipConstants.thicknessScaleSensitivity
 
     private var pendingFlips: [FlipRequest] = []
     private let easing: EasingFunction = .sineEaseOut
@@ -94,15 +96,15 @@ class FlipAnimatorController {
         frontSnapshot.isHidden = false
 
         // 给页面加上厚度
-        let frontThickness = makeEdgeShadowLayer(for: frontSnapshot, isLeftPage: direction == .lastPage)
-        let backThickness = makeEdgeShadowLayer(for: backSnapshot, isLeftPage: direction == .nextPage)
+        let frontDepthView = makeDepthView(for: frontSnapshot, isLeftPage: direction == .lastPage)
+        let backDepthView = makeDepthView(for: backSnapshot, isLeftPage: direction == .nextPage)
+        frontSnapshot.addSubview(frontDepthView)
+        backSnapshot.addSubview(backDepthView)
 
         // 按照视图顺序添加
         host.view.addSubview(container)
         container.addSubview(backSnapshot)
         container.addSubview(frontSnapshot)
-        frontSnapshot.layer.addSublayer(frontThickness)
-        backSnapshot.layer.addSublayer(backThickness)
         self.backSnapshot = backSnapshot
         self.frontSnapshot = frontSnapshot
         self.frontThicknessLayer = frontThickness
@@ -124,23 +126,23 @@ class FlipAnimatorController {
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
         // 控制页面厚度显示
-        let frontThicknessScale = abs(progress) < progressThreshold ? max(1 + 0.2 * abs(progress), 0.1) : 0.1
-        let backThicknessScale = abs(progress) >= progressThreshold ? max(1 + 0.2 * (1 - progressThreshold), 0.1) : 0.1
-        if let front = frontThicknessLayer { front.transform = CATransform3DMakeScale(frontThicknessScale, 1, 1) }
-        if let back = backThicknessLayer { back.transform = CATransform3DMakeScale(backThicknessScale, 1, 1) }
+        let thickness = max(sin(abs(progress) * .pi), epsilon)
+        let thicknessScale = 1 + thicknessScaleSensitivity * thickness
+        frontThicknessLayer?.transform = CATransform3DMakeScale(thicknessScale, 1, 1)
+        backThicknessLayer?.transform = CATransform3DMakeScale(thicknessScale, 1, 1)
 
         // 输出信息
         var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   📐 PageThickness scale: [\(format(frontThicknessScale)), \(format(backThicknessScale))].")
+                print("   📐 PageThickness scale: \(thicknessScale).")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   📐 PageThickness scale: [\(format(frontThicknessScale)), \(format(backThicknessScale))].")
+            print("   📐 PageThickness scale: \(thicknessScale).")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
@@ -264,21 +266,22 @@ class FlipAnimatorController {
     }
 
     // MARK: - 辅助函数
-    private func makeEdgeShadowLayer(for view: UIView, isLeftPage: Bool) -> CALayer {
-        let edgeWidth: CGFloat = 4
-        let shadowLayer = CAGradientLayer()
-        shadowLayer.frame = CGRect(
-            x: isLeftPage ? 0 : view.bounds.width - edgeWidth,
-            y: 0,
-            width: edgeWidth,
-            height: view.bounds.height
-        )
-        shadowLayer.colors = [UIColor.red.cgColor,UIColor.red.cgColor]
-        shadowLayer.startPoint = CGPoint(x: 0, y: 0.5)
-        shadowLayer.endPoint = CGPoint(x: 1, y: 0.5)
-        shadowLayer.opacity = 0
-        view.layer.addSublayer(shadowLayer)
-        return shadowLayer
+    private func makeDepthView(for snapshot: UIView, isLeftPage: Bool) -> UIView {
+        let depthWidth: CGFloat = 2
+        let depthView = UIView()
+        depthView.backgroundColor = UIColor.black.withAlphaComponent(0.2)
+        
+        let height = snapshot.bounds.height
+        let x = isLeftPage ? -depthWidth : snapshot.bounds.width
+        depthView.frame = CGRect(x: x, y: 0, width: depthWidth, height: height)
+        
+        // 关键：设置 anchorPoint 和 position 使其在旋转时不变形
+        depthView.layer.anchorPoint = CGPoint(x: isLeftPage ? 1 : 0, y: 0.5)
+        depthView.layer.position = CGPoint(x: isLeftPage ? 0 : snapshot.bounds.width, y: height / 2)
+        
+        // 防止 90 度时被裁掉
+        depthView.layer.isDoubleSided = true
+        return depthView
     }
 
     // MARK: - 清理
