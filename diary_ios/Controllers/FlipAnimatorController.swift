@@ -108,7 +108,10 @@ class FlipAnimatorController {
         
         var t = CATransform3DIdentity
         t.m34 = -1.0 / 1500
-        container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
+        let rotation = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
+        let scaleX = 1.0 - abs(progress) * 0.1
+        let scaleTransform = CATransform3DMakeScale(scaleX, 1.0, 1.0)
+        container.layer.transform = CATransform3DConcat(rotation, scaleTransform)
 
         var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
