@@ -7,6 +7,8 @@ class FlipAnimatorController {
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
+    private var frontThicknessLayer: CALayer?
+    private var backThicknessLayer: CALayer?
     private var lastProgressForTesting: CGFloat?
     
     private let baseVelocity = FlipConstants.baseVelocity
@@ -24,6 +26,7 @@ class FlipAnimatorController {
         self.host = host
     }
 
+    // MARK: - 动画开始、更新、结束
     func begin(direction: PageTurnDirection, type: AnimationType) {
         guard let host = host else { return }
         
@@ -52,9 +55,9 @@ class FlipAnimatorController {
             return
         }
 
+        // 隐藏即将旋转的 pageContainer view
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
         var offsetIndexToRemove: Int
-        // 隐藏即将旋转的 pageContainer view
         if direction == .nextPage {
             if host.currentIndex == 0 {
                 offsetIndexToRemove = 0
@@ -71,7 +74,7 @@ class FlipAnimatorController {
         host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
         print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
 
-        // 创建临时 conatiner, 包含 pageContainer view 快照
+        // 创建临时 conatiner 用来翻转
         let container = UIView()
         let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
         container.bounds = CGRect(origin: .zero, size: containerFrame.size)
@@ -81,6 +84,7 @@ class FlipAnimatorController {
         container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
 
+        // 给 container 添加页面快照
         let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
         let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
         frontSnapshot.frame = container.bounds
@@ -89,11 +93,20 @@ class FlipAnimatorController {
         backSnapshot.isHidden = true
         frontSnapshot.isHidden = false
 
+        // 给页面加上厚度
+        let frontThickness = makeEdgeShadowLayer(for: frontSnapshot, isLeftPage: direction == .lastPage)
+        let backThickness = makeEdgeShadowLayer(for: backSnapshot, isLeftPage: direction == .nextPage)
+
+        // 按照视图顺序添加
         host.view.addSubview(container)
         container.addSubview(backSnapshot)
         container.addSubview(frontSnapshot)
+        frontSnapshot.layer.addSublayer(frontThickness)
+        backSnapshot.layer.addSublayer(backThickness)
         self.backSnapshot = backSnapshot
         self.frontSnapshot = frontSnapshot
+        self.frontThicknessLayer = frontThickness
+        self.backThicknessLayer = backThickness
         self.container = container
 
         state = (type == .manual) ? .manualFlipping : .autoFlipping
@@ -110,15 +123,24 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
+        // 控制页面厚度显示
+        let frontThicknessScale = abs(progress) < progressThreshold ? 1 + 0.2 * abs(progress) : 0
+        let backThicknessScale = abs(progress) >= progressThreshold ? 1 + 0.2 * (1 - progressThreshold) : 0
+        if let front = frontThicknessLayer { front.transform = CATransform3DMakeScale(frontThicknessScale, 1, 1) }
+        if let back = backThicknessLayer { back.transform = CATransform3DMakeScale(backThicknessScale, 1, 1) }
+
+        // 输出信息
         var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
+                print("   📐 PageThickness scale: [\(format(frontThicknessScale)), \(format(backThicknessScale))].")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
+            print("   📐 PageThickness scale: [\(frontThicknessScale), \(backThicknessScale)].")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
@@ -241,16 +263,42 @@ class FlipAnimatorController {
         }
     }
 
+    // MARK: - 辅助函数
+    private func makeEdgeShadowLayer(for view: UIView, isLeftPage: Bool) -> CALayer {
+        let edgeWidth: CGFloat = 4
+        let shadowLayer = CAGradientLayer()
+        shadowLayer.frame = CGRect(
+            x: isLeftPage ? 0 : view.bounds.width - edgeWidth,
+            y: 0,
+            width: edgeWidth,
+            height: view.bounds.height
+        )
+        shadowLayer.colors = [UIColor.red.cgColor,UIColor.red.cgColor]
+        shadowLayer.startPoint = CGPoint(x: 0, y: 0.5)
+        shadowLayer.endPoint = CGPoint(x: 1, y: 0.5)
+        shadowLayer.opacity = 0
+        view.layer.addSublayer(shadowLayer)
+        return shadowLayer
+    }
+
+    // MARK: - 清理
     private func cleanupViews() {
         print("🧹 Cleanup views.")
         animator?.stopAnimation(true)
         animator = nil
+        
         container?.removeFromSuperview()
         frontSnapshot?.removeFromSuperview()
         backSnapshot?.removeFromSuperview()
-        container = nil
         frontSnapshot = nil
         backSnapshot = nil
+
+        frontThicknessLayer?.removeFromSuperlayer()
+        backThicknessLayer?.removeFromSuperlayer()
+        frontThicknessLayer = nil
+        backThicknessLayer = nil
+
+        container = nil
         lastProgressForTesting = nil
     }
 
