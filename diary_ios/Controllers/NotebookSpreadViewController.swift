@@ -9,8 +9,6 @@ class NotebookSpreadViewController: UIViewController {
     private var flipController: FlipAnimatorController!
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
-    private var centerBindingEdge: UIView?
-    private var bottomBindingBar: CAShapeLayer?
     
     private let baseOffset = StackConstants.baseOffset
     private let progressThreshold = FlipConstants.progressThreshold
@@ -19,6 +17,7 @@ class NotebookSpreadViewController: UIViewController {
     var pages: [NotebookPageViewController] = []
     var pageCount: Int {pages.count}
     var currentIndex: Int = 2
+
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
     var XOffsets: [CGFloat] = []
@@ -53,51 +52,6 @@ class NotebookSpreadViewController: UIViewController {
         view.addGestureRecognizer(panGesture)
     }
 
-    // MARK: - Gesture Handling
-    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: view)
-        let velocity = gesture.velocity(in: view)
-        let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
-        let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
-
-        switch gesture.state {
-        case .changed:
-            if lockedDirection == nil {
-                lockedDirection = direction
-                print("✋ Begin page flip: progress \(format(progress)).")
-                flipController.begin(direction: direction, type: .manual)
-            } else if direction != lockedDirection {
-                print("✋ Cancel page flip: Progress sign reversed.")
-                flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001, type: .manual, velocity: 1000)
-                return
-            }
-
-            if let last = lastProgressForTesting {
-                if format(last) != format(progress) {
-                    print("✋ Update page flip: progress \(format(progress)).")
-                    lastProgressForTesting = progress
-                }
-            } else {
-                print("✋ Update page flip: progress \(format(progress)).")
-                lastProgressForTesting = progress
-            }
-
-            flipController.update(direction: direction, progress: progress, type: .manual)
-        case .ended, .cancelled:
-            lockedDirection = nil
-            if abs(velocity.x) > velocityThreshold || abs(progress) > progressThreshold {
-                print("✋ Complete page flip - progress \(format(progress)).")
-                flipController.complete(direction: direction, progress: progress, type: .manual, velocity: velocity.x)
-            } else {
-                print("✋ Cancel page flip - progress \(format(progress)).")
-                flipController.cancel(direction: direction, progress: progress, type: .manual, velocity: velocity.x)
-            }
-        default:
-            break
-        }
-    }
-
-    // MARK: - PageContainer Management
     private func updatePageContainers() {
         // 清空 pageContainers
         pageContainers.forEach { $0.removeFromSuperview() }
@@ -167,8 +121,50 @@ class NotebookSpreadViewController: UIViewController {
         else if currentIndex == pageCount - 2 {
             view.addSubview(pageContainers.last!)
         }
-        addCenterBindingEdge()
-        addBottomBindingBar()
+    }
+
+    // MARK: - Gesture Handling
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        let translation = gesture.translation(in: view)
+        let velocity = gesture.velocity(in: view)
+        let progress = min(max(translation.x * 2 / view.bounds.width, -1), 1)
+        let direction: PageTurnDirection = translation.x < 0 ? .nextPage : .lastPage
+
+        switch gesture.state {
+        case .changed:
+            if lockedDirection == nil {
+                lockedDirection = direction
+                print("✋ Begin page flip: progress \(format(progress)).")
+                flipController.begin(direction: direction, type: .manual)
+            } else if direction != lockedDirection {
+                print("✋ Cancel page flip: Progress sign reversed.")
+                flipController.cancel(direction: direction, progress: direction == .nextPage ? -0.001 : 0.001, type: .manual, velocity: 1000)
+                return
+            }
+
+            if let last = lastProgressForTesting {
+                if format(last) != format(progress) {
+                    print("✋ Update page flip: progress \(format(progress)).")
+                    lastProgressForTesting = progress
+                }
+            } else {
+                print("✋ Update page flip: progress \(format(progress)).")
+                lastProgressForTesting = progress
+            }
+
+            flipController.update(direction: direction, progress: progress, type: .manual)
+        case .ended, .cancelled:
+            lockedDirection = nil
+            if abs(velocity.x) > velocityThreshold || abs(progress) > progressThreshold {
+                print("✋ Complete page flip - progress \(format(progress)).")
+                flipController.complete(direction: direction, progress: progress, type: .manual, velocity: velocity.x)
+            } else {
+                print("✋ Cancel page flip - progress \(format(progress)).")
+                flipController.cancel(direction: direction, progress: progress, type: .manual, velocity: velocity.x)
+            }
+        default:
+            break
+        }
     }
 
     // MARK: - Page Management
@@ -256,7 +252,6 @@ class NotebookSpreadViewController: UIViewController {
         if shouldPrint { print("].")}
     }
 
-    // MARK: - Notebook Appearance
     private func applyPageShadows() {
         pages.enumerated().forEach { index, page in
             page.view.layer.shadowColor = UIColor.black.cgColor
@@ -283,88 +278,6 @@ class NotebookSpreadViewController: UIViewController {
             }
         }
     }
-
-    private func addCenterBindingEdge() {
-        print("📖 Add binding edge.")
-        // 先移除旧的装订视图
-        centerBindingEdge?.removeFromSuperview()
-
-        let bindingWidth: CGFloat = 12
-        let contentHeight = view.bounds.height
-        let contentWidth = view.bounds.width
-        let x = contentWidth / 2 - bindingWidth / 2
-
-        let bindingView = UIView(frame: CGRect(x: x, y: 0, width: bindingWidth, height: contentHeight))
-        bindingView.backgroundColor = UIColor.darkGray
-
-        // 添加圆角 + 阴影提升质感
-        bindingView.layer.cornerRadius = bindingWidth / 2
-        bindingView.layer.shadowColor = UIColor.black.cgColor
-        bindingView.layer.shadowOpacity = 0.15
-        bindingView.layer.shadowRadius = 2
-        bindingView.layer.shadowOffset = CGSize(width: 0, height: 2)
-
-        // 可选：金属渐变层
-        let gradient = CAGradientLayer()
-        gradient.frame = bindingView.bounds
-        gradient.colors = [
-            UIColor(white: 0.25, alpha: 1).cgColor,
-            UIColor(white: 0.4, alpha: 1).cgColor,
-            UIColor(white: 0.25, alpha: 1).cgColor
-        ]
-        gradient.startPoint = CGPoint(x: 0, y: 0.5)
-        gradient.endPoint = CGPoint(x: 1, y: 0.5)
-        bindingView.layer.insertSublayer(gradient, at: 0)
-
-        view.addSubview(bindingView)
-        centerBindingEdge = bindingView
-    }
-private func addBottomBindingBar() {
-    bottomBindingBar?.removeFromSuperlayer()
-
-    guard !pageContainers.isEmpty else { return }
-
-    let path = UIBezierPath()
-    let barHeight: CGFloat = 10
-
-    // 左下角点序列（从前到后）
-    let leftPoints: [CGPoint] = pageContainers.map {
-        view.convert(CGPoint(x: $0.frame.minX, y: $0.frame.maxY), from: $0.superview)
-    }
-
-    // 右下角点序列（从后到前）
-    let rightPoints: [CGPoint] = pageContainers.reversed().map {
-        view.convert(CGPoint(x: $0.frame.maxX, y: $0.frame.maxY), from: $0.superview)
-    }
-
-    // 开始绘制路径：从第一个左下角点开始
-    if let start = leftPoints.first {
-        path.move(to: CGPoint(x: start.x, y: start.y))
-    }
-
-    // 连到所有左下角点
-    for point in leftPoints.dropFirst() {
-        path.addLine(to: point)
-    }
-
-    // 连到所有右下角点（形成闭合区域）
-    for point in rightPoints {
-        path.addLine(to: point)
-    }
-
-    path.close()
-
-    let shape = CAShapeLayer()
-    shape.path = path.cgPath
-    shape.fillColor = UIColor.darkGray.cgColor
-    shape.shadowColor = UIColor.black.cgColor
-    shape.shadowOpacity = 0.15
-    shape.shadowOffset = CGSize(width: 0, height: -1)
-    shape.shadowRadius = 2
-
-    view.layer.addSublayer(shape)
-    bottomBindingBar = shape
-}
 
     func exportAllDrawings() -> [Data] {
         return pages.map { $0.exportDrawing() }
