@@ -124,8 +124,8 @@ class FlipAnimatorController {
         container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
         // 控制页面厚度显示
-        let frontThicknessScale = abs(progress) < progressThreshold ? 1 + 0.2 * abs(progress) : 0
-        let backThicknessScale = abs(progress) >= progressThreshold ? 1 + 0.2 * (1 - progressThreshold) : 0
+        let frontThicknessScale = abs(progress) < progressThreshold ? max(1 + 0.2 * abs(progress), 0.1) : 0.1
+        let backThicknessScale = abs(progress) >= progressThreshold ? max(1 + 0.2 * (1 - progressThreshold), 0.1) : 0.1
         if let front = frontThicknessLayer { front.transform = CATransform3DMakeScale(frontThicknessScale, 1, 1) }
         if let back = backThicknessLayer { back.transform = CATransform3DMakeScale(backThicknessScale, 1, 1) }
 
@@ -140,7 +140,7 @@ class FlipAnimatorController {
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   📐 PageThickness scale: [\(frontThicknessScale), \(backThicknessScale)].")
+            print("   📐 PageThickness scale: [\(format(frontThicknessScale)), \(format(backThicknessScale))].")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
