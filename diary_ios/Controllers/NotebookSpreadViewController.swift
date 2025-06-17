@@ -82,6 +82,7 @@ class NotebookSpreadViewController: UIViewController {
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
+            thisContainer.layer.cornerRadius = 10
             baseX = i <= offsetIndex ? 0 : view.bounds.width / 2
             if i == 0, currentIndex == 0 {
                 baseX = view.bounds.width / 2

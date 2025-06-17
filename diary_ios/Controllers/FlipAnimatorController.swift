@@ -80,23 +80,25 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = -1.0 / 1500
+        container.clipsToBounds = true
 
         // 设置翻页正面
         let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
         frontSnapshot.frame = container.bounds
         frontSnapshot.isHidden = false
+        self.frontSnapshot = frontSnapshot
+        container.addSubview(frontSnapshot)
 
         // 设置翻页背面
         let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
         backSnapshot.frame = container.bounds
         backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
         backSnapshot.isHidden = true
-
-        host.view.addSubview(container)
-        container.addSubview(backSnapshot)
-        container.addSubview(frontSnapshot)
         self.backSnapshot = backSnapshot
-        self.frontSnapshot = frontSnapshot
+        container.addSubview(backSnapshot)
+
+        // 装入container
+        host.view.addSubview(container)
         self.container = container
 
         state = (type == .manual) ? .manualFlipping : .autoFlipping
@@ -129,8 +131,6 @@ class FlipAnimatorController {
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
-        let shadowAlpha = Float(1.0 - min(abs(progress) / 1.0, 1.0)) // 渐变到 0
-        frontSnapshot?.layer.shadowOpacity = shadowAlpha
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))

@@ -25,6 +25,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
             self.view.layer.borderColor = UIColor.black.cgColor
             self.view.layer.borderWidth = 2
         }
+        self.view.layer.cornerRadius = 10
     }
 
     required init?(coder: NSCoder) {
@@ -101,7 +102,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         applySnapshotOfIndex(snapshotIndex)
     }
 
-    func currentSnapshot() -> PageSnapshot {
+    private func currentSnapshot() -> PageSnapshot {
         return pageSnapshots[snapshotIndex]
     }
 
