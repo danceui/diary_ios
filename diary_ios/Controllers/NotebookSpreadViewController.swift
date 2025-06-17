@@ -78,7 +78,7 @@ class NotebookSpreadViewController: UIViewController {
         var pageIndex: Int
         
         // 确定每个 pageContainer 的位置和内容
-        print("   📐 OriginX: [", terminator: " ")
+        print("   📐 PageContainers originX: [", terminator: " ")
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
@@ -240,7 +240,7 @@ class NotebookSpreadViewController: UIViewController {
     func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
         guard fromYOffsets.count == toYOffsets.count else { return }
         let easedProgress = easeInOutCubic(abs(progress))
-        if shouldPrint { print("   📐 OriginY: [", terminator: " ")}
+        if shouldPrint { print("   📐 PageContainers originY: [", terminator: " ")}
         for (i, container) in pageContainers.enumerated() {
             guard i < fromYOffsets.count else { continue }
             let fromY = fromYOffsets[i]
