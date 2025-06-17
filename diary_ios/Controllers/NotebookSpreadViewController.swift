@@ -196,7 +196,6 @@ class NotebookSpreadViewController: UIViewController {
         print("▶️ Go to page pair \(index), \(index + 1).")
         currentIndex = index
         updatePageContainers()
-        applyPageShadows()
     }
 
     // MARK: - Progress Related Functions
@@ -252,32 +251,6 @@ class NotebookSpreadViewController: UIViewController {
         if shouldPrint { print("].")}
     }
 
-    private func applyPageShadows() {
-        pages.enumerated().forEach { index, page in
-            page.view.layer.shadowColor = UIColor.black.cgColor
-            page.view.layer.shadowOpacity = 0.3
-            page.view.layer.shadowRadius = 5
-            page.view.layer.shadowOffset = CGSize(width: 0, height: 1)
-
-            if index == currentIndex {
-                page.view.layer.shadowPath = UIBezierPath(rect: CGRect(
-                    x: page.view.bounds.width - 10,
-                    y: 0,
-                    width: 10,
-                    height: page.view.bounds.height
-                )).cgPath
-            } else if index == currentIndex + 1 {
-                page.view.layer.shadowPath = UIBezierPath(rect: CGRect(
-                    x: 0,
-                    y: 0,
-                    width: 10,
-                    height: page.view.bounds.height
-                )).cgPath
-            } else {
-                page.view.layer.shadowPath = nil
-            }
-        }
-    }
 
     func exportAllDrawings() -> [Data] {
         return pages.map { $0.exportDrawing() }

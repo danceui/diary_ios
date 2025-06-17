@@ -24,6 +24,7 @@ class FlipAnimatorController {
         self.host = host
     }
 
+    // MARK: - 动画开始
     func begin(direction: PageTurnDirection, type: AnimationType) {
         guard let host = host else { return }
         
@@ -78,16 +79,18 @@ class FlipAnimatorController {
         container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
-        container.clipsToBounds = true
         container.layer.transform.m34 = -1.0 / 1500
 
+        // 设置翻页正面
         let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
-        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
         frontSnapshot.frame = container.bounds
+        frontSnapshot.isHidden = false
+
+        // 设置翻页背面
+        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
         backSnapshot.frame = container.bounds
         backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
         backSnapshot.isHidden = true
-        frontSnapshot.isHidden = false
 
         host.view.addSubview(container)
         container.addSubview(backSnapshot)
@@ -99,6 +102,7 @@ class FlipAnimatorController {
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
+    // MARK: - 动画更新
     func update(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, messageForTesting: String = "") {
         guard let container = container else { return }
         guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
@@ -125,7 +129,8 @@ class FlipAnimatorController {
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
-
+        let shadowAlpha = Float(1.0 - min(abs(progress) / 1.0, 1.0)) // 渐变到 0
+        frontSnapshot?.layer.shadowOpacity = shadowAlpha
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
@@ -243,6 +248,11 @@ class FlipAnimatorController {
             self.complete(direction: direction, progress: direction == .nextPage ? -0.1 : 0.1, type: .auto, velocity: self.baseVelocity)
         }
     }
+
+    // MARK: - 辅助函数
+    private func applyShadowToView(view: UIView) {
+    }
+
 
     private func cleanupViews() {
         print("🧹 Cleanup views.")
