@@ -7,6 +7,8 @@ class FlipAnimatorController {
     private var container: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
+    private var frontOverlay: UIView?
+    private var backOverlay: UIView?
     private var lastProgressForTesting: CGFloat?
     
     private let baseVelocity = FlipConstants.baseVelocity
@@ -86,7 +88,6 @@ class FlipAnimatorController {
         let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
         frontSnapshot.frame = container.bounds
         frontSnapshot.isHidden = false
-        applyShadowToView(view: frontSnapshot, isFront: true)
         self.frontSnapshot = frontSnapshot
         container.addSubview(frontSnapshot)
 
@@ -95,9 +96,14 @@ class FlipAnimatorController {
         backSnapshot.frame = container.bounds
         backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
         backSnapshot.isHidden = true
-        applyShadowToView(view: backSnapshot, isFront: false)
         self.backSnapshot = backSnapshot
         container.addSubview(backSnapshot)
+
+        // 添加阴影和渐变
+        applyShadowToView(view: frontSnapshot, isFront: true)
+        applyShadowToView(view: backSnapshot, isFront: false)
+        self.frontOverlay = addShadowOverlay(to: frontSnapshot)
+        self.backOverlay = addShadowOverlay(to: backSnapshot)
 
         // 装入container
         host.view.addSubview(container)
@@ -130,11 +136,10 @@ class FlipAnimatorController {
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
-        
+
         // 更新前后快照的阴影和可见性
-        let shadowOpacity = Float(min(max(abs(progress * .pi), 0.1), 1.0)) * 0.3
-        frontSnapshot?.layer.shadowOpacity = 1.0 - shadowOpacity
-        backSnapshot?.layer.shadowOpacity = shadowOpacity
+        frontOverlay?.alpha = 0.15 * (1 - abs(progress))   // 前面越来越暗
+        backOverlay?.alpha = 0.25 * abs(progress)          // 背面越来越亮
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
@@ -262,6 +267,15 @@ class FlipAnimatorController {
         view.layer.shadowRadius = 10
     }
 
+    private func addShadowOverlay(to view: UIView) -> UIView {
+        let overlay = UIView(frame: view.bounds)
+        overlay.backgroundColor = UIColor.black
+        overlay.alpha = 0.2
+        overlay.isUserInteractionEnabled = false
+        view.addSubview(overlay)
+        return overlay
+    }
+
     // MARK: - 清理函数
     private func cleanupViews() {
         print("🧹 Cleanup views.")
@@ -273,6 +287,8 @@ class FlipAnimatorController {
         container = nil
         frontSnapshot = nil
         backSnapshot = nil
+        frontOverlay = nil
+        backOverlay = nil
         lastProgressForTesting = nil
     }
 
