@@ -46,15 +46,6 @@ class FlipAnimatorController {
         }
         host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentIndex) ?? []
         host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex) ?? []
-        guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
-            let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
-            let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
-            let targetRightSnapshot = host.pages[targetIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
-            print("❌ Snapshot generation failed.")
-            state = .idle
-            return
-        }
-
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
         var offsetIndexToRemove: Int
         // 隐藏即将旋转的 pageContainer view
@@ -84,26 +75,20 @@ class FlipAnimatorController {
         container.layer.transform.m34 = -1.0 / 1500
         // container.clipsToBounds = true // true时，阴影效果无法展现
 
+        guard let frontSourceView = direction == .nextPage ? host.pages[host.currentIndex + 1].view : host.pages[host.currentIndex].view,
+            let backSourceView = direction == .nextPage ? host.pages[targetIndex].view : host.pages[targetIndex + 1].view else {
+            print("❌ Source views not found.")
+            state = .idle
+            return
+        }
+        self.frontSnapshot = addSnapshot(to: container, view: frontSourceView, isFront: true)
+        self.backSnapshot = addSnapshot(to: container, view: backSourceView, isFront: false)
         // 设置翻页正面
-        let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
-        frontSnapshot.frame = container.bounds
-        frontSnapshot.isHidden = false
-        self.frontSnapshot = frontSnapshot
-        container.addSubview(frontSnapshot)
-
+        // let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
+        // self.frontSnapshot = frontSnapshot
         // 设置翻页背面
-        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
-        backSnapshot.frame = container.bounds
-        backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
-        backSnapshot.isHidden = true
-        self.backSnapshot = backSnapshot
-        container.addSubview(backSnapshot)
-
-        // 添加阴影和渐变
-        applyShadowToView(view: frontSnapshot, isFront: true)
-        applyShadowToView(view: backSnapshot, isFront: false)
-        self.frontOverlay = addShadowOverlay(to: frontSnapshot)
-        self.backOverlay = addShadowOverlay(to: backSnapshot)
+        // let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
+        // self.backSnapshot = backSnapshot
 
         // 装入container
         host.view.addSubview(container)
@@ -260,11 +245,17 @@ class FlipAnimatorController {
     }
 
     // MARK: - 辅助函数
-    private func applyShadowToView(view: UIView, isFront: Bool) {
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = isFront ? 0.2 : 0.1
-        view.layer.shadowOffset = isFront ? CGSize(width: -5, height: 0) : CGSize(width: 5, height: 0)
-        view.layer.shadowRadius = 10
+    private func addSnapshot(to container: UIView, view: UIView, isFront: Bool) -> UIView {
+        guard let snapshot = view.snapshotView(afterScreenUpdates: true) else {
+            print("❌ Snapshot creation failed.")
+            return UIView() // 或者 return nil 让上层处理
+        }
+        snapshot.frame = container.bounds
+        snapshot.isHidden = isFront ? false : true
+        snapshot.layer.transform = isFront ? CATransform3DIdentity : CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
+        container.addSubview(snapshot)
+        self.frontOverlay = addShadowOverlay(to: snapshot)
+        return snapshot
     }
 
     private func addShadowOverlay(to view: UIView) -> UIView {
@@ -274,6 +265,13 @@ class FlipAnimatorController {
         overlay.isUserInteractionEnabled = false
         view.addSubview(overlay)
         return overlay
+    }
+
+    private func applyShadowToView(view: UIView, isFront: Bool) {
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = isFront ? 0.2 : 0.1
+        view.layer.shadowOffset = isFront ? CGSize(width: -5, height: 0) : CGSize(width: 5, height: 0)
+        view.layer.shadowRadius = 10
     }
 
     // MARK: - 清理函数
