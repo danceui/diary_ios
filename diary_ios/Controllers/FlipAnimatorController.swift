@@ -80,12 +80,13 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = -1.0 / 1500
-        container.clipsToBounds = true
+        // container.clipsToBounds = true // true时，阴影效果无法展现
 
         // 设置翻页正面
         let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
         frontSnapshot.frame = container.bounds
         frontSnapshot.isHidden = false
+        applyShadowToView(view: frontSnapshot, isFront: true)
         self.frontSnapshot = frontSnapshot
         container.addSubview(frontSnapshot)
 
@@ -94,6 +95,7 @@ class FlipAnimatorController {
         backSnapshot.frame = container.bounds
         backSnapshot.layer.transform = CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
         backSnapshot.isHidden = true
+        applyShadowToView(view: backSnapshot, isFront: false)
         self.backSnapshot = backSnapshot
         container.addSubview(backSnapshot)
 
@@ -128,12 +130,18 @@ class FlipAnimatorController {
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
+        
+        // 更新前后快照的阴影和可见性
+        let shadowOpacity = Float(min(max(abs(progress * .pi), 0.1), 1.0)) * 0.3
+        frontSnapshot?.layer.shadowOpacity = 1.0 - shadowOpacity
+        backSnapshot?.layer.shadowOpacity = shadowOpacity
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
         host?.updateStackTransforms(progress: abs(progress), shouldPrint: hostShouldPrint) 
     }
 
+    // MARK: - 动画完成、取消
     func complete(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, velocity: CGFloat) {
         guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
             print("❌ Cannot complete this animation [type: \(type), state: \(state)].")
@@ -247,10 +255,14 @@ class FlipAnimatorController {
     }
 
     // MARK: - 辅助函数
-    private func applyShadowToView(view: UIView) {
+    private func applyShadowToView(view: UIView, isFront: Bool) {
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = isFront ? 0.2 : 0.1
+        view.layer.shadowOffset = isFront ? CGSize(width: -5, height: 0) : CGSize(width: 5, height: 0)
+        view.layer.shadowRadius = 10
     }
 
-
+    // MARK: - 清理函数
     private func cleanupViews() {
         print("🧹 Cleanup views.")
         animator?.stopAnimation(true)
