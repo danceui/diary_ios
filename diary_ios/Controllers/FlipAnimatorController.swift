@@ -4,11 +4,14 @@ class FlipAnimatorController {
     private var animator: UIViewPropertyAnimator?
     private var state: AnimationState = .idle
     
+    // MARK: - 翻页相关属性
     private var flipContainer: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var frontOverlay: UIView?
     private var backOverlay: UIView?
+    private var pageShadowView: UIView?
+    private var pageShadowGradient: CAGradientLayer?
     private var lastProgressForTesting: CGFloat?
     
     private let baseVelocity = FlipConstants.baseVelocity
@@ -104,13 +107,25 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
+        // ⚡ Update shadow size and alpha
+        if let shadowView = pageShadowView, let gradient = pageShadowGradient {
+            let maxWidth = flipContainer.bounds.width ?? 0
+            let shadowWidth = maxWidth * 0.5 * sin(abs(progress) * .pi)
+            gradient.frame = CGRect(x: direction == .nextPage ? 0 : maxWidth - shadowWidth,
+                                    y: 0,
+                                    width: shadowWidth,
+                                    height: shadowView.bounds.height)
+            gradient.opacity = Float(0.4 * sin(abs(progress) * .pi))
+        }
+
         // 更新前后快照的阴影和可见性
-        frontOverlay?.alpha = 0.3 * abs(progress)   // 前面越来越暗
-        backOverlay?.alpha = 0.3 * (1 - abs(progress))          // 背面越来越亮
+        frontOverlay?.alpha = 0.4 * abs(progress)
+        backOverlay?.alpha = 0.4 * (1 - abs(progress))
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
 
+        // 打印调试信息
         var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
@@ -275,11 +290,24 @@ class FlipAnimatorController {
         else { self.backOverlay = overlay }
     }
 
-    private func applyShadowToView(view: UIView, isFront: Bool) {
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = isFront ? 0.2 : 0.1
-        view.layer.shadowOffset = isFront ? CGSize(width: -5, height: 0) : CGSize(width: 5, height: 0)
-        view.layer.shadowRadius = 10
+    private func configureDynamicPageShadow(below targetView: UIView, direction: PageTurnDirection) {
+        let shadowView = UIView(frame: targetView.bounds)
+        shadowView.isUserInteractionEnabled = false
+        shadowView.backgroundColor = .clear
+
+        let gradient = CAGradientLayer()
+        gradient.frame = shadowView.bounds
+        gradient.colors = [
+            UIColor.black.withAlphaComponent(0.3).cgColor,
+            UIColor.clear.cgColor
+        ]
+        gradient.startPoint = direction == .nextPage ? CGPoint(x: 0, y: 0.5) : CGPoint(x: 1, y: 0.5)
+        gradient.endPoint = direction == .nextPage ? CGPoint(x: 1, y: 0.5) : CGPoint(x: 0, y: 0.5)
+
+        shadowView.layer.addSublayer(gradient)
+        targetView.addSubview(shadowView)
+        self.pageShadowView = shadowView
+        self.pageShadowGradient = gradient
     }
 
     // MARK: - 清理函数
@@ -295,6 +323,9 @@ class FlipAnimatorController {
         backSnapshot = nil
         frontOverlay = nil
         backOverlay = nil
+        pageShadowView?.removeFromSuperview()
+        pageShadowView = nil
+        pageShadowGradient = nil
         lastProgressForTesting = nil
     }
 
