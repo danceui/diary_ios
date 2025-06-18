@@ -47,7 +47,22 @@ class FlipAnimatorController {
         host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentIndex) ?? []
         host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex) ?? []
 
-        // 隐藏即将被旋转的 pageContainer
+        // 生成前后快照
+        print("📸 Create snapshots.")
+        guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
+            let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
+            let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
+            let targetRightSnapshot = host.pages[targetIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
+            print("❌ Snapshot generation failed.")
+            state = .idle
+            return
+        }
+        let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
+        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
+        self.frontSnapshot = frontSnapshot
+        self.backSnapshot = backSnapshot
+
+        // 隐藏即将被旋转的 pageContainer, 这一步必须在snapshot后面
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
         var offsetIndexToRemove: Int
         if direction == .nextPage {
@@ -66,7 +81,7 @@ class FlipAnimatorController {
         host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
 
         print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
-        guard let flipContainer = setupFlipContainer(for: direction, targetIndex: targetIndex, offsetIndex: offsetIndex) else {
+        guard let flipContainer = setupFlipContainer(for: direction, offsetIndex: offsetIndex, frontSnapshot: frontSnapshot, backSnapshot: backSnapshot) else {
             print("❌ FlipContainer setup failed.")
             state = .idle
             return
@@ -225,7 +240,7 @@ class FlipAnimatorController {
     }
 
     // MARK: - 辅助函数
-    private func setupFlipContainer(for direction: PageTurnDirection, targetIndex: Int, offsetIndex: Int) -> UIView? {
+    private func setupFlipContainer(for direction: PageTurnDirection, offsetIndex: Int, frontSnapshot: UIView, backSnapshot: UIView) -> UIView? {
         guard let host = host else { return nil }
         // 创建临时 conatiner, 包含 pageContainer view 快照
         let container = UIView()
@@ -237,23 +252,10 @@ class FlipAnimatorController {
         container.layer.transform.m34 = -1.0 / 1500
         // container.clipsToBounds = true // true时，阴影效果无法展现
 
-        guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
-            let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
-            let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
-            let targetRightSnapshot = host.pages[targetIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
-            print("❌ Snapshot generation failed.")
-            state = .idle
-            return nil
-        }
-        let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
-        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
         setupSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         setupSnapshot(for: container, snapshot: backSnapshot, isFront: false)
         container.addSubview(frontSnapshot)
         container.addSubview(backSnapshot)
-        self.frontSnapshot = frontSnapshot
-        self.backSnapshot = backSnapshot
-
         return container
     }
 
