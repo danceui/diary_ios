@@ -4,7 +4,7 @@ class FlipAnimatorController {
     private var animator: UIViewPropertyAnimator?
     private var state: AnimationState = .idle
     
-    private var container: UIView?
+    private var flipContainer: UIView?
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var frontOverlay: UIView?
@@ -46,9 +46,10 @@ class FlipAnimatorController {
         }
         host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentIndex) ?? []
         host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex) ?? []
+
+        // 隐藏即将被旋转的 pageContainer
         let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
         var offsetIndexToRemove: Int
-        // 隐藏即将旋转的 pageContainer view
         if direction == .nextPage {
             if host.currentIndex == 0 {
                 offsetIndexToRemove = 0
@@ -63,19 +64,22 @@ class FlipAnimatorController {
             }
         }
         host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
+
         print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
-        guard let container = setupFlipContainer(...) else {
+        guard let flipContainer = setupFlipContainer(for: direction, targetIndex: targetIndex, offsetIndex: offsetIndex) else {
+            print("❌ FlipContainer setup failed.")
             state = .idle
             return
         }
-        host.view.addSubview(container)
-        self.container = container
+        host.view.addSubview(flipContainer)
+        self.flipContainer = flipContainer
+
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
     // MARK: - 动画更新
     func update(direction: PageTurnDirection, progress: CGFloat, type: AnimationType, messageForTesting: String = "") {
-        guard let container = container else { return }
+        guard let flipContainer = flipContainer else { return }
         guard (type == .manual && state == .manualFlipping) || (type == .auto && state == .autoFlipping) else {
             print(messageForTesting + "❌ Cannot update this animation [type: \(type), state: \(state)].")
             return
@@ -83,7 +87,7 @@ class FlipAnimatorController {
         
         var t = CATransform3DIdentity
         t.m34 = -1.0 / 1500
-        container.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
+        flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
         var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
@@ -233,36 +237,45 @@ class FlipAnimatorController {
         container.layer.transform.m34 = -1.0 / 1500
         // container.clipsToBounds = true // true时，阴影效果无法展现
 
-        guard let frontSourceView = direction == .nextPage ? host.pages[host.currentIndex + 1].view : host.pages[host.currentIndex].view,
-            let backSourceView = direction == .nextPage ? host.pages[targetIndex].view : host.pages[targetIndex + 1].view else {
-            print("❌ Source views not found.")
+        guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
+            let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
+            let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
+            let targetRightSnapshot = host.pages[targetIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
+            print("❌ Snapshot generation failed.")
             state = .idle
             return nil
         }
-        self.frontSnapshot = addSnapshot(to: container, view: frontSourceView, isFront: true)
-        self.backSnapshot = addSnapshot(to: container, view: backSourceView, isFront: false)
+        let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
+        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
+        setupSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
+        setupSnapshot(for: container, snapshot: backSnapshot, isFront: false)
+        container.addSubview(frontSnapshot)
+        container.addSubview(backSnapshot)
+        self.frontSnapshot = frontSnapshot
+        self.backSnapshot = backSnapshot
+
         return container
     }
 
-    private func addSnapshot(to container: UIView, view: UIView, isFront: Bool) -> UIView? {
-        guard let snapshot = view.snapshotView(afterScreenUpdates: true) else {
-            print("❌ Snapshot creation failed.")
-            return nil
-        }
+    private func setupSnapshot(for container: UIView, snapshot: UIView, isFront: Bool){
         snapshot.frame = container.bounds
         snapshot.isHidden = isFront ? false : true
         snapshot.layer.transform = isFront ? CATransform3DIdentity : CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
-        container.addSubview(snapshot)
-        self.frontOverlay = addShadowOverlay(to: snapshot)
-        return snapshot
+
+        guard let overlay = setupShadowOverlay(for: snapshot) else {
+            print("❌ Shadow overlay setup failed.")
+            return
+        }
+        snapshot.addSubview(overlay)
+        if isFront { self.frontOverlay = overlay }
+        else { self.backOverlay = overlay }
     }
 
-    private func addShadowOverlay(to view: UIView) -> UIView {
+    private func setupShadowOverlay(for view: UIView) -> UIView? {
         let overlay = UIView(frame: view.bounds)
         overlay.backgroundColor = UIColor.black
         overlay.alpha = 0.2
         overlay.isUserInteractionEnabled = false
-        view.addSubview(overlay)
         return overlay
     }
 
@@ -278,10 +291,10 @@ class FlipAnimatorController {
         print("🧹 Cleanup views.")
         animator?.stopAnimation(true)
         animator = nil
-        container?.removeFromSuperview()
+        flipContainer?.removeFromSuperview()
         frontSnapshot?.removeFromSuperview()
         backSnapshot?.removeFromSuperview()
-        container = nil
+        flipContainer = nil
         frontSnapshot = nil
         backSnapshot = nil
         frontOverlay = nil
