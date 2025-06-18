@@ -81,7 +81,7 @@ class FlipAnimatorController {
         host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
 
         print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
-        guard let flipContainer = setupFlipContainer(for: direction, offsetIndex: offsetIndex, frontSnapshot: frontSnapshot, backSnapshot: backSnapshot) else {
+        guard let flipContainer = createFlipContainer(for: direction, offsetIndex: offsetIndex, frontSnapshot: frontSnapshot, backSnapshot: backSnapshot) else {
             print("❌ FlipContainer setup failed.")
             state = .idle
             return
@@ -104,6 +104,13 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
+        // 更新前后快照的阴影和可见性
+        frontOverlay?.alpha = 0.3 * abs(progress)   // 前面越来越暗
+        backOverlay?.alpha = 0.3 * (1 - abs(progress))          // 背面越来越亮
+        frontSnapshot?.isHidden = abs(progress) >= progressThreshold
+        backSnapshot?.isHidden = abs(progress) < progressThreshold
+        host?.updateProgressOffset(direction: direction, progress: abs(progress))
+
         var hostShouldPrint: Bool = false
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
@@ -116,14 +123,7 @@ class FlipAnimatorController {
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
-
-        // 更新前后快照的阴影和可见性
-        frontOverlay?.alpha = 0.15 * (1 - abs(progress))   // 前面越来越暗
-        backOverlay?.alpha = 0.25 * abs(progress)          // 背面越来越亮
-        frontSnapshot?.isHidden = abs(progress) >= progressThreshold
-        backSnapshot?.isHidden = abs(progress) < progressThreshold
-        host?.updateProgressOffset(direction: direction, progress: abs(progress))
-        host?.updateStackTransforms(progress: abs(progress), shouldPrint: hostShouldPrint) 
+        host?.updateStackTransforms(progress: abs(progress), shouldPrint: hostShouldPrint)
     }
 
     // MARK: - 动画完成、取消
@@ -240,7 +240,7 @@ class FlipAnimatorController {
     }
 
     // MARK: - 辅助函数
-    private func setupFlipContainer(for direction: PageTurnDirection, offsetIndex: Int, frontSnapshot: UIView, backSnapshot: UIView) -> UIView? {
+    private func createFlipContainer(for direction: PageTurnDirection, offsetIndex: Int, frontSnapshot: UIView, backSnapshot: UIView) -> UIView? {
         guard let host = host else { return nil }
         // 创建临时 conatiner, 包含 pageContainer view 快照
         let container = UIView()
@@ -252,33 +252,27 @@ class FlipAnimatorController {
         container.layer.transform.m34 = -1.0 / 1500
         // container.clipsToBounds = true // true时，阴影效果无法展现
 
-        setupSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
-        setupSnapshot(for: container, snapshot: backSnapshot, isFront: false)
+        configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
+        configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
         container.addSubview(frontSnapshot)
         container.addSubview(backSnapshot)
         return container
     }
 
-    private func setupSnapshot(for container: UIView, snapshot: UIView, isFront: Bool){
+    private func configureSnapshot(for container: UIView, snapshot: UIView, isFront: Bool){
         snapshot.frame = container.bounds
         snapshot.isHidden = isFront ? false : true
         snapshot.layer.transform = isFront ? CATransform3DIdentity : CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
 
-        guard let overlay = setupShadowOverlay(for: snapshot) else {
-            print("❌ Shadow overlay setup failed.")
-            return
-        }
+        let overlay = UIView(frame: snapshot.bounds)
+        overlay.layer.cornerRadius = 10
+        overlay.backgroundColor = UIColor.black
+        overlay.alpha = 0 // 完全透明，之后update时修改
+        overlay.isUserInteractionEnabled = false
         snapshot.addSubview(overlay)
+
         if isFront { self.frontOverlay = overlay }
         else { self.backOverlay = overlay }
-    }
-
-    private func setupShadowOverlay(for view: UIView) -> UIView? {
-        let overlay = UIView(frame: view.bounds)
-        overlay.backgroundColor = UIColor.black
-        overlay.alpha = 0.2
-        overlay.isUserInteractionEnabled = false
-        return overlay
     }
 
     private func applyShadowToView(view: UIView, isFront: Bool) {
