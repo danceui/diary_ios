@@ -64,36 +64,12 @@ class FlipAnimatorController {
         }
         host.pageContainers[offsetIndexToRemove].subviews.forEach { $0.removeFromSuperview() }
         print("🔘 Begin animation [state: \(state), type: \(type), remove pageContainer \(offsetIndexToRemove)].")
-
-        // 创建临时 conatiner, 包含 pageContainer view 快照
-        let container = UIView()
-        let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
-        container.bounds = CGRect(origin: .zero, size: containerFrame.size)
-        container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
-                                            y: containerFrame.origin.y + containerFrame.midY)
-        container.layer.transform.m34 = -1.0 / 1500
-        // container.clipsToBounds = true // true时，阴影效果无法展现
-
-        guard let frontSourceView = direction == .nextPage ? host.pages[host.currentIndex + 1].view : host.pages[host.currentIndex].view,
-            let backSourceView = direction == .nextPage ? host.pages[targetIndex].view : host.pages[targetIndex + 1].view else {
-            print("❌ Source views not found.")
+        guard let container = setupFlipContainer(...) else {
             state = .idle
             return
         }
-        self.frontSnapshot = addSnapshot(to: container, view: frontSourceView, isFront: true)
-        self.backSnapshot = addSnapshot(to: container, view: backSourceView, isFront: false)
-        // 设置翻页正面
-        // let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
-        // self.frontSnapshot = frontSnapshot
-        // 设置翻页背面
-        // let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
-        // self.backSnapshot = backSnapshot
-
-        // 装入container
         host.view.addSubview(container)
         self.container = container
-
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
@@ -245,10 +221,33 @@ class FlipAnimatorController {
     }
 
     // MARK: - 辅助函数
-    private func addSnapshot(to container: UIView, view: UIView, isFront: Bool) -> UIView {
+    private func setupFlipContainer(for direction: PageTurnDirection, targetIndex: Int, offsetIndex: Int) -> UIView? {
+        guard let host = host else { return nil }
+        // 创建临时 conatiner, 包含 pageContainer view 快照
+        let container = UIView()
+        let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
+        container.bounds = CGRect(origin: .zero, size: containerFrame.size)
+        container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
+        container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
+                                            y: containerFrame.origin.y + containerFrame.midY)
+        container.layer.transform.m34 = -1.0 / 1500
+        // container.clipsToBounds = true // true时，阴影效果无法展现
+
+        guard let frontSourceView = direction == .nextPage ? host.pages[host.currentIndex + 1].view : host.pages[host.currentIndex].view,
+            let backSourceView = direction == .nextPage ? host.pages[targetIndex].view : host.pages[targetIndex + 1].view else {
+            print("❌ Source views not found.")
+            state = .idle
+            return nil
+        }
+        self.frontSnapshot = addSnapshot(to: container, view: frontSourceView, isFront: true)
+        self.backSnapshot = addSnapshot(to: container, view: backSourceView, isFront: false)
+        return container
+    }
+
+    private func addSnapshot(to container: UIView, view: UIView, isFront: Bool) -> UIView? {
         guard let snapshot = view.snapshotView(afterScreenUpdates: true) else {
             print("❌ Snapshot creation failed.")
-            return UIView() // 或者 return nil 让上层处理
+            return nil
         }
         snapshot.frame = container.bounds
         snapshot.isHidden = isFront ? false : true
