@@ -52,16 +52,20 @@ class FlipAnimatorController {
 
         // 生成前后快照
         print("📸 Create snapshots.")
-        guard let currentLeftSnapshot = host.pages[host.currentIndex].view.snapshotView(afterScreenUpdates: true),
-            let currentRightSnapshot = host.pages[host.currentIndex + 1].view.snapshotView(afterScreenUpdates: true),
-            let targetLeftSnapshot = host.pages[targetIndex].view.snapshotView(afterScreenUpdates: true),
-            let targetRightSnapshot = host.pages[targetIndex + 1].view.snapshotView(afterScreenUpdates: true) else {
+        guard let currentLeftView = host.pages[host.currentIndex].view,
+            let currentRightView = host.pages[host.currentIndex + 1].view,
+            let targetLeftView = host.pages[targetIndex].view,
+            let targetRightView = host.pages[targetIndex + 1].view else {
+            print("❌ View does not exist.")
+            state = .idle
+            return
+        }
+        guard let frontSnapshot = direction == .nextPage ? currentRightView.snapshotView(afterScreenUpdates: true) : currentLeftView.snapshotView(afterScreenUpdates: true),
+            let backSnapshot = direction == .nextPage ? targetLeftView.snapshotView(afterScreenUpdates: true) : targetRightView.snapshotView(afterScreenUpdates: true) else {
             print("❌ Snapshot generation failed.")
             state = .idle
             return
         }
-        let frontSnapshot = direction == .nextPage ? currentRightSnapshot : currentLeftSnapshot
-        let backSnapshot = direction == .nextPage ? targetLeftSnapshot : targetRightSnapshot
         self.frontSnapshot = frontSnapshot
         self.backSnapshot = backSnapshot
 
@@ -91,7 +95,7 @@ class FlipAnimatorController {
         }
         host.view.addSubview(flipContainer)
         self.flipContainer = flipContainer
-        configureDynamicPageShadow(below: backSnapshot, direction: direction)
+        configureDynamicPageShadow(for: direction == .nextPage ? targetRightView : targetLeftView, direction: direction)
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
@@ -290,26 +294,14 @@ class FlipAnimatorController {
         else { self.backOverlay = overlay }
     }
 
-    private func configureDynamicPageShadow(below targetView: UIView, direction: PageTurnDirection) {
+    private func configureDynamicPageShadow(for targetView: UIView, direction: PageTurnDirection) {
         let shadow = UIView(frame: targetView.bounds)
         shadow.layer.cornerRadius = 10
-        shadow.backgroundColor = .clear
-        shadow.alpha = 0
+        shadow.backgroundColor = .black
+        shadow.alpha = 0.3
         shadow.isUserInteractionEnabled = false
-
-        // let gradient = CAGradientLayer()
-        // gradient.frame = shadow.bounds
-        // gradient.colors = [
-        //     UIColor.black.withAlphaComponent(0.3).cgColor,
-        //     UIColor.clear.cgColor
-        // ]
-        // gradient.startPoint = direction == .nextPage ? CGPoint(x: 0, y: 0.5) : CGPoint(x: 1, y: 0.5)
-        // gradient.endPoint = direction == .nextPage ? CGPoint(x: 1, y: 0.5) : CGPoint(x: 0, y: 0.5)
-
-        // shadow.layer.addSublayer(gradient)
         targetView.addSubview(shadow)
         self.pageShadowView = shadow
-        // self.pageShadowGradient = gradient
     }
 
     // MARK: - 清理函数
