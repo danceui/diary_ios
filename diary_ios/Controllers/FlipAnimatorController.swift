@@ -306,6 +306,7 @@ class FlipAnimatorController {
         targetView.addSubview(shadow)
         self.pageShadow = shadow
     }
+    
     // MARK: - 清理函数
     private func cleanupViews() {
         print("🧹 Cleanup views.")
