@@ -94,7 +94,7 @@ class FlipAnimatorController {
         }
         host.view.addSubview(flipContainer)
         self.flipContainer = flipContainer
-        setupPageShadow(for: direction == .nextPage ? targetRightView : targetLeftView, direction: direction)
+        setupPageShadow(for: direction == .nextPage ? targetRightView : currentRightView, direction: direction)
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
@@ -113,18 +113,12 @@ class FlipAnimatorController {
         // ⚡ Update shadow size and alpha
         if let shadow = pageShadow {
             let maxWidth = flipContainer.bounds.width
-            let progressAbs = abs(progress)
             // 阴影宽度最大为页面一半（也可以调小些）
-            let shadowWidth = maxWidth * 0.4 * sin(progressAbs * .pi)
-            // 高度固定，与容器等高
-            let height = shadow.bounds.height
-            let y: CGFloat = 0
-            // 根据翻页方向设置 x 坐标
-            let x: CGFloat = maxWidth - shadowWidth  // 从右向左翻，阴影贴右边
+            let shadowWidth = maxWidth * 0.4 * sin(abs(progress) * .pi)
             // 更新 frame
-            shadow.frame = CGRect(x: x, y: y, width: shadowWidth, height: height)
+            shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
             // 动态透明度：最大 0.3，可自行调整
-            shadow.alpha = 0.3 * sin(progressAbs * .pi)
+            shadow.alpha = 0.3 * sin(abs(progress) * .pi)
         }
 
 
@@ -140,11 +134,13 @@ class FlipAnimatorController {
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
+                print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
+            print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
