@@ -91,7 +91,7 @@ class FlipAnimatorController {
         }
         host.view.addSubview(flipContainer)
         self.flipContainer = flipContainer
-
+        configureDynamicPageShadow(below: backSnapshot, direction: direction)
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
@@ -108,13 +108,13 @@ class FlipAnimatorController {
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
         // ⚡ Update shadow size and alpha
-        if let shadowView = pageShadowView, let gradient = pageShadowGradient {
+        if let shadow = pageShadowView, let gradient = pageShadowGradient {
             let maxWidth = flipContainer.bounds.width ?? 0
             let shadowWidth = maxWidth * 0.5 * sin(abs(progress) * .pi)
             gradient.frame = CGRect(x: direction == .nextPage ? 0 : maxWidth - shadowWidth,
                                     y: 0,
                                     width: shadowWidth,
-                                    height: shadowView.bounds.height)
+                                    height: shadow.bounds.height)
             gradient.opacity = Float(0.4 * sin(abs(progress) * .pi))
         }
 
@@ -281,8 +281,8 @@ class FlipAnimatorController {
 
         let overlay = UIView(frame: snapshot.bounds)
         overlay.layer.cornerRadius = 10
-        overlay.backgroundColor = UIColor.black
-        overlay.alpha = 0 // 完全透明，之后update时修改
+        overlay.backgroundColor = .black
+        overlay.alpha = 0
         overlay.isUserInteractionEnabled = false
         snapshot.addSubview(overlay)
 
@@ -291,23 +291,25 @@ class FlipAnimatorController {
     }
 
     private func configureDynamicPageShadow(below targetView: UIView, direction: PageTurnDirection) {
-        let shadowView = UIView(frame: targetView.bounds)
-        shadowView.isUserInteractionEnabled = false
-        shadowView.backgroundColor = .clear
+        let shadow = UIView(frame: targetView.bounds)
+        shadow.layer.cornerRadius = 10
+        shadow.backgroundColor = .clear
+        shadow.alpha = 0
+        shadow.isUserInteractionEnabled = false
 
-        let gradient = CAGradientLayer()
-        gradient.frame = shadowView.bounds
-        gradient.colors = [
-            UIColor.black.withAlphaComponent(0.3).cgColor,
-            UIColor.clear.cgColor
-        ]
-        gradient.startPoint = direction == .nextPage ? CGPoint(x: 0, y: 0.5) : CGPoint(x: 1, y: 0.5)
-        gradient.endPoint = direction == .nextPage ? CGPoint(x: 1, y: 0.5) : CGPoint(x: 0, y: 0.5)
+        // let gradient = CAGradientLayer()
+        // gradient.frame = shadow.bounds
+        // gradient.colors = [
+        //     UIColor.black.withAlphaComponent(0.3).cgColor,
+        //     UIColor.clear.cgColor
+        // ]
+        // gradient.startPoint = direction == .nextPage ? CGPoint(x: 0, y: 0.5) : CGPoint(x: 1, y: 0.5)
+        // gradient.endPoint = direction == .nextPage ? CGPoint(x: 1, y: 0.5) : CGPoint(x: 0, y: 0.5)
 
-        shadowView.layer.addSublayer(gradient)
-        targetView.addSubview(shadowView)
-        self.pageShadowView = shadowView
-        self.pageShadowGradient = gradient
+        // shadow.layer.addSublayer(gradient)
+        targetView.addSubview(shadow)
+        self.pageShadowView = shadow
+        // self.pageShadowGradient = gradient
     }
 
     // MARK: - 清理函数
