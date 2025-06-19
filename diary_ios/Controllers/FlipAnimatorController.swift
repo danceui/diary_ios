@@ -118,9 +118,9 @@ class FlipAnimatorController {
         }
         var shadowProgress = abs(progress)
         if direction == .nextPage && abs(progress) < progressThreshold {
-            shadowProgress = progressThreshold - abs(progress)
+            shadowProgress = (progressThreshold - abs(progress)) * 2
         } else if direction == .lastPage && abs(progress) >= progressThreshold {
-            shadowProgress = abs(progress) - progressThreshold
+            shadowProgress = (abs(progress) - progressThreshold) * 2
         } else {
             shadowProgress = 0
         }
