@@ -110,19 +110,23 @@ class FlipAnimatorController {
         t.m34 = -1.0 / 1500
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
-        // ⚡ Update shadow size and alpha
-        if let shadow = pageShadow {
-            var shadowProgress: CGFloat = 0
-            if direction == .nextPage && progress < progressThreshold {
-                shadowProgress = progressThreshold - abs(progress)
-            } else if direction == .lastPage && progress >= progressThreshold {
-                shadowProgress = progressThreshold - abs(progress)
-            } else {
-                shadowProgress = 0
-            }
-            shadow.transform = CGAffineTransform(scaleX: shadowProgress, y: 1.0)
+        // 更新页面投影
+        guard let shadow = self.pageShadow else {
+            print("❌ Page shadow not found.")
+            state = .idle
+            return
         }
-
+        var shadowProgress = abs(progress)
+        if direction == .nextPage && abs(progress) < progressThreshold {
+            shadowProgress = progressThreshold - abs(progress)
+        } else if direction == .lastPage && abs(progress) >= progressThreshold {
+            shadowProgress = abs(progress) - progressThreshold
+        } else {
+            shadowProgress = 0
+        }
+        print("!!! Shadow progress: \(format(shadowProgress)) !!!")
+        let shadowWidth = flipContainer.bounds.width * sin(shadowProgress * .pi)
+        shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
 
         // 更新前后快照的阴影和可见性
         frontOverlay?.alpha = 0.4 * abs(progress)
@@ -136,13 +140,13 @@ class FlipAnimatorController {
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   💡 Shadow width: \(formatRect(pageShadow!.frame)).")
+                print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   💡 Shadow width: \(formatRect(pageShadow!.frame)).")
+            print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
@@ -299,17 +303,14 @@ class FlipAnimatorController {
     }
 
     private func setupPageShadow(for targetView: UIView, direction: PageTurnDirection) {
-        let shadow = UIView(frame: CGRect(x: 0, y: 0, width: targetView.bounds.width, height: targetView.bounds.height))
+        let shadow = UIView(frame: targetView.bounds)
         shadow.layer.cornerRadius = 10
         shadow.backgroundColor = .black
         shadow.alpha = 0.3
         shadow.isUserInteractionEnabled = false
-        shadow.layer.anchorPoint = CGPoint(x: 0, y: 0.5) // 锚点在左中
-        // shadow.layer.position = CGPoint(x: -targetView.bounds.origin.x, y: targetView.bounds.midY)
         targetView.addSubview(shadow)
         self.pageShadow = shadow
     }
-
     // MARK: - 清理函数
     private func cleanupViews() {
         print("🧹 Cleanup views.")
