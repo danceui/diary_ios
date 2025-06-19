@@ -112,13 +112,15 @@ class FlipAnimatorController {
 
         // ⚡ Update shadow size and alpha
         if let shadow = pageShadow {
-            let maxWidth = flipContainer.bounds.width
-            // 阴影宽度最大为页面一半（也可以调小些）
-            let shadowWidth = maxWidth * 0.4 * sin(abs(progress) * .pi)
-            // 更新 frame
-            shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
-            // 动态透明度：最大 0.3，可自行调整
-            shadow.alpha = 0.3 * sin(abs(progress) * .pi)
+            var shadowProgress: CGFloat = 0
+            if direction == .nextPage && progress < progressThreshold {
+                shadowProgress = progressThreshold - abs(progress)
+            } else if direction == .lastPage && progress >= progressThreshold {
+                shadowProgress = progressThreshold - abs(progress)
+            } else {
+                shadowProgress = 0
+            }
+            shadow.transform = CGAffineTransform(scaleX: shadowProgress, y: 1.0)
         }
 
 
@@ -134,13 +136,13 @@ class FlipAnimatorController {
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
+                print("   💡 Shadow width: \(formatRect(pageShadow!.frame)).")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
+            print("   💡 Shadow width: \(formatRect(pageShadow!.frame)).")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
@@ -297,14 +299,17 @@ class FlipAnimatorController {
     }
 
     private func setupPageShadow(for targetView: UIView, direction: PageTurnDirection) {
-        let shadow = UIView(frame: targetView.bounds)
+        let shadow = UIView(frame: CGRect(x: 0, y: 0, width: targetView.bounds.width, height: targetView.bounds.height))
         shadow.layer.cornerRadius = 10
         shadow.backgroundColor = .black
         shadow.alpha = 0.3
         shadow.isUserInteractionEnabled = false
+        shadow.layer.anchorPoint = CGPoint(x: 0, y: 0.5) // 锚点在左中
+        // shadow.layer.position = CGPoint(x: -targetView.bounds.origin.x, y: targetView.bounds.midY)
         targetView.addSubview(shadow)
         self.pageShadow = shadow
     }
+
     // MARK: - 清理函数
     private func cleanupViews() {
         print("🧹 Cleanup views.")
