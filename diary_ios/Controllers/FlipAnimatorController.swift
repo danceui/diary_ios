@@ -290,8 +290,7 @@ class FlipAnimatorController {
         let overlay = UIView(frame: snapshot.bounds)
         overlay.isUserInteractionEnabled = false
         overlay.layer.cornerRadius = 10
-        overlay.backgroundColor = .black
-        overlay.alpha = 0
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0)
 
         snapshot.addSubview(overlay)
         if isFront { self.frontOverlay = overlay }
@@ -302,7 +301,7 @@ class FlipAnimatorController {
         let shadow = UIView(frame: targetView.bounds)
         shadow.isUserInteractionEnabled = false
         shadow.layer.cornerRadius = 10
-        shadow.backgroundColor = .black
+        shadow.backgroundColor = .clear
         shadow.alpha = 0.3
 
         configurePageShadowLayer(for: shadow)
@@ -317,11 +316,7 @@ class FlipAnimatorController {
         shadow.layer.shadowOffset = CGSize(width: 0, height: 0)
         shadow.layer.shadowRadius = 20 // 控制模糊边缘程度
         
-        let w = shadow.bounds.width
-        let h = shadow.bounds.height
-        // ✅ 只绘制靠右边的一小块区域（例如右侧 10pt）
-        let width: CGFloat = max(2.0, min(20.0, w * 0.1)) // 限制范围
-        let path = UIBezierPath(rect: CGRect(x: w - width, y: 0, width: width, height: h))
+        let path = UIBezierPath(rect: shadow.bounds)
         shadow.layer.shadowPath = path.cgPath
     }
 
