@@ -20,6 +20,7 @@ class FlipAnimatorController {
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
     private let lightAngle  = FlipConstants.lightAngle
+    private let transformm34  = FlipConstants.transformm34
 
     private var pendingFlips: [FlipRequest] = []
     private let easing: EasingFunction = .sineEaseOut
@@ -108,7 +109,7 @@ class FlipAnimatorController {
         }
         
         var t = CATransform3DIdentity
-        t.m34 = -1.0 / 5000
+        t.m34 = transformm34
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
         // 更新页面投影
@@ -270,7 +271,7 @@ class FlipAnimatorController {
         container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
-        container.layer.transform.m34 = -1.0 / 1500
+        container.layer.transform.m34 = transformm34
         // container.clipsToBounds = true // true时，阴影效果无法展现
 
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
