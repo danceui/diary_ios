@@ -19,6 +19,7 @@ class FlipAnimatorController {
     private let velocityThreshold = FlipConstants.velocityThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
+    private let lightAngle  = FlipConstants.lightAngle
 
     private var pendingFlips: [FlipRequest] = []
     private let easing: EasingFunction = .sineEaseOut
@@ -116,17 +117,9 @@ class FlipAnimatorController {
             state = .idle
             return
         }
-        var shadowProgress: CGFloat
-        if direction == .nextPage && abs(progress) < progressThreshold {
-            shadowProgress = progressThreshold - abs(progress)
-        } else if direction == .lastPage && abs(progress) >= progressThreshold {
-            shadowProgress = abs(progress) - progressThreshold
-        } else {
-            shadowProgress = 0
-        }
-        let shadowScale = -(25/3) * shadowProgress * shadowProgress + (37/6) * shadowProgress
-        let shadowWidth = flipContainer.bounds.width * shadowScale
-        print("!!! ShadowProgress: \(format(shadowProgress)), shadowScale: \(format(shadowScale))!!!")
+        let shadowProgress = direction == .nextPage ? abs(progress) : 1 - abs(progress)
+        let shadowAngle = shadowProgress * .pi
+        let shadowWidth = shadowAngle - .pi/2 >= lightAngle ? 0 : flipContainer.bounds.width * cos(lightAngle - shadowAngle) / cos(lightAngle)
         shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
 
         // 更新前后快照的阴影和可见性
@@ -141,13 +134,13 @@ class FlipAnimatorController {
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   💡 Shadow.frame: \(formatRect(shadow.frame)).")
+                print("   💡 ShadowProgress: \(format(shadowProgress)), ShadowRelativeWidth: \(format(shadowWidth/flipContainer.bounds.width)).")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   💡 Shadow.frame: \(formatRect(shadow.frame)).")
+            print("   💡 ShadowProgress: \(format(shadowProgress)), ShadowRelativeWidth: \(format(shadowWidth/flipContainer.bounds.width)).")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
