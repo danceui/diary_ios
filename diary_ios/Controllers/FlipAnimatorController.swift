@@ -122,7 +122,7 @@ class FlipAnimatorController {
         let shadowAngle = shadowProgress * .pi
         let shadowWidth = shadowAngle - .pi/2 >= lightAngle ? 0 : flipContainer.bounds.width * cos(lightAngle - shadowAngle) / cos(lightAngle)
         shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
-        shadow.layer.shadowPath = UIBezierPath(rect: shadow.bounds).cgPath
+        configurePageShadowLayer(for: shadow)
 
         // 更新前后快照的阴影和可见性
         frontOverlay?.alpha = 0.4 * abs(progress)
@@ -302,21 +302,29 @@ class FlipAnimatorController {
         let shadow = UIView(frame: targetView.bounds)
         shadow.isUserInteractionEnabled = false
         shadow.layer.cornerRadius = 10
-        shadow.backgroundColor = .clear
-        shadow.layer.masksToBounds = false // 允许阴影超出 bounds
+        shadow.backgroundColor = .black
+        shadow.alpha = 0.3
 
-        shadow.layer.shadowColor = UIColor.black.cgColor
-        shadow.layer.shadowOpacity = 0.3
-        shadow.layer.shadowOffset = CGSize(width: 0, height: 0)
-        shadow.layer.shadowRadius = 20 // 控制模糊边缘程度
-        shadow.layer.shadowPath = UIBezierPath(rect: shadow.bounds).cgPath
-        shadow.layer.borderColor = UIColor.red.cgColor
-        shadow.layer.borderWidth = 1.0
-        
+        configurePageShadowLayer(for: shadow)
         targetView.addSubview(shadow)
         self.pageShadow = shadow
     }
     
+    private func configurePageShadowLayer(for shadow: UIView) {
+        shadow.layer.masksToBounds = false // 允许阴影超出 bounds
+        shadow.layer.shadowColor = UIColor.black.cgColor
+        shadow.layer.shadowOpacity = 0.3
+        shadow.layer.shadowOffset = CGSize(width: 0, height: 0)
+        shadow.layer.shadowRadius = 20 // 控制模糊边缘程度
+        
+        let w = shadow.bounds.width
+        let h = shadow.bounds.height
+        // ✅ 只绘制靠右边的一小块区域（例如右侧 10pt）
+        let width: CGFloat = max(2.0, min(20.0, w * 0.1)) // 限制范围
+        let path = UIBezierPath(rect: CGRect(x: w - width, y: 0, width: width, height: h))
+        shadow.layer.shadowPath = path.cgPath
+    }
+
     // MARK: - 清理函数
     private func cleanupViews() {
         print("🧹 Cleanup views.")
