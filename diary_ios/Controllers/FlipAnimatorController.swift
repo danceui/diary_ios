@@ -107,7 +107,7 @@ class FlipAnimatorController {
         }
         
         var t = CATransform3DIdentity
-        t.m34 = -1.0 / 1500
+        t.m34 = -1.0 / 5000
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
         // 更新页面投影
@@ -116,16 +116,17 @@ class FlipAnimatorController {
             state = .idle
             return
         }
-        var shadowProgress = abs(progress)
+        var shadowProgress: CGFloat
         if direction == .nextPage && abs(progress) < progressThreshold {
-            shadowProgress = (progressThreshold - abs(progress)) * 2
+            shadowProgress = progressThreshold - abs(progress)
         } else if direction == .lastPage && abs(progress) >= progressThreshold {
-            shadowProgress = (abs(progress) - progressThreshold) * 2
+            shadowProgress = abs(progress) - progressThreshold
         } else {
             shadowProgress = 0
         }
-        print("!!! Shadow progress: \(format(shadowProgress)) !!!")
-        let shadowWidth = flipContainer.bounds.width * sin(shadowProgress * .pi)
+        let shadowScale = -(25/3) * shadowProgress * shadowProgress + (37/6) * shadowProgress
+        let shadowWidth = flipContainer.bounds.width * shadowScale
+        print("!!! ShadowProgress: \(format(shadowProgress)), shadowScale: \(format(shadowScale))!!!")
         shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
 
         // 更新前后快照的阴影和可见性
@@ -140,13 +141,13 @@ class FlipAnimatorController {
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
+                print("   💡 Shadow.frame: \(formatRect(shadow.frame)).")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   💡 Shadow.frame: \(formatRect(pageShadow!.frame)).")
+            print("   💡 Shadow.frame: \(formatRect(shadow.frame)).")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
