@@ -10,8 +10,7 @@ class FlipAnimatorController {
     private var backSnapshot: UIView?
     private var frontOverlay: UIView?
     private var backOverlay: UIView?
-    private var pageShadowView: UIView?
-    private var pageShadowGradient: CAGradientLayer?
+    private var pageShadow: UIView?
     private var lastProgressForTesting: CGFloat?
     
     private let baseVelocity = FlipConstants.baseVelocity
@@ -95,7 +94,7 @@ class FlipAnimatorController {
         }
         host.view.addSubview(flipContainer)
         self.flipContainer = flipContainer
-        configureDynamicPageShadow(for: direction == .nextPage ? targetRightView : targetLeftView, direction: direction)
+        setupPageShadow(for: direction == .nextPage ? targetRightView : targetLeftView, direction: direction)
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
@@ -112,15 +111,22 @@ class FlipAnimatorController {
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
         // ⚡ Update shadow size and alpha
-        if let shadow = pageShadowView, let gradient = pageShadowGradient {
-            let maxWidth = flipContainer.bounds.width ?? 0
-            let shadowWidth = maxWidth * 0.5 * sin(abs(progress) * .pi)
-            gradient.frame = CGRect(x: direction == .nextPage ? 0 : maxWidth - shadowWidth,
-                                    y: 0,
-                                    width: shadowWidth,
-                                    height: shadow.bounds.height)
-            gradient.opacity = Float(0.4 * sin(abs(progress) * .pi))
+        if let shadow = pageShadow {
+            let maxWidth = flipContainer.bounds.width
+            let progressAbs = abs(progress)
+            // 阴影宽度最大为页面一半（也可以调小些）
+            let shadowWidth = maxWidth * 0.4 * sin(progressAbs * .pi)
+            // 高度固定，与容器等高
+            let height = shadow.bounds.height
+            let y: CGFloat = 0
+            // 根据翻页方向设置 x 坐标
+            let x: CGFloat = maxWidth - shadowWidth  // 从右向左翻，阴影贴右边
+            // 更新 frame
+            shadow.frame = CGRect(x: x, y: y, width: shadowWidth, height: height)
+            // 动态透明度：最大 0.3，可自行调整
+            shadow.alpha = 0.3 * sin(progressAbs * .pi)
         }
+
 
         // 更新前后快照的阴影和可见性
         frontOverlay?.alpha = 0.4 * abs(progress)
@@ -294,16 +300,15 @@ class FlipAnimatorController {
         else { self.backOverlay = overlay }
     }
 
-    private func configureDynamicPageShadow(for targetView: UIView, direction: PageTurnDirection) {
+    private func setupPageShadow(for targetView: UIView, direction: PageTurnDirection) {
         let shadow = UIView(frame: targetView.bounds)
         shadow.layer.cornerRadius = 10
         shadow.backgroundColor = .black
         shadow.alpha = 0.3
         shadow.isUserInteractionEnabled = false
         targetView.addSubview(shadow)
-        self.pageShadowView = shadow
+        self.pageShadow = shadow
     }
-
     // MARK: - 清理函数
     private func cleanupViews() {
         print("🧹 Cleanup views.")
@@ -317,9 +322,8 @@ class FlipAnimatorController {
         backSnapshot = nil
         frontOverlay = nil
         backOverlay = nil
-        pageShadowView?.removeFromSuperview()
-        pageShadowView = nil
-        pageShadowGradient = nil
+        pageShadow?.removeFromSuperview()
+        pageShadow = nil
         lastProgressForTesting = nil
     }
 
