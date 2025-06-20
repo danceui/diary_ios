@@ -21,6 +21,8 @@ class FlipAnimatorController {
     private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
     private let lightAngle  = FlipConstants.lightAngle
     private let transformm34  = FlipConstants.transformm34
+    private let maxOverlayAlpha  = FlipConstants.maxOverlayAlpha
+    private let minOverlayAlpha  = FlipConstants.minOverlayAlpha
 
     private var pendingFlips: [FlipRequest] = []
     private let easing: EasingFunction = .sineEaseOut
@@ -112,7 +114,7 @@ class FlipAnimatorController {
         t.m34 = transformm34
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
 
-        // 更新页面投影
+        // 更新快照的投影
         guard let shadow = self.pageShadow else {
             print("❌ Page shadow not found.")
             state = .idle
@@ -120,13 +122,17 @@ class FlipAnimatorController {
         }
         let shadowProgress = direction == .nextPage ? abs(progress) : 1 - abs(progress)
         let shadowAngle = shadowProgress * .pi
-        let shadowWidth = shadowAngle - .pi/2 >= lightAngle ? 0 : flipContainer.bounds.width * cos(lightAngle - shadowAngle) / cos(lightAngle)
+        let shadowWidth = computeShadowWidth(shadowAngle: shadowAngle,
+                                           lightAngle: lightAngle,
+                                           containerWidth: flipContainer.bounds.width)
         shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
         configurePageShadowLayer(for: shadow)
 
-        // 更新前后快照的阴影和可见性
-        frontOverlay?.alpha = 0.4 * abs(progress)
-        backOverlay?.alpha = 0.4 * (1 - abs(progress))
+        // 更新快照的阴影层和可见性
+        let frontMaxAlpha = direction == .nextPage ? minOverlayAlpha : maxOverlayAlpha
+        let backMaxAlpha = direction == .nextPage ? maxOverlayAlpha : minOverlayAlpha
+        frontOverlay?.alpha = frontMaxAlpha * sin(abs(progress) * .pi / 2)
+        backOverlay?.alpha = backMaxAlpha * sin((1 - abs(progress)) * .pi / 2)
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
@@ -262,7 +268,7 @@ class FlipAnimatorController {
         }
     }
 
-    // MARK: - 辅助函数
+    // MARK: - 创建翻页容器
     private func createFlipContainer(for direction: PageTurnDirection, offsetIndex: Int, frontSnapshot: UIView, backSnapshot: UIView) -> UIView? {
         guard let host = host else { return nil }
         // 创建临时 conatiner, 包含 pageContainer view 快照
@@ -282,6 +288,7 @@ class FlipAnimatorController {
         return container
     }
 
+    // MARK: - 配置快照属性
     private func configureSnapshot(for container: UIView, snapshot: UIView, isFront: Bool){
         snapshot.frame = container.bounds
         snapshot.isHidden = isFront ? false : true
@@ -290,18 +297,20 @@ class FlipAnimatorController {
         let overlay = UIView(frame: snapshot.bounds)
         overlay.isUserInteractionEnabled = false
         overlay.layer.cornerRadius = 10
-        overlay.backgroundColor = UIColor.black.withAlphaComponent(0)
+        overlay.backgroundColor = UIColor.black
+        overlay.alpha = 0.3
 
         snapshot.addSubview(overlay)
         if isFront { self.frontOverlay = overlay }
         else { self.backOverlay = overlay }
     }
 
+    // MARK: - 快照的阴影层
     private func setupPageShadow(for targetView: UIView, direction: PageTurnDirection) {
         let shadow = UIView(frame: targetView.bounds)
         shadow.isUserInteractionEnabled = false
         shadow.layer.cornerRadius = 10
-        shadow.backgroundColor = .clear
+        shadow.backgroundColor = .clear // 背景色必须透明，否则阴影无法显示
         shadow.alpha = 0.3
 
         configurePageShadowLayer(for: shadow)
@@ -309,10 +318,11 @@ class FlipAnimatorController {
         self.pageShadow = shadow
     }
     
+    // MARK: - 翻页时快照的投影
     private func configurePageShadowLayer(for shadow: UIView) {
         shadow.layer.masksToBounds = false // 允许阴影超出 bounds
         shadow.layer.shadowColor = UIColor.black.cgColor
-        shadow.layer.shadowOpacity = 0.3
+        shadow.layer.shadowOpacity = 0.4
         shadow.layer.shadowOffset = CGSize(width: 0, height: 0)
         shadow.layer.shadowRadius = 20 // 控制模糊边缘程度
         
