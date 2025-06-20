@@ -3,38 +3,37 @@ import PencilKit
 
 @available(iOS 16.0, *)
 class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
-
-    let pageIndex: Int
     let pageRole: PageRole
     let canvas = HandwritingCanvas()
 
     private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
     private var snapshotIndex = 0
     private let maxSnapshots = 50
+    private let defaultCornerRadius = PageConstants.defaultCornerRadius
 
-    // MARK: - Init
-    init(pageIndex: Int, role: PageRole = .normal, initialData: Data? = nil) {
-        self.pageIndex = pageIndex
-        self.pageRole = role
+    init(role: PageRole = .normal, initialData: Data? = nil) {
+        pageRole = role
         super.init(nibName: nil, bundle: nil)
         if let initialData = initialData {
             loadDrawing(data: initialData)
         }
-        if pageRole != .empty {
-            self.view.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
-            self.view.layer.borderColor = UIColor.black.cgColor
-            self.view.layer.borderWidth = 2
-        }
-        self.view.layer.cornerRadius = 10
+        view.layer.cornerRadius = defaultCornerRadius
+        view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00)
     }
 
     required init?(coder: NSCoder) {
+        // This class is not intended to be initialized from a storyboard.
         fatalError("init(coder:) has not been implemented")
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCanvas()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        canvas.frame = view.bounds
     }
 
     private func setupCanvas() {
@@ -51,26 +50,14 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
             canvas.isUserInteractionEnabled = false
         case .empty: break
         }
-        
-        canvas.layer.cornerRadius = 20
+
+        canvas.layer.cornerRadius = defaultCornerRadius
         canvas.layer.masksToBounds = true
-        canvas.layer.borderColor = UIColor.lightGray.cgColor
-        canvas.layer.borderWidth = 2
-
-        canvas.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(canvas)
-
-        NSLayoutConstraint.activate([
-            canvas.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            canvas.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            canvas.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.85),
-            canvas.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.85)
-        ])
     }
 
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
-            // print("Drawing updated — saving snapshot.")
             canvas.waitingForStrokeFinish = false
             saveSnapshot()
         }
@@ -88,6 +75,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         return canvas.drawing.dataRepresentation()
     }
 
+    // MARK: - 快照管理
     func undo() {
         guard snapshotIndex > 0 else { return }
         snapshotIndex -= 1
@@ -123,13 +111,13 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
             pageSnapshots.removeFirst()
             snapshotIndex -= 1
         }
-        print("Saved snapshot #\(snapshotIndex) on page \(pageIndex).")
+        print("Saved snapshot #\(snapshotIndex).")
     }
 
     private func applySnapshotOfIndex(_ index: Int) {
         canvas.drawing = pageSnapshots[index].drawing
         canvas.tool = canvas.tool
-        print("Apply snapshot #\(snapshotIndex)/\(pageSnapshots.count) on page \(pageIndex).")
+        print("Apply snapshot #\(snapshotIndex)/\(pageSnapshots.count).")
         canvas.setNeedsDisplay()
     }
 }

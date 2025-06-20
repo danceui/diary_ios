@@ -10,9 +10,9 @@ struct FlipConstants {
     static let epsilon: CGFloat = 0.01
     static let lightAngle: CGFloat = .pi / 12
     static let thicknessScaleSensitivity: CGFloat = 0.4
-    static let transformm34: CGFloat = -1 / 1800
-    static let largerOverlayAlpha: CGFloat = 0.3
-    static let smallerOverlayAlpha: CGFloat = 0.1
+    static let transformm34: CGFloat = -1 / 2000
+    static let largerOverlayAlpha: CGFloat = 0.25
+    static let smallerOverlayAlpha: CGFloat = 0.15
 }
 
 struct StackConstants {

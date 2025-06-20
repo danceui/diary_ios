@@ -13,6 +13,7 @@ class NotebookSpreadViewController: UIViewController {
     private let baseOffset = StackConstants.baseOffset
     private let progressThreshold = FlipConstants.progressThreshold
     private let velocityThreshold = FlipConstants.velocityThreshold
+    private let defaultCornerRadius = PageConstants.defaultCornerRadius
     
     var pages: [NotebookPageViewController] = []
     var pageCount: Int {pages.count}
@@ -38,12 +39,12 @@ class NotebookSpreadViewController: UIViewController {
     // MARK: - Setup
     private func setupInitialPages() {
         pages = [
-            NotebookPageViewController(pageIndex: 0, role: .empty),
-            NotebookPageViewController(pageIndex: 1, role: .cover),
-            NotebookPageViewController(pageIndex: 2, role: .normal),
-            NotebookPageViewController(pageIndex: 3, role: .normal),
-            NotebookPageViewController(pageIndex: 4, role: .back),
-            NotebookPageViewController(pageIndex: 5, role: .empty)
+            NotebookPageViewController(role: .empty),
+            NotebookPageViewController(role: .cover),
+            NotebookPageViewController(role: .normal),
+            NotebookPageViewController(role: .normal),
+            NotebookPageViewController(role: .back),
+            NotebookPageViewController(role: .empty)
         ]
     }
 
@@ -82,7 +83,7 @@ class NotebookSpreadViewController: UIViewController {
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
-            thisContainer.layer.cornerRadius = 10
+            thisContainer.layer.cornerRadius = defaultCornerRadius
             baseX = i <= offsetIndex ? 0 : view.bounds.width / 2
             if i == 0, currentIndex == 0 {
                 baseX = view.bounds.width / 2
@@ -181,8 +182,8 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let insertIndex = currentIndex + 2
-        let leftPage = NotebookPageViewController(pageIndex: insertIndex, initialData: initialData)
-        let rightPage = NotebookPageViewController(pageIndex: insertIndex + 1, initialData: initialData)
+        let leftPage = NotebookPageViewController(initialData: initialData)
+        let rightPage = NotebookPageViewController(initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         updatePageContainers()
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
