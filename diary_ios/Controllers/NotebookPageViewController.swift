@@ -11,6 +11,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     private let maxSnapshots = 50
     private let defaultCornerRadius = PageConstants.defaultCornerRadius
 
+    // MARK: - 生命周期
     init(role: PageRole = .normal, initialData: Data? = nil) {
         pageRole = role
         super.init(nibName: nil, bundle: nil)

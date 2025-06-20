@@ -28,12 +28,17 @@ class NotebookSpreadViewController: UIViewController {
     weak var pageDelegate: NotebookSpreadViewControllerDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
 
+    // MARK: - 生命周期
     override func viewDidLoad() {
         super.viewDidLoad()
         flipController = FlipAnimatorController(host: self)
         setupInitialPages()
-        updatePageContainers()
         setupGestureRecognizers()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updatePageContainers()
     }
 
     // MARK: - Setup
@@ -53,6 +58,7 @@ class NotebookSpreadViewController: UIViewController {
         view.addGestureRecognizer(panGesture)
     }
 
+    // MARK: - 更新PageContainers
     private func updatePageContainers() {
         // 清空 pageContainers
         pageContainers.forEach { $0.removeFromSuperview() }
@@ -125,7 +131,7 @@ class NotebookSpreadViewController: UIViewController {
         }
     }
 
-    // MARK: - Gesture Handling
+    // MARK: - 手势处理
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let velocity = gesture.velocity(in: view)
@@ -169,7 +175,7 @@ class NotebookSpreadViewController: UIViewController {
         }
     }
 
-    // MARK: - Page Management
+    // MARK: - 页面管理
     func addNewPagePair(initialData: Data? = nil) {
         if flipController.isAnimating {
             print("❌ Cannot add page during animation.")
@@ -200,7 +206,7 @@ class NotebookSpreadViewController: UIViewController {
         updatePageContainers()
     }
 
-    // MARK: - Progress Related Functions
+    // MARK: - 随progress更新的函数
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
         let width = pageDelegate?.currentContentWidth() ?? 0 
         var offset: CGFloat = 0
