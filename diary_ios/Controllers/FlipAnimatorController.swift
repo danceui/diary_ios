@@ -23,6 +23,7 @@ class FlipAnimatorController {
     private let transformm34  = FlipConstants.transformm34
     private let largerOverlayAlpha  = FlipConstants.largerOverlayAlpha
     private let smallerOverlayAlpha  = FlipConstants.smallerOverlayAlpha
+    private let defaultCornerRadius = PageConstants.defaultCornerRadius
 
     private var pendingFlips: [FlipRequest] = []
     var isAnimating: Bool { return state != .idle }
@@ -290,7 +291,7 @@ class FlipAnimatorController {
 
         let overlay = UIView(frame: snapshot.bounds)
         overlay.isUserInteractionEnabled = false
-        overlay.layer.cornerRadius = 10
+        overlay.layer.cornerRadius = defaultCornerRadius
         overlay.backgroundColor = UIColor.black
         overlay.alpha = 0
 
@@ -303,7 +304,7 @@ class FlipAnimatorController {
     private func setupPageShadow(for targetView: UIView, direction: PageTurnDirection) {
         let shadow = UIView(frame: targetView.bounds)
         shadow.isUserInteractionEnabled = false
-        shadow.layer.cornerRadius = 10
+        shadow.layer.cornerRadius = defaultCornerRadius
         shadow.backgroundColor = .clear // 背景色必须透明，否则阴影无法显示
         shadow.alpha = 0.3
 

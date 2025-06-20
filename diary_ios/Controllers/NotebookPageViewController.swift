@@ -17,8 +17,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         if let initialData = initialData {
             loadDrawing(data: initialData)
         }
-        view.layer.cornerRadius = defaultCornerRadius
-        view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00)
+        setupViewStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -34,6 +33,15 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         canvas.frame = view.bounds
+    }
+
+    private func setupViewStyle() {
+        view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
+        view.layer.cornerRadius = defaultCornerRadius
+        view.layer.masksToBounds = false // 允许阴影超出边界
+        view.layer.shadowColor = UIColor.black.cgColor // 阴影颜色
+        view.layer.shadowOffset = CGSize(width: 0, height: 4) // 阴影偏移
+        view.layer.shadowOpacity = 0.2 // 阴影透明度
     }
 
     private func setupCanvas() {
