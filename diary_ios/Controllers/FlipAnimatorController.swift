@@ -21,8 +21,7 @@ class FlipAnimatorController {
     private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
     private let lightAngle  = FlipConstants.lightAngle
     private let transformm34  = FlipConstants.transformm34
-    private let maxOverlayAlpha  = FlipConstants.maxOverlayAlpha
-    private let minOverlayAlpha  = FlipConstants.minOverlayAlpha
+    private let overlayAlpha  = FlipConstants.overlayAlpha
 
     private var pendingFlips: [FlipRequest] = []
     private let easing: EasingFunction = .sineEaseOut
@@ -122,17 +121,13 @@ class FlipAnimatorController {
         }
         let shadowProgress = direction == .nextPage ? abs(progress) : 1 - abs(progress)
         let shadowAngle = shadowProgress * .pi
-        let shadowWidth = computeShadowWidth(shadowAngle: shadowAngle,
-                                           lightAngle: lightAngle,
-                                           containerWidth: flipContainer.bounds.width)
+        let shadowWidth = computeShadowWidth(shadowAngle: shadowAngle, lightAngle: lightAngle, containerWidth: flipContainer.bounds.width)
         shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
         configurePageShadowLayer(for: shadow)
 
         // 更新快照的阴影层和可见性
-        let frontMaxAlpha = direction == .nextPage ? minOverlayAlpha : maxOverlayAlpha
-        let backMaxAlpha = direction == .nextPage ? maxOverlayAlpha : minOverlayAlpha
-        frontOverlay?.alpha = frontMaxAlpha * sin(abs(progress) * .pi / 2)
-        backOverlay?.alpha = backMaxAlpha * sin((1 - abs(progress)) * .pi / 2)
+        frontOverlay?.alpha = computeOverlayAlpha(shadowProgress: abs(progress), overlayAlpha: overlayAlpha)
+        backOverlay?.alpha = computeOverlayAlpha(shadowProgress: 1 - abs(progress), overlayAlpha: overlayAlpha)
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
@@ -142,13 +137,13 @@ class FlipAnimatorController {
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   💡 ShadowProgress: \(format(shadowProgress)), ShadowRelativeWidth: \(format(shadowWidth/flipContainer.bounds.width)).")
+                print("   💡 ShadowWidth: \(format(shadowWidth/flipContainer.bounds.width)), OverlayAlpha: [\(format(frontOverlay!.alpha)), \(format(backOverlay!.alpha))].")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   💡 ShadowProgress: \(format(shadowProgress)), ShadowRelativeWidth: \(format(shadowWidth/flipContainer.bounds.width)).")
+            print("   💡 ShadowWidth: \(format(shadowWidth/flipContainer.bounds.width)), OverlayAlpha: [\(format(frontOverlay!.alpha)), \(format(backOverlay!.alpha))].")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
