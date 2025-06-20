@@ -1,8 +1,9 @@
 import UIKit
 
-func computeShadowWidth(shadowAngle: CGFloat,
+func computeShadowWidth(shadowProgress: CGFloat,
                                 lightAngle: CGFloat,
                                 containerWidth: CGFloat) -> CGFloat {
+    let shadowAngle = shadowProgress * .pi
     if shadowAngle - .pi / 2 >= lightAngle {
         return 0
     } else {
@@ -12,10 +13,10 @@ func computeShadowWidth(shadowAngle: CGFloat,
     }
 }
 
-func computeOverlayAlpha(shadowProgress: CGFloat,
+func computeOverlayAlpha(alphaProgress: CGFloat,
                          overlayAlpha: CGFloat) -> CGFloat {
-    guard shadowProgress >= 0 && shadowProgress <= 1 else {
+    guard alphaProgress >= 0 && alphaProgress <= 1 else {
         return 0
     }
-    return (1 - cos(shadowProgress * .pi)) * overlayAlpha
+    return (1 - cos(alphaProgress * .pi)) * overlayAlpha
 }

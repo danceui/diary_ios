@@ -21,7 +21,8 @@ class FlipAnimatorController {
     private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
     private let lightAngle  = FlipConstants.lightAngle
     private let transformm34  = FlipConstants.transformm34
-    private let overlayAlpha  = FlipConstants.overlayAlpha
+    private let largerOverlayAlpha  = FlipConstants.largerOverlayAlpha
+    private let smallerOverlayAlpha  = FlipConstants.smallerOverlayAlpha
 
     private var pendingFlips: [FlipRequest] = []
     private let easing: EasingFunction = .sineEaseOut
@@ -120,14 +121,13 @@ class FlipAnimatorController {
             return
         }
         let shadowProgress = direction == .nextPage ? abs(progress) : 1 - abs(progress)
-        let shadowAngle = shadowProgress * .pi
-        let shadowWidth = computeShadowWidth(shadowAngle: shadowAngle, lightAngle: lightAngle, containerWidth: flipContainer.bounds.width)
+        let shadowWidth = computeShadowWidth(shadowProgress: shadowProgress, lightAngle: lightAngle, containerWidth: flipContainer.bounds.width)
         shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
         configurePageShadowLayer(for: shadow)
 
         // 更新快照的阴影层和可见性
-        frontOverlay?.alpha = computeOverlayAlpha(shadowProgress: abs(progress), overlayAlpha: overlayAlpha)
-        backOverlay?.alpha = computeOverlayAlpha(shadowProgress: 1 - abs(progress), overlayAlpha: overlayAlpha)
+        frontOverlay?.alpha = computeOverlayAlpha(alphaProgress: abs(progress), overlayAlpha: direction == .nextPage ? smallerOverlayAlpha : largerOverlayAlpha)
+        backOverlay?.alpha = computeOverlayAlpha(alphaProgress: 1 - abs(progress), overlayAlpha: direction == .nextPage ? largerOverlayAlpha : smallerOverlayAlpha)
         frontSnapshot?.isHidden = abs(progress) >= progressThreshold
         backSnapshot?.isHidden = abs(progress) < progressThreshold
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
