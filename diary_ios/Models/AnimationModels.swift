@@ -8,9 +8,9 @@ struct FlipConstants {
     static let minSpeedFactor: CGFloat = 1
     static let maxSpeedFactor: CGFloat = 1.5
     static let epsilon: CGFloat = 0.01
-    static let lightAngle: CGFloat = .pi / 8
+    static let lightAngle: CGFloat = .pi / 12
     static let thicknessScaleSensitivity: CGFloat = 0.4
-    static let transformm34: CGFloat = -1 / 2000
+    static let transformm34: CGFloat = -1 / 2500
     static let largerOverlayAlpha: CGFloat = 0.3
     static let smallerOverlayAlpha: CGFloat = 0.1
 }

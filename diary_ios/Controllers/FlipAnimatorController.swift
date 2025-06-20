@@ -293,7 +293,7 @@ class FlipAnimatorController {
         overlay.isUserInteractionEnabled = false
         overlay.layer.cornerRadius = 10
         overlay.backgroundColor = UIColor.black
-        overlay.alpha = 0.3
+        overlay.alpha = 0
 
         snapshot.addSubview(overlay)
         if isFront { self.frontOverlay = overlay }
