@@ -1,5 +1,15 @@
 import UIKit
 
+struct PageConstants {
+    static let defaultPageSize: PaperSize = .a4
+    static let defaultPageRole: PageRole = .normal
+    static let defaultCornerRadius: CGFloat = 20 // 页面圆角
+}
+
+struct StackConstants {
+    static let baseOffset: CGFloat = 5
+}
+
 enum PageRole {
     case normal
     case cover
@@ -30,10 +40,4 @@ enum PaperSize {
 enum PageTurnDirection {
     case nextPage
     case lastPage
-}
-
-struct PageConstants {
-    static let defaultPageSize: PaperSize = .a4
-    static let defaultPageRole: PageRole = .normal
-    static let defaultCornerRadius: CGFloat = 20 // 页面圆角
 }

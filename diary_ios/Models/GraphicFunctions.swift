@@ -1,4 +1,7 @@
 import UIKit
+func sineEaseOut(_ t: CGFloat) -> CGFloat {
+    return sin(t * .pi / 2)
+}
 
 func computeShadowWidth(shadowProgress: CGFloat,
                                 lightAngle: CGFloat,

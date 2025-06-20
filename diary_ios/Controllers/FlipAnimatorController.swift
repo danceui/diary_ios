@@ -25,7 +25,6 @@ class FlipAnimatorController {
     private let smallerOverlayAlpha  = FlipConstants.smallerOverlayAlpha
 
     private var pendingFlips: [FlipRequest] = []
-    private let easing: EasingFunction = .sineEaseOut
     var isAnimating: Bool { return state != .idle }
 
     init(host: NotebookSpreadViewController) {
@@ -171,7 +170,7 @@ class FlipAnimatorController {
         for i in 1...steps {
             // Ease-out 曲线（模拟减速滑动）: p = 1 - (1 - t)^2
             let t = CGFloat(i) / CGFloat(steps)
-            let easedT = easing.apply(t)
+            let easedT = sineEaseOut(t)
             let interpolated = progress + delta * easedT
             predictedProgress.append(interpolated)
         }
@@ -228,7 +227,7 @@ class FlipAnimatorController {
         
         for i in 1...steps {
             let t = CGFloat(i) / CGFloat(steps)
-            let easedT = easing.apply(t)
+            let easedT = sineEaseOut(t)
             let interpolated = progress + delta * easedT
             predictedProgress.append(interpolated)
         }
