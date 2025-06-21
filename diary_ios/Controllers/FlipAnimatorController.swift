@@ -30,12 +30,6 @@ class FlipAnimatorController {
     private let shadowInset = FlipConstants.shadowInset
     private let shadowCornerRadius = FlipConstants.shadowCornerRadius
 
-    private let containerShadowCornerRadius = PageConstants.shadowCornorRadius
-    private let containerShadowOffset = PageConstants.shadowOffset
-    private let containerShadowRadius = PageConstants.shadowRadius
-    private let containerShadowOpacity = PageConstants.shadowOpacity
-    private let containerShadowInset = PageConstants.shadowInset
-
     private var pendingFlips: [FlipRequest] = []
     var isAnimating: Bool { return state != .idle }
 
@@ -108,6 +102,7 @@ class FlipAnimatorController {
             return
         }
         host.view.addSubview(flipContainer)
+        host.view.bringSubviewToFront(flipContainer)
         self.flipContainer = flipContainer
         setupPageShadow(for: direction == .nextPage ? targetRightView : currentRightView, direction: direction)
         state = (type == .manual) ? .manualFlipping : .autoFlipping
@@ -285,13 +280,6 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = transformm34
-        container.layer.cornerRadius = pageCornerRadius
-        container.layer.masksToBounds = false
-        container.layer.shadowColor = UIColor.red.cgColor
-        container.layer.shadowOffset = CGSize(width: containerShadowOffset, height: containerShadowOffset)
-        container.layer.shadowOpacity = containerShadowOpacity
-        let path = UIBezierPath(roundedRect: container.bounds.insetBy(dx: containerShadowInset, dy: containerShadowInset), cornerRadius: containerShadowCornerRadius)
-        container.layer.shadowPath = path.cgPath
 
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
