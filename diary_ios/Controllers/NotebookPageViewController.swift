@@ -48,7 +48,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     private func setupViewStyle() {
         view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
         view.layer.cornerRadius = pageCornerRadius
-        view.layer.masksToBounds = false
+        view.layer.masksToBounds = true
         view.layer.shadowColor = UIColor.red.cgColor
         view.layer.shadowOffset = CGSize(width: shadowOffset, height: shadowOffset)
         view.layer.shadowOpacity = shadowOpacity
