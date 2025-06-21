@@ -12,11 +12,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     // MARK: - 常量
     private let maxSnapshots = 50
     private let pageCornerRadius = PageConstants.pageCornerRadius
-    private let shadowOffset = PageConstants.shadowOffset
-    private let shadowRadius = PageConstants.shadowRadius
-    private let shadowOpacity = PageConstants.shadowOpacity
-    private let shadowInset = PageConstants.shadowInset
-    private let shadowCornorRadius = PageConstants.shadowCornorRadius
 
     // MARK: - 生命周期
     init(role: PageRole = .normal, initialData: Data? = nil) {
@@ -41,17 +36,12 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         canvas.frame = view.bounds
-        let path = UIBezierPath(roundedRect: view.bounds.insetBy(dx: shadowInset, dy: shadowInset), cornerRadius: shadowCornorRadius)
-        view.layer.shadowPath = path.cgPath
     }
 
     private func setupViewStyle() {
         view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
         view.layer.cornerRadius = pageCornerRadius
         view.layer.masksToBounds = true
-        view.layer.shadowColor = UIColor.red.cgColor
-        view.layer.shadowOffset = CGSize(width: shadowOffset, height: shadowOffset)
-        view.layer.shadowOpacity = shadowOpacity
     }
 
     private func setupCanvas() {

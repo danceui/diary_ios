@@ -13,6 +13,11 @@ class NotebookSpreadViewController: UIViewController {
     private let progressThreshold = FlipConstants.progressThreshold
     private let velocityThreshold = FlipConstants.velocityThreshold
     private let pageCornerRadius = PageConstants.pageCornerRadius
+    private let pageShadowOffset = PageConstants.shadowOffset
+    private let pageShadowRadius = PageConstants.shadowRadius
+    private let pageShadowOpacity = PageConstants.shadowOpacity
+    private let pageShadowInset = PageConstants.shadowInset
+    private let pageShadowCornerRadius = PageConstants.shadowCornorRadius
     
     var pages: [NotebookPageViewController] = []
     var pageCount: Int {pages.count}
@@ -63,7 +68,7 @@ class NotebookSpreadViewController: UIViewController {
         pageContainers.forEach { $0.removeFromSuperview() }
         pageContainers.removeAll()
 
-        // 重新计算 pageContainers
+        // 重新计算 pageContainers 数量
         containerCount = (pageCount - 2) / 2
         guard containerCount > 0 else {
             print("❌ Container count = 0.")
@@ -97,7 +102,12 @@ class NotebookSpreadViewController: UIViewController {
             let originX = XOffsets[i] * baseOffset + baseX
             let originY = offsetsY[i]
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
-            thisContainer.layer.masksToBounds = false
+
+            thisContainer.layer.masksToBounds = false // 允许阴影
+            thisContainer.layer.shadowColor = UIColor.red.cgColor
+            thisContainer.layer.shadowOffset = CGSize(width: pageShadowOffset, height: pageShadowOffset)
+            thisContainer.layer.shadowOpacity = pageShadowOpacity
+            thisContainer.layer.shadowRadius = pageShadowRadius
 
             // 确定这个容器的内容
             pageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
