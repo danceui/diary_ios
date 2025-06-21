@@ -6,7 +6,6 @@ struct PageConstants {
     static let pageCornerRadius: CGFloat = 20
 
     static let shadowRadius: CGFloat = 3
-    static let shadowOffset: CGFloat = 3
     static let shadowOpacity: Float = 0.3
     static let shadowCornorRadius: CGFloat = 20
 }
