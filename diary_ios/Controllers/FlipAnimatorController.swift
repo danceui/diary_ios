@@ -13,17 +13,28 @@ class FlipAnimatorController {
     private var pageShadow: UIView?
     private var lastProgressForTesting: CGFloat?
     
+    private let pageCornerRadius = PageConstants.pageCornerRadius
     private let baseVelocity = FlipConstants.baseVelocity
     private let baseDuration = FlipConstants.baseDuration
     private let progressThreshold = FlipConstants.progressThreshold
     private let velocityThreshold = FlipConstants.velocityThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
-    private let maxSpeedFactor  = FlipConstants.maxSpeedFactor
-    private let lightAngle  = FlipConstants.lightAngle
-    private let transformm34  = FlipConstants.transformm34
-    private let largerOverlayAlpha  = FlipConstants.largerOverlayAlpha
-    private let smallerOverlayAlpha  = FlipConstants.smallerOverlayAlpha
-    private let defaultCornerRadius = PageConstants.defaultCornerRadius
+    private let maxSpeedFactor = FlipConstants.maxSpeedFactor
+    private let lightAngle = FlipConstants.lightAngle
+    private let transformm34 = FlipConstants.transformm34
+    private let largerOverlayAlpha = FlipConstants.largerOverlayAlpha
+    private let smallerOverlayAlpha = FlipConstants.smallerOverlayAlpha
+    private let shadowOffset = FlipConstants.shadowOffset
+    private let shadowOpacity = FlipConstants.shadowOpacity
+    private let shadowRadius = FlipConstants.shadowRadius
+    private let shadowInset = FlipConstants.shadowInset
+    private let shadowCornerRadius = FlipConstants.shadowCornerRadius
+
+    private let containerShadowCornerRadius = PageConstants.shadowCornorRadius
+    private let containerShadowOffset = PageConstants.shadowOffset
+    private let containerShadowRadius = PageConstants.shadowRadius
+    private let containerShadowOpacity = PageConstants.shadowOpacity
+    private let containerShadowInset = PageConstants.shadowInset
 
     private var pendingFlips: [FlipRequest] = []
     var isAnimating: Bool { return state != .idle }
@@ -274,6 +285,13 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = transformm34
+        container.layer.cornerRadius = pageCornerRadius
+        container.layer.masksToBounds = false
+        container.layer.shadowColor = UIColor.red.cgColor
+        container.layer.shadowOffset = CGSize(width: containerShadowOffset, height: containerShadowOffset)
+        container.layer.shadowOpacity = containerShadowOpacity
+        let path = UIBezierPath(roundedRect: container.bounds.insetBy(dx: containerShadowInset, dy: containerShadowInset), cornerRadius: containerShadowCornerRadius)
+        container.layer.shadowPath = path.cgPath
 
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
@@ -291,7 +309,7 @@ class FlipAnimatorController {
         // 快照的阴影和圆角
         let overlay = UIView(frame: snapshot.bounds)
         overlay.isUserInteractionEnabled = false
-        overlay.layer.cornerRadius = defaultCornerRadius
+        overlay.layer.cornerRadius = pageCornerRadius
         overlay.backgroundColor = UIColor.black
         overlay.alpha = 0
 
@@ -305,10 +323,10 @@ class FlipAnimatorController {
         let shadow = UIView(frame: targetView.bounds)
         shadow.isUserInteractionEnabled = false
         shadow.backgroundColor = .clear
-        shadow.layer.cornerRadius = defaultCornerRadius
+        shadow.layer.cornerRadius = shadowCornerRadius
         shadow.layer.masksToBounds = false // 允许阴影超出 bounds
         shadow.layer.shadowColor = UIColor.blue.cgColor
-        shadow.layer.shadowOffset = CGSize(width: 0, height: 4)
+        shadow.layer.shadowOffset = CGSize(width: shadowOffset, height: shadowOffset)
 
         updatePageShadow(for: shadow)
         targetView.addSubview(shadow)
@@ -316,9 +334,9 @@ class FlipAnimatorController {
     }
 
     private func updatePageShadow(for shadow: UIView) {
-        shadow.layer.shadowOpacity = 0.4
-        shadow.layer.shadowRadius = 20 // 控制模糊边缘程度
-        let path = UIBezierPath(rect: shadow.bounds)
+        shadow.layer.shadowOpacity = shadowOpacity
+        shadow.layer.shadowRadius = shadowRadius
+        let path = UIBezierPath(roundedRect: shadow.bounds.insetBy(dx: shadowInset, dy: shadowInset), cornerRadius: shadowCornerRadius)
         shadow.layer.shadowPath = path.cgPath
     }
 

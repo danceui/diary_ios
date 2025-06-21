@@ -3,7 +3,13 @@ import UIKit
 struct PageConstants {
     static let defaultPageSize: PaperSize = .a4
     static let defaultPageRole: PageRole = .normal
-    static let defaultCornerRadius: CGFloat = 20 // 页面圆角
+    static let pageCornerRadius: CGFloat = 20
+
+    static let shadowOffset: CGFloat = 5
+    static let shadowRadius: CGFloat = 10
+    static let shadowOpacity: Float = 0.3
+    static let shadowInset: CGFloat = -10
+    static let shadowCornorRadius: CGFloat = 20
 }
 
 struct StackConstants {

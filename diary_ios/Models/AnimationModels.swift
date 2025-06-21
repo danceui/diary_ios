@@ -1,18 +1,27 @@
 import UIKit
 
 struct FlipConstants {
+    // 翻页动画相关常量
     static let baseVelocity: CGFloat = 1000
     static let baseDuration: TimeInterval = 0.4
     static let progressThreshold: CGFloat = 0.499
     static let velocityThreshold: CGFloat = 800
     static let minSpeedFactor: CGFloat = 1
     static let maxSpeedFactor: CGFloat = 1.5
+    static let transformm34: CGFloat = -1 / 2000
+
     static let epsilon: CGFloat = 0.01
+
+    // 阴影相关常量
     static let lightAngle: CGFloat = .pi / 12
     static let thicknessScaleSensitivity: CGFloat = 0.4
-    static let transformm34: CGFloat = -1 / 2000
     static let largerOverlayAlpha: CGFloat = 0.2
     static let smallerOverlayAlpha: CGFloat = 0.2
+    static let shadowOffset: CGFloat = 5
+    static let shadowRadius: CGFloat = 30
+    static let shadowOpacity: Float = 0.3
+    static let shadowInset: CGFloat = 30
+    static let shadowCornerRadius: CGFloat = 20
 }
 
 struct FlipRequest {

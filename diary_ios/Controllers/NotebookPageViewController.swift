@@ -8,8 +8,15 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
 
     private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
     private var snapshotIndex = 0
+
+    // MARK: - 常量
     private let maxSnapshots = 50
-    private let defaultCornerRadius = PageConstants.defaultCornerRadius
+    private let pageCornerRadius = PageConstants.pageCornerRadius
+    private let shadowOffset = PageConstants.shadowOffset
+    private let shadowRadius = PageConstants.shadowRadius
+    private let shadowOpacity = PageConstants.shadowOpacity
+    private let shadowInset = PageConstants.shadowInset
+    private let shadowCornorRadius = PageConstants.shadowCornorRadius
 
     // MARK: - 生命周期
     init(role: PageRole = .normal, initialData: Data? = nil) {
@@ -34,15 +41,17 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         canvas.frame = view.bounds
+        let path = UIBezierPath(roundedRect: view.bounds.insetBy(dx: shadowInset, dy: shadowInset), cornerRadius: shadowCornorRadius)
+        view.layer.shadowPath = path.cgPath
     }
 
     private func setupViewStyle() {
         view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
-        view.layer.cornerRadius = defaultCornerRadius
-        view.layer.masksToBounds = false // 允许阴影超出边界
-        view.layer.shadowColor = UIColor.red.cgColor // 阴影颜色
-        view.layer.shadowOffset = CGSize(width: 0, height: 4) // 阴影偏移
-        view.layer.shadowOpacity = 0.2 // 阴影透明度
+        view.layer.cornerRadius = pageCornerRadius
+        view.layer.masksToBounds = false
+        view.layer.shadowColor = UIColor.red.cgColor
+        view.layer.shadowOffset = CGSize(width: shadowOffset, height: shadowOffset)
+        view.layer.shadowOpacity = shadowOpacity
     }
 
     private func setupCanvas() {
@@ -60,7 +69,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         case .empty: break
         }
 
-        canvas.layer.cornerRadius = defaultCornerRadius
+        canvas.layer.cornerRadius = pageCornerRadius
         canvas.layer.masksToBounds = true
         view.addSubview(canvas)
     }
