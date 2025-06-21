@@ -8,8 +8,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
 
     private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
     private var snapshotIndex = 0
-
-    // MARK: - 常量
     private let maxSnapshots = 50
     private let pageCornerRadius = PageConstants.pageCornerRadius
 

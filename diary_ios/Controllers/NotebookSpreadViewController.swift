@@ -12,11 +12,10 @@ class NotebookSpreadViewController: UIViewController {
     private let baseOffset = StackConstants.baseOffset
     private let progressThreshold = FlipConstants.progressThreshold
     private let velocityThreshold = FlipConstants.velocityThreshold
-    private let pageCornerRadius = PageConstants.pageCornerRadius
+
     private let pageShadowOffset = PageConstants.shadowOffset
     private let pageShadowRadius = PageConstants.shadowRadius
     private let pageShadowOpacity = PageConstants.shadowOpacity
-    private let pageShadowInset = PageConstants.shadowInset
     private let pageShadowCornerRadius = PageConstants.shadowCornorRadius
     
     var pages: [NotebookPageViewController] = []
@@ -104,8 +103,8 @@ class NotebookSpreadViewController: UIViewController {
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
 
             thisContainer.layer.masksToBounds = false // 允许阴影
+            thisContainer.layer.shadowOffset = CGSize(width: 0, height: pageShadowOffset)
             thisContainer.layer.shadowColor = UIColor.red.cgColor
-            thisContainer.layer.shadowOffset = CGSize(width: pageShadowOffset, height: pageShadowOffset)
             thisContainer.layer.shadowOpacity = pageShadowOpacity
             thisContainer.layer.shadowRadius = pageShadowRadius
 
