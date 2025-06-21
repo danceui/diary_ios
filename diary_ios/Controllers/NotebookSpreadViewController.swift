@@ -1,5 +1,4 @@
 import UIKit
-
 protocol NotebookSpreadViewControllerDelegate: AnyObject {
     func currentContentWidth() -> CGFloat
 }

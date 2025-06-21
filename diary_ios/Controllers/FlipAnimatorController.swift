@@ -123,7 +123,7 @@ class FlipAnimatorController {
         let shadowProgress = direction == .nextPage ? abs(progress) : 1 - abs(progress)
         let shadowWidth = computeShadowWidth(shadowProgress: shadowProgress, lightAngle: lightAngle, containerWidth: flipContainer.bounds.width)
         shadow.frame = CGRect(x: 0, y: 0, width: shadowWidth, height: shadow.bounds.height)
-        configurePageShadowLayer(for: shadow)
+        updatePageShadow(for: shadow)
 
         // 更新快照的阴影层和可见性
         frontOverlay?.alpha = computeOverlayAlpha(alphaProgress: abs(progress), overlayAlpha: direction == .nextPage ? smallerOverlayAlpha : largerOverlayAlpha)
@@ -274,7 +274,6 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = transformm34
-        // container.clipsToBounds = true // true时，阴影效果无法展现
 
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
@@ -289,6 +288,7 @@ class FlipAnimatorController {
         snapshot.isHidden = isFront ? false : true
         snapshot.layer.transform = isFront ? CATransform3DIdentity : CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
 
+        // 快照的阴影和圆角
         let overlay = UIView(frame: snapshot.bounds)
         overlay.isUserInteractionEnabled = false
         overlay.layer.cornerRadius = defaultCornerRadius
@@ -300,27 +300,24 @@ class FlipAnimatorController {
         else { self.backOverlay = overlay }
     }
 
-    // MARK: - 快照的阴影层
+    // MARK: - 翻页时快照的投影
     private func setupPageShadow(for targetView: UIView, direction: PageTurnDirection) {
         let shadow = UIView(frame: targetView.bounds)
         shadow.isUserInteractionEnabled = false
+        shadow.backgroundColor = .clear
         shadow.layer.cornerRadius = defaultCornerRadius
-        shadow.backgroundColor = .clear // 背景色必须透明，否则阴影无法显示
-        shadow.alpha = 0.3
+        shadow.layer.masksToBounds = false // 允许阴影超出 bounds
+        shadow.layer.shadowColor = UIColor.blue.cgColor
+        shadow.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        configurePageShadowLayer(for: shadow)
+        updatePageShadow(for: shadow)
         targetView.addSubview(shadow)
         self.pageShadow = shadow
     }
-    
-    // MARK: - 翻页时快照的投影
-    private func configurePageShadowLayer(for shadow: UIView) {
-        shadow.layer.masksToBounds = false // 允许阴影超出 bounds
-        shadow.layer.shadowColor = UIColor.black.cgColor
+
+    private func updatePageShadow(for shadow: UIView) {
         shadow.layer.shadowOpacity = 0.4
-        shadow.layer.shadowOffset = CGSize(width: 0, height: 0)
         shadow.layer.shadowRadius = 20 // 控制模糊边缘程度
-        
         let path = UIBezierPath(rect: shadow.bounds)
         shadow.layer.shadowPath = path.cgPath
     }
