@@ -13,13 +13,12 @@ class FlipAnimatorController {
     private var pageShadow: UIView?
     private var lastProgressForTesting: CGFloat?
     
-    private let pageCornerRadius = PageConstants.pageCornerRadius
     private let baseVelocity = FlipConstants.baseVelocity
     private let baseDuration = FlipConstants.baseDuration
     private let progressThreshold = FlipConstants.progressThreshold
-    private let velocityThreshold = FlipConstants.velocityThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor = FlipConstants.maxSpeedFactor
+
     private let lightAngle = FlipConstants.lightAngle
     private let transformm34 = FlipConstants.transformm34
     private let largerOverlayAlpha = FlipConstants.largerOverlayAlpha
@@ -280,7 +279,11 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = transformm34
-        container.layer.masksToBounds = true
+        container.layer.masksToBounds = false // 允许阴影
+        container.layer.shadowOffset = CGSize(width: 0, height: 0)
+        container.layer.shadowColor = UIColor.yellow.cgColor
+        container.layer.shadowOpacity = 0.3
+        container.layer.shadowRadius = 5
 
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
@@ -299,7 +302,6 @@ class FlipAnimatorController {
         // 快照的阴影和圆角
         let overlay = UIView(frame: snapshot.bounds)
         overlay.isUserInteractionEnabled = false
-        overlay.layer.cornerRadius = pageCornerRadius
         overlay.backgroundColor = UIColor.black
         overlay.alpha = 0
 
