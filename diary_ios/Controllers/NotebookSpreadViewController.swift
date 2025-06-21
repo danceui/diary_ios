@@ -97,6 +97,7 @@ class NotebookSpreadViewController: UIViewController {
             let originX = XOffsets[i] * baseOffset + baseX
             let originY = offsetsY[i]
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
+            thisContainer.layer.masksToBounds = false
 
             // 确定这个容器的内容
             pageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1

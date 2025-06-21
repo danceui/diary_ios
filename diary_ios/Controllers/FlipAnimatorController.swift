@@ -102,9 +102,9 @@ class FlipAnimatorController {
             return
         }
         host.view.addSubview(flipContainer)
-        host.view.bringSubviewToFront(flipContainer)
-        self.flipContainer = flipContainer
         setupPageShadow(for: direction == .nextPage ? targetRightView : currentRightView, direction: direction)
+
+        self.flipContainer = flipContainer
         state = (type == .manual) ? .manualFlipping : .autoFlipping
     }
 
@@ -280,6 +280,7 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = transformm34
+        container.layer.masksToBounds = false
 
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
@@ -293,10 +294,12 @@ class FlipAnimatorController {
         snapshot.frame = container.bounds
         snapshot.isHidden = isFront ? false : true
         snapshot.layer.transform = isFront ? CATransform3DIdentity : CATransform3DRotate(CATransform3DIdentity, .pi, 0, 1, 0)
+        snapshot.layer.masksToBounds = false
 
         // 快照的阴影和圆角
         let overlay = UIView(frame: snapshot.bounds)
         overlay.isUserInteractionEnabled = false
+        overlay.layer.masksToBounds = false
         overlay.layer.cornerRadius = pageCornerRadius
         overlay.backgroundColor = UIColor.black
         overlay.alpha = 0
