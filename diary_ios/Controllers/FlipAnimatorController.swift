@@ -298,7 +298,7 @@ class FlipAnimatorController {
 
         containerShadow.layer.masksToBounds = false
         containerShadow.layer.shadowOffset = CGSize(width: 0, height: 0)
-        containerShadow.layer.shadowColor = UIColor.green.cgColor
+        containerShadow.layer.shadowColor = UIColor.red.cgColor
         containerShadow.layer.shadowOpacity = pageShadowOpacity
         containerShadow.layer.shadowRadius = pageShadowRadius
 
