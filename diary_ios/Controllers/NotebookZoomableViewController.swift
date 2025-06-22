@@ -7,12 +7,12 @@ extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
 }
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
-    let notebookSpreadVC: NotebookSpreadViewController
+    private var notebookSpreadVC: NotebookSpreadViewController
     private var scrollView: UIScrollView!
     private var spreadContainer: UIView!
     private var layoutAnimator: UIViewPropertyAnimator?
 
-    let paperSize: PaperSize
+    private let paperSize: PaperSize
     private let defaultZoomScale = NotebookConstants.defaultZoomScale
 
     private var previousZoomScale = NotebookConstants.defaultZoomScale
@@ -78,7 +78,14 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private func setupNotebookSpreadVC() {
         addChild(notebookSpreadVC)
         spreadContainer.addSubview(notebookSpreadVC.view)
-        notebookSpreadVC.view.frame = spreadContainer.bounds // 确保notebookSpreadVC.view填满spreadContainer
+        // notebookSpreadVC.view.frame = spreadContainer.bounds // 确保notebookSpreadVC.view填满spreadContainer
+        notebookSpreadVC.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            notebookSpreadVC.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor),
+            notebookSpreadVC.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor),
+            notebookSpreadVC.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor),
+            notebookSpreadVC.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
+        ])
         notebookSpreadVC.didMove(toParent: self)
     }
 
