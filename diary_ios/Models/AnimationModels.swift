@@ -21,7 +21,6 @@ struct FlipConstants {
     static let shadowRadius: CGFloat = 30
     static let shadowOpacity: Float = 0.3
     static let shadowInset: CGFloat = 30
-    static let shadowCornerRadius: CGFloat = 20
 }
 
 struct FlipRequest {

@@ -15,7 +15,7 @@ class NotebookSpreadViewController: UIViewController {
 
     private let pageShadowRadius = PageConstants.shadowRadius
     private let pageShadowOpacity = PageConstants.shadowOpacity
-    private let pageShadowCornerRadius = PageConstants.shadowCornorRadius
+    private let pageShadowCornerRadius = PageConstants.pageCornerRadius
     
     var pages: [NotebookPageViewController] = []
     var pageCount: Int {pages.count}
