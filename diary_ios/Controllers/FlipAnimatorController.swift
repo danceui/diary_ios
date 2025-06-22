@@ -57,8 +57,10 @@ class FlipAnimatorController {
             state = .idle
             return
         }
-        host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentIndex) ?? []
-        host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex) ?? []
+        host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentIndex)
+        host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex)
+        host.fromXOffsets = host.computeXOffsets(pageIndex: host.currentIndex)
+        host.toXOffsets = host.computeXOffsets(pageIndex: targetIndex)
 
         // 生成前后快照
         print("📸 Create snapshots.")

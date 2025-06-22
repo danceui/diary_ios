@@ -23,7 +23,8 @@ class NotebookSpreadViewController: UIViewController {
 
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
-    var XOffsets: [CGFloat] = []
+    var fromXOffsets: [CGFloat] = []
+    var toXOffsets: [CGFloat] = []
     var fromYOffsets: [CGFloat] = []
     var toYOffsets: [CGFloat] = []
 
@@ -75,10 +76,8 @@ class NotebookSpreadViewController: UIViewController {
 
         // 根据 currentIndex 确定要展开的 pageContainer
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
-
-        XOffsets = computeXOffsets()
+        let offsetsX = computeXOffsets(pageIndex: currentIndex)
         let offsetsY = computeYOffsets(pageIndex: currentIndex)
-
         var baseX: CGFloat
         var pageIndex: Int
         
@@ -92,7 +91,7 @@ class NotebookSpreadViewController: UIViewController {
             if i == 0, currentIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
             else if i == containerCount - 1, currentIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
 
-            let originX = XOffsets[i] + baseX
+            let originX = offsetsX[i] + baseX
             let originY = offsetsY[i]
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
 
@@ -206,28 +205,16 @@ class NotebookSpreadViewController: UIViewController {
         updatePageContainers()
     }
 
-    // MARK: - 随progress更新的函数
-    func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
-        let width = pageDelegate?.currentContentWidth() ?? 0 
-        var offset: CGFloat = 0
-        let easedProgress = easeInOutCubic(progress)
-
-        if currentIndex == 2 && direction == .lastPage {
-            offset = -width / 4 * easedProgress
-        } else if currentIndex + 4 == pages.count && direction == .nextPage {
-            offset = width / 4 * easedProgress
-        } else if currentIndex == 0 && direction == .nextPage {
-            offset = -width / 4 * (1 - easedProgress)
-        } else if currentIndex == pages.count - 2 && direction == .lastPage {
-            offset = width / 4 * (1 - easedProgress)
-        }
-        onProgressChanged?(offset)
-    }
-
+    // MARK: - 计算 X Y 偏移量
     func computeYOffsets(pageIndex: Int) -> [CGFloat] {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
-        var offsets = Array(repeating: CGFloat(0), count: containerCount)
 
+        // 封面或背页时，所有 Y 偏移为 0
+        if pageIndex == 0 || pageIndex == pageCount - 2 {
+            return Array(repeating: 0, count: containerCount)
+        }
+
+        var offsets = Array(repeating: CGFloat(0), count: containerCount)
         if offsetIndex == 0, pageIndex == 0 {
             for j in 2..<containerCount {
                 offsets[j] = CGFloat(j - 1) * baseOffset
@@ -249,10 +236,24 @@ class NotebookSpreadViewController: UIViewController {
         }
         return offsets
     }
-    
-    func computeXOffsets() -> [CGFloat] {
-        guard containerCount > 0 else { return [] }
+
+    func computeXOffsets(pageIndex: Int) -> [CGFloat] {
+        let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
+
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
+        // 封面或背页时，所有 X 偏移为 0
+        if pageIndex == 0 {
+            offsets[0] = CGFloat(1 - containerCount) / 2.0
+            offsets[1] = offsets[0] + 1.0            
+            for i in 2..<containerCount { offsets[i] = offsets[1] }
+            return offsets.map { $0 * baseOffset }
+        } else if pageIndex == pageCount - 2 {
+            offsets[containerCount - 1] = CGFloat(containerCount - 1) / 2.0
+            offsets[containerCount - 2] = offsets[containerCount - 1] - 1.0            
+            for i in 0..<(containerCount - 2) { offsets[i] = offsets[containerCount - 2] }
+            return offsets.map { $0 * baseOffset }
+        }
+
         offsets[0] = CGFloat(1 - containerCount) / 2.0
         for i in 1..<containerCount {
             offsets[i] = offsets[i - 1] + 1
@@ -260,17 +261,37 @@ class NotebookSpreadViewController: UIViewController {
         return offsets.map { $0 * baseOffset }
     }
 
+    // MARK: - 随 progress 更新的变量
+    func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
+        let width = pageDelegate?.currentContentWidth() ?? 0 
+        var offset: CGFloat = 0
+        let easedProgress = easeInOutCubic(progress)
+
+        if currentIndex == 2 && direction == .lastPage {
+            offset = -width / 4 * easedProgress
+        } else if currentIndex + 4 == pages.count && direction == .nextPage {
+            offset = width / 4 * easedProgress
+        } else if currentIndex == 0 && direction == .nextPage {
+            offset = -width / 4 * (1 - easedProgress)
+        } else if currentIndex == pages.count - 2 && direction == .lastPage {
+            offset = width / 4 * (1 - easedProgress)
+        }
+        onProgressChanged?(offset)
+    }
+
     func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
-        guard fromYOffsets.count == toYOffsets.count else { return }
+        guard fromYOffsets.count == toYOffsets.count, fromXOffsets.count == toXOffsets.count else { return }
         let easedProgress = easeInOutCubic(abs(progress))
-        if shouldPrint { print("   📐 PageContainers originY: [", terminator: " ")}
+        if shouldPrint { print("   📐 PageContainers offsets: [", terminator: " ")}
         for (i, container) in pageContainers.enumerated() {
-            guard i < fromYOffsets.count else { continue }
             let fromY = fromYOffsets[i]
             let toY = toYOffsets[i]
             let dy = (toY - fromY) * easedProgress
-            if shouldPrint { print("\(format(fromY + dy))", terminator: " ")}
-            container.transform = CGAffineTransform(translationX: 0, y: dy)
+            let fromX = fromXOffsets[i]
+            let toX = toXOffsets[i]
+            let dx = (toX - fromX) * easedProgress
+            if shouldPrint { print("(\(format(dx)), \(format(dy)))", terminator: " ")}
+            container.transform = CGAffineTransform(translationX: dx, y: dy)
         }
         if shouldPrint { print("].")}
     }
