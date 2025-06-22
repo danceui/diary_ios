@@ -3,8 +3,10 @@ import UIKit
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     let notebookSpreadVC: NotebookSpreadViewController
     let paperSize: PaperSize
-    private let containerView = UIView()
-    private var previousZoomScale: CGFloat = 0.8
+    private let defaultZoomScale = NotebookConstants.defaultZoomScale
+
+    private var containerView = UIView()
+    private var previousZoomScale = NotebookConstants.defaultZoomScale
 
     private lazy var scrollView: UIScrollView = {
         let sv = UIScrollView()
@@ -99,10 +101,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        scrollView.setZoomScale(0.8, animated: true)
-        previousZoomScale = scrollView.zoomScale
+        let targetScale: CGFloat = scrollView.zoomScale > 0.9 ? 0.8 : 1.5
+        scrollView.setZoomScale(targetScale, animated: true)
+        previousZoomScale = targetScale
         printLayoutInfo(context: "handleDoubleTap")
     }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? { return containerView }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale

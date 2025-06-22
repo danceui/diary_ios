@@ -9,6 +9,10 @@ struct PageConstants {
     static let shadowOpacity: Float = 0.3
 }
 
+struct NotebookConstants {
+    static let defaultZoomScale: CGFloat = 0.8
+}
+
 struct StackConstants {
     static let baseOffset: CGFloat = 5
 }
