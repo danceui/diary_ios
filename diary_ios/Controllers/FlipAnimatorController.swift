@@ -13,13 +13,16 @@ class FlipAnimatorController {
     private var pageShadow: UIView?
     private var lastProgressForTesting: CGFloat?
     
+    private let defaultCornerRadius = PageConstants.pageCornerRadius
+    private let pageShadowRadius = PageConstants.shadowRadius
+    private let pageShadowOpacity = PageConstants.shadowOpacity
+
     private let baseVelocity = FlipConstants.baseVelocity
     private let baseDuration = FlipConstants.baseDuration
     private let progressThreshold = FlipConstants.progressThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor = FlipConstants.maxSpeedFactor
 
-    private let defaultCornerRadius = PageConstants.pageCornerRadius
     private let lightAngle = FlipConstants.lightAngle
     private let transformm34 = FlipConstants.transformm34
     private let largerOverlayAlpha = FlipConstants.largerOverlayAlpha
@@ -271,40 +274,31 @@ class FlipAnimatorController {
     // MARK: - 创建翻页容器
     private func createFlipContainer(for direction: PageTurnDirection, offsetIndex: Int, frontSnapshot: UIView, backSnapshot: UIView) -> UIView? {
         guard let host = host else { return nil }
-        // 创建临时 conatiner, 包含 pageContainer view 快照
-        let container = UIView()
         let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
-        container.bounds = CGRect(origin: .zero, size: containerFrame.size)
-        container.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
-                                            y: containerFrame.origin.y + containerFrame.midY)
-        container.layer.transform.m34 = transformm34
+        
+        // 内层容器：负责内容和圆角裁剪
+        let container = UIView(frame: CGRect(origin: .zero, size: containerFrame.size))
         container.layer.cornerRadius = defaultCornerRadius
         container.layer.masksToBounds = true
-
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
         container.addSubview(frontSnapshot)
         container.addSubview(backSnapshot)
 
-        let containerShadow = createContainerShadow(for: container)
-        containerShadow.addSubview(container)
-        return containerShadow
-    }
+        // 外层容器：负责阴影和变换
+        let containerShadow = UIView(frame: containerFrame)
+        containerShadow.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
+        containerShadow.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
+                                            y: containerFrame.origin.y + containerFrame.midY)
+        containerShadow.layer.transform.m34 = transformm34
 
-    // MARK: - 创建容器阴影
-    private func createContainerShadow(for container: UIView) -> UIView {
-        let containerShadow = UIView(frame: container.bounds)
-        containerShadow.layer.anchorPoint = container.layer.anchorPoint
-        containerShadow.layer.position = container.layer.position
-        containerShadow.layer.transform = container.layer.transform
-        containerShadow.layer.cornerRadius = defaultCornerRadius
-        containerShadow.isUserInteractionEnabled = false
-
-        containerShadow.backgroundColor = .clear
-        containerShadow.layer.shadowColor = UIColor.blue.cgColor
+        containerShadow.layer.masksToBounds = false
         containerShadow.layer.shadowOffset = CGSize(width: 0, height: 0)
+        containerShadow.layer.shadowColor = UIColor.green.cgColor
+        containerShadow.layer.shadowOpacity = pageShadowOpacity
+        containerShadow.layer.shadowRadius = pageShadowRadius
 
+        containerShadow.addSubview(container)
         return containerShadow
     }
 
@@ -344,7 +338,11 @@ class FlipAnimatorController {
     private func updatePageShadow(for shadow: UIView) {
         shadow.layer.shadowOpacity = shadowOpacity
         shadow.layer.shadowRadius = shadowRadius
-        let path = UIBezierPath(roundedRect: shadow.bounds.insetBy(dx: shadowInset, dy: shadowInset), cornerRadius: defaultCornerRadius)
+        guard let insetRect = insetRectSafe(from: shadow.bounds, inset: shadowInset) else {
+            print("❌ Invalid shadow bounds.")
+            return
+        }
+        let path = UIBezierPath(roundedRect: insetRect, cornerRadius: defaultCornerRadius)
         shadow.layer.shadowPath = path.cgPath
     }
 
