@@ -75,10 +75,6 @@ class NotebookSpreadViewController: UIViewController {
 
         // 根据 currentIndex 确定要展开的 pageContainer
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
-        guard offsetIndex >= 0 && offsetIndex <= containerCount - 1 else {
-            print("❌ Offset index \(offsetIndex) invalid.")
-            return 
-        }
 
         XOffsets = computeXOffsets()
         let offsetsY = computeYOffsets(pageIndex: currentIndex)
@@ -91,12 +87,11 @@ class NotebookSpreadViewController: UIViewController {
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
+
             baseX = i <= offsetIndex ? 0 : view.bounds.width / 2
-            if i == 0, currentIndex == 0 {
-                baseX = view.bounds.width / 2
-            } else if i == containerCount - 1, currentIndex == pageCount - 2 {
-                baseX = 0
-            }
+            if i == 0, currentIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
+            else if i == containerCount - 1, currentIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
+
             let originX = XOffsets[i] * baseOffset + baseX
             let originY = offsetsY[i]
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
@@ -109,11 +104,9 @@ class NotebookSpreadViewController: UIViewController {
 
             // 确定这个容器的内容
             pageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
-            if i == 0, currentIndex == 0 {
-                pageIndex = 1
-            } else if i == containerCount - 1, currentIndex == pageCount - 2 {
-                pageIndex = pageCount - 2
-            }
+            if i == 0, currentIndex == 0 { pageIndex = 1 }
+            else if  i == containerCount - 1, currentIndex == pageCount - 2 { pageIndex = pageCount - 2 }
+
             let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
