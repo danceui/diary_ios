@@ -19,6 +19,7 @@ class FlipAnimatorController {
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor = FlipConstants.maxSpeedFactor
 
+    private let pageCornerRadius = PageConstants.pageCornerRadius
     private let lightAngle = FlipConstants.lightAngle
     private let transformm34 = FlipConstants.transformm34
     private let largerOverlayAlpha = FlipConstants.largerOverlayAlpha
@@ -279,6 +280,8 @@ class FlipAnimatorController {
         container.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         container.layer.transform.m34 = transformm34
+
+        container.layer.cornerRadius = pageCornerRadius
         container.layer.masksToBounds = false // 允许阴影
         container.layer.shadowOffset = CGSize(width: 0, height: 0)
         container.layer.shadowColor = UIColor.yellow.cgColor
