@@ -274,7 +274,8 @@ class FlipAnimatorController {
     // MARK: - 创建翻页容器
     private func createFlipContainer(for direction: PageTurnDirection, offsetIndex: Int, frontSnapshot: UIView, backSnapshot: UIView) -> UIView? {
         guard let host = host else { return nil }
-        let containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
+        var containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
+        if host.currentIndex == 0 && direction == .nextPage { containerFrame = host.pageContainers[offsetIndex].frame }
         
         // 内层容器：负责内容和圆角裁剪
         let container = UIView(frame: CGRect(origin: .zero, size: containerFrame.size))
@@ -291,7 +292,7 @@ class FlipAnimatorController {
         containerShadow.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
                                             y: containerFrame.origin.y + containerFrame.midY)
         containerShadow.layer.transform.m34 = transformm34
-        print("   📐 FlipContainer frame: \(formatRect(containerShadow.frame)).")
+        print("   📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)).")
 
         containerShadow.layer.masksToBounds = false
         containerShadow.layer.shadowOffset = CGSize(width: 0, height: 0)

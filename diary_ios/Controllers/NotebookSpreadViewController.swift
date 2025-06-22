@@ -224,12 +224,28 @@ class NotebookSpreadViewController: UIViewController {
         onProgressChanged?(offset)
     }
 
-    func computeYOffsets(pageIndex i: Int) -> [CGFloat] {
-        let centerIndex = min(max(0, i / 2 - 1), containerCount - 1)
+    func computeYOffsets(pageIndex: Int) -> [CGFloat] {
+        let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
-        for i in 0..<containerCount {
-            let depth = i <= centerIndex ? (centerIndex - i) : (i - centerIndex - 1)
-            offsets[i] = CGFloat(depth) * baseOffset
+
+        if offsetIndex == 0, pageIndex == 0 {
+            for j in 2..<containerCount {
+                offsets[j] = CGFloat(j - 1) * baseOffset
+            }
+        } else if offsetIndex == containerCount - 1 && pageIndex == pageCount - 2 {
+            for j in 0..<(containerCount - 2) {
+                offsets[j] = CGFloat(containerCount - 2 - j) * baseOffset
+            }
+        } else {
+            for j in 0..<containerCount {
+                if j < offsetIndex {
+                    offsets[j] = CGFloat(offsetIndex - j) * baseOffset
+                } else if j > offsetIndex + 1 {
+                    offsets[j] = CGFloat(j - offsetIndex - 1) * baseOffset
+                } else {
+                    offsets[j] = 0
+                }
+            }
         }
         return offsets
     }
