@@ -92,7 +92,7 @@ class NotebookSpreadViewController: UIViewController {
             if i == 0, currentIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
             else if i == containerCount - 1, currentIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
 
-            let originX = XOffsets[i] * baseOffset + baseX
+            let originX = XOffsets[i] + baseX
             let originY = offsetsY[i]
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
 
@@ -257,7 +257,7 @@ class NotebookSpreadViewController: UIViewController {
         for i in 1..<containerCount {
             offsets[i] = offsets[i - 1] + 1
         }
-        return offsets
+        return offsets.map { $0 * baseOffset }
     }
 
     func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
