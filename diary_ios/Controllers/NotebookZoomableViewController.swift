@@ -68,19 +68,20 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
-        // 设置背景颜色以便调试
-        // scrollView.backgroundColor = .yellow 
+        // 设置边框以便调试
+        addTestBorder(for: scrollView, color: .red, width: 2.0)
 
         spreadContainer = UIView()
         scrollView.addSubview(spreadContainer)
         spreadContainer.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            spreadContainer.centerXAnchor.constraint(equalTo: scrollView.contentLayoutGuide.centerXAnchor),
-            spreadContainer.centerYAnchor.constraint(equalTo: scrollView.contentLayoutGuide.centerYAnchor),
+            spreadContainer.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            spreadContainer.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
             spreadContainer.widthAnchor.constraint(equalToConstant: paperSize.size.width),
             spreadContainer.heightAnchor.constraint(equalToConstant: paperSize.size.height)
         ])
-        spreadContainer.backgroundColor = .yellow // 设置背景颜色以便调试
+        // 设置边框以便调试
+        addTestBorder(for: spreadContainer, color: .blue, width: 2.0)
 
     }
 
@@ -107,30 +108,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 调整内容位置
     private func centerContent(roleXOffset: CGFloat = 0) {
+        let scrollSize = scrollView.bounds.size
+        let contentSize = scrollView.contentSize
+        let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
+        let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
+        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX, bottom: insetY, right: insetX)
+        scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
     }
-
-    // private func centerContent(roleXOffset: CGFloat = 0) {
-    //     let scrollSize = scrollView.bounds.size
-    //     let contentSize = spreadContainer.frame.size
-    //     let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
-    //     let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
-    //     let targetCenter = CGPoint(
-    //         x: contentSize.width / 2 + offsetX + roleXOffset,
-    //         y: contentSize.height / 2 + offsetY
-    //     )
-    //     // 计算距离，设置动态时长
-    //     let distance = hypot(spreadContainer.center.x - targetCenter.x,
-    //                         spreadContainer.center.y - targetCenter.y)
-    //     let duration = min(max(0.15, Double(distance / 500)), 0.5)
-    //     // 停止任何已有动画
-    //     layoutAnimator?.stopAnimation(true)
-    //     // 创建 spring 动画器
-    //     layoutAnimator = UIViewPropertyAnimator(duration: duration, dampingRatio: 0.5) {
-    //         self.spreadContainer.center = targetCenter
-    //     }
-    //     layoutAnimator?.startAnimation()
-    //     // print("📐 roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(spreadContainer.center))")
-    // }
     
     // MARK: - 调整内容缩放
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
@@ -144,11 +128,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
-        // centerContent()
-        let insetX = max((scrollView.bounds.width - scrollView.contentSize.width) / 2, 0)
-        let insetY = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
-        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX, bottom: 0, right: 0)
-
+        centerContent()
         printLayoutInfo(context: "scrollViewDidZoom")
     }
 
@@ -157,13 +137,15 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("=======", terminator: " ")
         print("\(context)", terminator: " ")
         print("=======")
+        print("📐 scrollView.zoomScale: \(format(scrollView.zoomScale))")
         print("📐 scrollView.frame: \(formatRect(scrollView.frame))")
         print("📐 scrollView.bounds: \(formatRect(scrollView.bounds))")
-        print("📐 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
         print("📐 scrollView.contentOffset: \(formatPoint(scrollView.contentOffset))")
-        print("📐 scrollView.zoomScale: \(format(scrollView.zoomScale))")
-        print("📐 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
-        // print("📐 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        print("📐 scrollView.contentInset: \(scrollView.contentInset)")
+        print("📐 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
+        print("📐 spreadContainer.frame: \(formatRect(spreadContainer.frame))") // spreadContainer.frame 由 Auto Layout 管理，不必太关注
+        print("📐 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        print("📐 spreadContainer.center: \(formatPoint(spreadContainer.center))")
         // print("📐 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
         // print("📐 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
         print("=======================")
