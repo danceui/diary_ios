@@ -25,6 +25,7 @@ class FlipAnimatorController {
 
     private let lightAngle = FlipConstants.lightAngle
     private let transformm34 = FlipConstants.transformm34
+    private let baseOffset = StackConstants.baseOffset
     private let largerOverlayAlpha = FlipConstants.largerOverlayAlpha
     private let smallerOverlayAlpha = FlipConstants.smallerOverlayAlpha
     private let shadowOffset = FlipConstants.shadowOffset
@@ -248,7 +249,7 @@ class FlipAnimatorController {
             if i >= predictedProgress.count {
                 timer.invalidate()
                 host.goToPagePair(to: host.currentIndex)
-                print("🔘 Cancel animation.", terminator: " ")
+                print("🔘 Cancel animation.")
                 self.cleanupViews()
                 self.cleanupAnimations()
                 return
@@ -276,11 +277,10 @@ class FlipAnimatorController {
     // MARK: - 创建翻页容器
     private func createFlipContainer(for direction: PageTurnDirection, offsetIndex: Int, frontSnapshot: UIView, backSnapshot: UIView) -> UIView? {
         guard let host = host else { return nil }
-        var containerFrame = host.pageContainers[direction == .nextPage ? offsetIndex + 1 : offsetIndex].frame
-        if host.currentIndex == 0 && direction == .nextPage { containerFrame = host.pageContainers[offsetIndex].frame }
+        let containerSize = CGSize(width: host.view.bounds.width / 2, height: host.view.bounds.height)
         
         // 内层容器：负责内容和圆角裁剪
-        let container = UIView(frame: CGRect(origin: .zero, size: containerFrame.size))
+        let container = UIView(frame: CGRect(origin: .zero, size: containerSize))
         container.layer.cornerRadius = defaultCornerRadius
         container.layer.masksToBounds = true
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
@@ -289,12 +289,12 @@ class FlipAnimatorController {
         container.addSubview(backSnapshot)
 
         // 外层容器：负责阴影和变换
-        let containerShadow = UIView(frame: containerFrame)
+        let containerShadow = UIView(frame: CGRect(origin: .zero, size: containerSize))
+        let originX = calculateFlipContainerOriginX(for: direction, isContainerCntEven: host.containerCount % 2 == 0)
         containerShadow.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
-        containerShadow.layer.position = CGPoint(x: direction == .nextPage ? containerFrame.origin.x : containerFrame.origin.x + containerFrame.width, 
-                                            y: containerFrame.origin.y + containerFrame.midY)
+        containerShadow.layer.position = CGPoint(x: direction == .nextPage ? originX : originX + containerSize.width, y: containerSize.height / 2)
         containerShadow.layer.transform.m34 = transformm34
-        print("   📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)).")
+        print("📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)).")
 
         containerShadow.layer.masksToBounds = false
         containerShadow.layer.shadowOffset = CGSize(width: 0, height: 0)
@@ -322,6 +322,24 @@ class FlipAnimatorController {
         snapshot.addSubview(overlay)
         if isFront { self.frontOverlay = overlay }
         else { self.backOverlay = overlay }
+    }
+
+    // MARK: - 获取容器位置
+    private func calculateFlipContainerOriginX(for direction: PageTurnDirection, isContainerCntEven: Bool) -> CGFloat {
+        guard let host = host else { return 0 }
+        if isContainerCntEven {
+            if direction == .nextPage {
+                return computeXDecay(1) * baseOffset / 2 + host.view.bounds.width / 2
+            } else {
+                return -computeXDecay(1) * baseOffset / 2
+            }
+        } else {
+            if direction == .nextPage {
+                return computeXDecay(1) * baseOffset + host.view.bounds.width / 2
+            } else {
+                return computeXDecay(0) * baseOffset
+            }
+        }
     }
 
     // MARK: - 翻页时快照的投影
