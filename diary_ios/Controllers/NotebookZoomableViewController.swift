@@ -7,7 +7,7 @@ extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
 }
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
-    private var notebookSpreadVC: NotebookSpreadViewController
+    private var notebookSpreadViewController: NotebookSpreadViewController
     private var scrollView: UIScrollView!
     private var spreadContainer: UIView!
     private var layoutAnimator: UIViewPropertyAnimator?
@@ -15,12 +15,12 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     private let paperSize: PaperSize
 
-    init(notebookSpreadVC: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
-        self.notebookSpreadVC = notebookSpreadVC
+    init(notebookSpreadViewController: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
+        self.notebookSpreadViewController = notebookSpreadViewController
         self.paperSize = paperSize
         super.init(nibName: nil, bundle: nil)
-        self.notebookSpreadVC.pageDelegate = self
-        self.notebookSpreadVC.onProgressChanged = { [weak self] offset in
+        self.notebookSpreadViewController.pageDelegate = self
+        self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
             self?.centerContent(roleXOffset: offset)
         }
     }
@@ -33,9 +33,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         super.viewDidLoad()
         setupScrollView()
         setupViews()
-        setupNotebookSpreadVC()
+        setupNotebookSpreadViewController()
         setupGestures()
-        setupTestFunctions()
+        // setupTestFunctions()
     }
 
     override func viewDidLayoutSubviews() {
@@ -74,19 +74,19 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.addSubview(spreadContainer)
     }
 
-    private func setupNotebookSpreadVC() {
-        // notebookSpreadVC.view.frame = spreadContainer.bounds // 确保notebookSpreadVC.view填满spreadContainer
-        addChild(notebookSpreadVC)
-        notebookSpreadVC.view.translatesAutoresizingMaskIntoConstraints = false
-        spreadContainer.addSubview(notebookSpreadVC.view)
+    private func setupNotebookSpreadViewController() {
+        // notebookSpreadViewController.view.frame = spreadContainer.bounds // 确保notebookSpreadViewController.view填满spreadContainer
+        addChild(notebookSpreadViewController)
+        notebookSpreadViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        spreadContainer.addSubview(notebookSpreadViewController.view)
         NSLayoutConstraint.activate([
-            notebookSpreadVC.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor),
-            notebookSpreadVC.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor),
-            notebookSpreadVC.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor),
-            notebookSpreadVC.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
+            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor),
+            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor),
+            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor),
+            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
         ])
-        notebookSpreadVC.didMove(toParent: self)
-        // notebookSpreadVC.view.backgroundColor = .yellow // 设置背景颜色以便调试
+        notebookSpreadViewController.didMove(toParent: self)
+        // notebookSpreadViewController.view.backgroundColor = .yellow // 设置背景颜色以便调试
     }
 
     private func setupGestures() {
@@ -110,7 +110,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let targetScale: CGFloat = scrollView.zoomScale > 0.9 ? 0.8 : 1.0
         scrollView.setZoomScale(targetScale, animated: true)
         previousZoomScale = targetScale
-        printLayoutInfo(context: "handleDoubleTap")
+        printLayoutInfo(context: "Double Tap")
     }
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { return spreadContainer }
@@ -118,27 +118,25 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
         centerContent()
-        printLayoutInfo(context: "scrollViewDidZoom")
+        printLayoutInfo(context: "Scroll View Did Zoom")
     }
 
     // MARK: - 测试用
     private func setupTestFunctions() {
         addTestBorder(for: scrollView, color: .red, width: 2.0)
         addTestBorder(for: spreadContainer, color: .blue, width: 2.0)
-        addTestBorder(for: notebookSpreadVC.view, color: .green, width: 2.0)
+        addTestBorder(for: notebookSpreadViewController.view, color: .green, width: 2.0)
     }
 
     private func printLayoutInfo(context: String) {
         print("📐 \(context)")
         print("   📌 scrollView.zoomScale: \(format(scrollView.zoomScale))")
-        print("   📌 scrollView.frame: \(formatRect(scrollView.frame))")
+        // print("   📌 scrollView.frame: \(formatRect(scrollView.frame))")
         print("   📌 scrollView.bounds: \(formatRect(scrollView.bounds))")
         print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
         print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
-        print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
-        print("   📌 spreadContainer.center: \(formatPoint(spreadContainer.center))")
-        // print("   📌 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
-        // print("   📌 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
-        print("=======================")
+        // print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        // print("   📌 notebookView.frame: \(formatRect(notebookSpreadViewController.view.frame))")
+        // print("   📌 notebookView.bounds: \(formatRect(notebookSpreadViewController.view.bounds))")
     }
 }

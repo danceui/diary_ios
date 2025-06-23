@@ -8,7 +8,7 @@ struct NotebookViewContainer: UIViewControllerRepresentable {
     // var borderColor: Color = .red // 边框颜色
 
     func makeUIViewController(context: Context) -> NotebookZoomableViewController {
-        return NotebookZoomableViewController(notebookSpreadVC: notebookSpreadVC)
+        return NotebookZoomableViewController(notebookSpreadViewController: notebookSpreadVC)
     }
 
     func updateUIViewController(_ uiViewController: NotebookZoomableViewController, context: Context) {

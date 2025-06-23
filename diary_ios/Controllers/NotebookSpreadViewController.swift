@@ -82,7 +82,7 @@ class NotebookSpreadViewController: UIViewController {
         var pageIndex: Int
         
         // 确定每个 pageContainer 的位置和内容
-        print("   📐 PageContainers originX: [", terminator: " ")
+        print("📐 PageContainers originX: [", terminator: " ")
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
@@ -97,7 +97,7 @@ class NotebookSpreadViewController: UIViewController {
 
             thisContainer.layer.masksToBounds = false // 允许阴影
             thisContainer.layer.shadowOffset = CGSize(width: 0, height: 0)
-            thisContainer.layer.shadowColor = UIColor.red.cgColor
+            thisContainer.layer.shadowColor = UIColor.black.cgColor
             thisContainer.layer.shadowOpacity = pageShadowOpacity
             thisContainer.layer.shadowRadius = pageShadowRadius
 
