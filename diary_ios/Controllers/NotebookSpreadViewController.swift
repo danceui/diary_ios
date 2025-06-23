@@ -236,27 +236,53 @@ class NotebookSpreadViewController: UIViewController {
         }
         return offsets
     }
-    
+
     func computeXOffsets(pageIndex: Int) -> [CGFloat] {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
-
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
-        // 封面或背页时，所有 X 偏移为 0
+
+        // 封面页逻辑：集中在右侧
         if pageIndex == 0 {
-            offsets[0] = CGFloat(1 - containerCount) / 2.0
-            offsets[1] = offsets[0] + 1.0            
-            for i in 2..<containerCount { offsets[i] = offsets[1] }
-            return offsets.map { $0 * baseOffset }
-        } else if pageIndex == pageCount - 2 {
-            offsets[containerCount - 1] = CGFloat(containerCount - 1) / 2.0
-            offsets[containerCount - 2] = offsets[containerCount - 1] - 1.0            
-            for i in 0..<(containerCount - 2) { offsets[i] = offsets[containerCount - 2] }
+            offsets[0] = -0.5
+            offsets[1] = 0.5
+            if containerCount > 2 {
+                for i in 2..<containerCount { offsets[i] = offsets[1] }
+            }
             return offsets.map { $0 * baseOffset }
         }
 
-        offsets[0] = CGFloat(1 - containerCount) / 2.0
-        for i in 1..<containerCount {
-            offsets[i] = offsets[i - 1] + 1
+        // 背页逻辑：集中在左侧
+        if pageIndex == pageCount - 2 {
+            offsets[containerCount - 1] = 0.5
+            offsets[containerCount - 2] = -0.5
+            if containerCount > 2 {
+                for i in 0..<(containerCount - 2) { offsets[i] = offsets[containerCount - 2] }
+            }
+            return offsets.map { $0 * baseOffset }
+        }
+
+        // 普通情况：中间展开页面，根据 offsetIndex 对称收敛
+        if containerCount % 2 == 0 {
+            let leftCenter = offsetIndex
+            let rightCenter = offsetIndex + 1
+            offsets[leftCenter] = -0.5
+            offsets[rightCenter] = 0.5
+            for i in 1..<(containerCount / 2) {
+                let offset = decayedOffset(i + 1)
+                let left = leftCenter - i
+                let right = rightCenter + i
+                if left >= 0 { offsets[left] = -offset + 0.5 }
+                if right < containerCount { offsets[right] = offset - 0.5 }
+            }
+        } else {
+            offsets[offsetIndex] = 0
+            for i in 1..<((containerCount + 1) / 2) {
+                let offset = decayedOffset(i)
+                let left = offsetIndex - i
+                let right = offsetIndex + i
+                if left >= 0 { offsets[left] = -offset }
+                if right < containerCount { offsets[right] = offset }
+            }
         }
         return offsets.map { $0 * baseOffset }
     }
