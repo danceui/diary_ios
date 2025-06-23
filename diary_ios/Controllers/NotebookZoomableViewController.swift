@@ -68,10 +68,11 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
-        scrollView.backgroundColor = .yellow // 设置背景颜色以便调试
+        // scrollView.backgroundColor = .yellow // 设置背景颜色以便调试
 
         spreadContainer = UIView()
         spreadContainer.frame = CGRect(origin: .zero, size: paperSize.size)
+        spreadContainer.backgroundColor = .yellow // 设置背景颜色以便调试
 
         scrollView.addSubview(spreadContainer)
     }
