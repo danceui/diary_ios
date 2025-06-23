@@ -147,17 +147,17 @@ class FlipAnimatorController {
         if let last = lastProgressForTesting {
             if format(last) != format(progress) {
                 print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-                print("   💡 ShadowWidth: \(format(shadowWidth/flipContainer.bounds.width)), OverlayAlpha: [\(format(frontOverlay!.alpha)), \(format(backOverlay!.alpha))].")
+                // print("   💡 ShadowWidth: \(format(shadowWidth/flipContainer.bounds.width)), OverlayAlpha: [\(format(frontOverlay!.alpha)), \(format(backOverlay!.alpha))].")
                 lastProgressForTesting = progress
                 hostShouldPrint = true
             }
         } else {
             print(messageForTesting + "🔘 Update animation [state: \(state), type: \(type), progress \(format(progress))].")
-            print("   💡 ShadowWidth: \(format(shadowWidth/flipContainer.bounds.width)), OverlayAlpha: [\(format(frontOverlay!.alpha)), \(format(backOverlay!.alpha))].")
+            // print("   💡 ShadowWidth: \(format(shadowWidth/flipContainer.bounds.width)), OverlayAlpha: [\(format(frontOverlay!.alpha)), \(format(backOverlay!.alpha))].")
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
-        host?.updateStackTransforms(progress: abs(progress), shouldPrint: hostShouldPrint)
+        host?.updateStackTransforms(progress: abs(progress))
     }
 
     // MARK: - 动画完成、取消

@@ -82,7 +82,7 @@ class NotebookSpreadViewController: UIViewController {
         var pageIndex: Int
         
         // 确定每个 pageContainer 的位置和内容
-        print("📐 PageContainers originX: [", terminator: " ")
+        print("📐 PageContainers origins: [", terminator: " ")
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
@@ -109,7 +109,7 @@ class NotebookSpreadViewController: UIViewController {
             let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
-            print("\(originX)", terminator: " ")
+            print("(\(format(originX)), \(format(originY)))", terminator: " ")
             pageContainers.append(thisContainer)
         }
         print("].")
@@ -236,7 +236,7 @@ class NotebookSpreadViewController: UIViewController {
         }
         return offsets
     }
-
+    
     func computeXOffsets(pageIndex: Int) -> [CGFloat] {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
 
@@ -279,10 +279,9 @@ class NotebookSpreadViewController: UIViewController {
         onProgressChanged?(offset)
     }
 
-    func updateStackTransforms(progress: CGFloat, shouldPrint: Bool) {
+    func updateStackTransforms(progress: CGFloat) {
         guard fromYOffsets.count == toYOffsets.count, fromXOffsets.count == toXOffsets.count else { return }
         let easedProgress = easeInOutCubic(abs(progress))
-        if shouldPrint { print("   📐 PageContainers offsets: [", terminator: " ")}
         for (i, container) in pageContainers.enumerated() {
             let fromY = fromYOffsets[i]
             let toY = toYOffsets[i]
@@ -290,10 +289,8 @@ class NotebookSpreadViewController: UIViewController {
             let fromX = fromXOffsets[i]
             let toX = toXOffsets[i]
             let dx = (toX - fromX) * easedProgress
-            if shouldPrint { print("(\(format(dx)), \(format(dy)))", terminator: " ")}
             container.transform = CGAffineTransform(translationX: dx, y: dy)
         }
-        if shouldPrint { print("].")}
     }
 
 
