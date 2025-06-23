@@ -10,10 +10,12 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var notebookSpreadVC: NotebookSpreadViewController
     private var scrollView: UIScrollView!
     private var spreadContainer: UIView!
+    private var centerXConstraint: NSLayoutConstraint!
+    private var centerYConstraint: NSLayoutConstraint!
     private var layoutAnimator: UIViewPropertyAnimator?
+    private var previousZoomScale = NotebookConstants.defaultZoomScale
 
     private let paperSize: PaperSize
-    private var previousZoomScale = NotebookConstants.defaultZoomScale
 
     init(notebookSpreadVC: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
         self.notebookSpreadVC = notebookSpreadVC
@@ -60,26 +62,35 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     private func setupViews() {
         // scrollView.frame = view.bounds // 确保scrollView填满整个视图
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
-        // scrollView.backgroundColor = .yellow // 设置背景颜色以便调试
+        // 设置背景颜色以便调试
+        // scrollView.backgroundColor = .yellow 
 
         spreadContainer = UIView()
-        spreadContainer.frame = CGRect(origin: .zero, size: paperSize.size)
+        centerXConstraint = spreadContainer.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor)
+        centerYConstraint = spreadContainer.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor)
+        scrollView.addSubview(spreadContainer)
+        spreadContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            centerXConstraint,
+            centerYConstraint,
+            spreadContainer.widthAnchor.constraint(equalToConstant: paperSize.size.width),
+            spreadContainer.heightAnchor.constraint(equalToConstant: paperSize.size.height)
+        ])
         spreadContainer.backgroundColor = .yellow // 设置背景颜色以便调试
 
-        scrollView.addSubview(spreadContainer)
     }
 
     private func setupNotebookSpreadVC() {
-        addChild(notebookSpreadVC)
         // notebookSpreadVC.view.frame = spreadContainer.bounds // 确保notebookSpreadVC.view填满spreadContainer
+        addChild(notebookSpreadVC)
         notebookSpreadVC.view.translatesAutoresizingMaskIntoConstraints = false
         spreadContainer.addSubview(notebookSpreadVC.view)
         NSLayoutConstraint.activate([
@@ -100,36 +111,38 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 调整内容位置
     private func centerContent(roleXOffset: CGFloat = 0) {
-        let scrollSize = scrollView.bounds.size
-        let contentSize = spreadContainer.frame.size
-        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
-        let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
-
-        let targetCenter = CGPoint(
-            x: contentSize.width / 2 + offsetX + roleXOffset,
-            y: contentSize.height / 2 + offsetY
-        )
-
-        // 计算距离，设置动态时长
-        let distance = hypot(spreadContainer.center.x - targetCenter.x,
-                            spreadContainer.center.y - targetCenter.y)
-        let duration = min(max(0.15, Double(distance / 500)), 0.5)
-
-        // 停止任何已有动画
-        layoutAnimator?.stopAnimation(true)
-
-        // 创建 spring 动画器
-        layoutAnimator = UIViewPropertyAnimator(duration: duration, dampingRatio: 0.5) {
-            self.spreadContainer.center = targetCenter
-        }
-        layoutAnimator?.startAnimation()
-
-        // print("📐 roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(spreadContainer.center))")
+        // centerXConstraint.constant = roleXOffset
+        // UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut]) {
+        //     self.view.layoutIfNeeded()
+        // }
     }
+
+    // private func centerContent(roleXOffset: CGFloat = 0) {
+    //     let scrollSize = scrollView.bounds.size
+    //     let contentSize = spreadContainer.frame.size
+    //     let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
+    //     let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
+    //     let targetCenter = CGPoint(
+    //         x: contentSize.width / 2 + offsetX + roleXOffset,
+    //         y: contentSize.height / 2 + offsetY
+    //     )
+    //     // 计算距离，设置动态时长
+    //     let distance = hypot(spreadContainer.center.x - targetCenter.x,
+    //                         spreadContainer.center.y - targetCenter.y)
+    //     let duration = min(max(0.15, Double(distance / 500)), 0.5)
+    //     // 停止任何已有动画
+    //     layoutAnimator?.stopAnimation(true)
+    //     // 创建 spring 动画器
+    //     layoutAnimator = UIViewPropertyAnimator(duration: duration, dampingRatio: 0.5) {
+    //         self.spreadContainer.center = targetCenter
+    //     }
+    //     layoutAnimator?.startAnimation()
+    //     // print("📐 roleXOffset: \(format(roleXOffset)), centerPoint: \(formatPoint(spreadContainer.center))")
+    // }
     
     // MARK: - 调整内容缩放
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        let targetScale: CGFloat = scrollView.zoomScale > 0.9 ? 0.8 : 1.5
+        let targetScale: CGFloat = scrollView.zoomScale > 0.9 ? 0.8 : 1.0
         scrollView.setZoomScale(targetScale, animated: true)
         previousZoomScale = targetScale
         printLayoutInfo(context: "handleDoubleTap")
@@ -139,7 +152,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
-        centerContent()
+        // centerContent()
+        let scrollViewSize = scrollView.bounds.size
+        let contentSize = scrollView.contentSize
+        let insetX = max((scrollViewSize.width - contentSize.width) / 2, 0)
+        let insetY = max((scrollViewSize.height - contentSize.height) / 2, 0)
+        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX, bottom: 0, right: 0)
+
         printLayoutInfo(context: "scrollViewDidZoom")
     }
 
