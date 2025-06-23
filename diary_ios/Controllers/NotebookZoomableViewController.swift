@@ -13,8 +13,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var layoutAnimator: UIViewPropertyAnimator?
 
     private let paperSize: PaperSize
-    private let defaultZoomScale = NotebookConstants.defaultZoomScale
-
     private var previousZoomScale = NotebookConstants.defaultZoomScale
 
     init(notebookSpreadVC: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
@@ -51,8 +49,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private func setupScrollView() {
         scrollView = UIScrollView()
         scrollView.delegate = self
-        scrollView.minimumZoomScale = 0.5
-        scrollView.maximumZoomScale = 3.0
+        scrollView.backgroundColor = .clear
+        scrollView.minimumZoomScale = NotebookConstants.minZoomScale
+        scrollView.maximumZoomScale = NotebookConstants.maxZoomScale
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.decelerationRate = .fast
@@ -60,15 +59,17 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     private func setupViews() {
-        view.addSubview(scrollView)
         // scrollView.frame = view.bounds // 确保scrollView填满整个视图
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scrollView)
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+        scrollView.backgroundColor = .yellow // 设置背景颜色以便调试
+
         spreadContainer = UIView()
         spreadContainer.frame = CGRect(origin: .zero, size: paperSize.size)
 
@@ -77,9 +78,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     private func setupNotebookSpreadVC() {
         addChild(notebookSpreadVC)
-        spreadContainer.addSubview(notebookSpreadVC.view)
         // notebookSpreadVC.view.frame = spreadContainer.bounds // 确保notebookSpreadVC.view填满spreadContainer
         notebookSpreadVC.view.translatesAutoresizingMaskIntoConstraints = false
+        spreadContainer.addSubview(notebookSpreadVC.view)
         NSLayoutConstraint.activate([
             notebookSpreadVC.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor),
             notebookSpreadVC.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor),
@@ -87,6 +88,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             notebookSpreadVC.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
         ])
         notebookSpreadVC.didMove(toParent: self)
+        // notebookSpreadVC.view.backgroundColor = .yellow // 设置背景颜色以便调试
     }
 
     private func setupGestures() {
