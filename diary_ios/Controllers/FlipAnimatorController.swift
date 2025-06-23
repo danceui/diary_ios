@@ -6,6 +6,7 @@ class FlipAnimatorController {
     
     // MARK: - 翻页相关属性
     private var flipContainer: UIView?
+    private var containerPositionX: CGFloat = 0
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var frontOverlay: UIView?
@@ -22,6 +23,7 @@ class FlipAnimatorController {
     private let progressThreshold = FlipConstants.progressThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor = FlipConstants.maxSpeedFactor
+    private let containerOffset = StackConstants.baseOffset * computeXDecay(1)
 
     private let lightAngle = FlipConstants.lightAngle
     private let transformm34 = FlipConstants.transformm34
@@ -124,6 +126,7 @@ class FlipAnimatorController {
         var t = CATransform3DIdentity
         t.m34 = transformm34
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
+        flipContainer.layer.position.x = containerPositionX + progress * containerOffset
 
         // 更新快照的投影
         guard let shadow = self.pageShadow else {
@@ -294,6 +297,7 @@ class FlipAnimatorController {
         containerShadow.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
         containerShadow.layer.position = CGPoint(x: direction == .nextPage ? originX : originX + containerSize.width, y: containerSize.height / 2)
         containerShadow.layer.transform.m34 = transformm34
+        containerPositionX = containerShadow.layer.position.x
         print("📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)).")
 
         containerShadow.layer.masksToBounds = false
