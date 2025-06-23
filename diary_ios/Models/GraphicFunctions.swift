@@ -35,6 +35,6 @@ func insetRectSafe(from rect: CGRect, inset: CGFloat) -> CGRect? {
     return insetRect
 }
 
-func decayedOffset(_ distance: Int, baseOffset: CGFloat, alpha: CGFloat = 0.4) -> CGFloat {
-    return baseOffset * pow(CGFloat(distance), alpha)
+func computeDecay(_ distance: Int, alpha: CGFloat = 0.6) -> CGFloat {
+    return pow(CGFloat(distance), alpha)
 }

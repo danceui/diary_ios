@@ -207,34 +207,35 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - 计算 X Y 偏移量
     func computeYOffsets(pageIndex: Int) -> [CGFloat] {
-        let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
+        return Array(repeating: 0, count: containerCount)
+        // let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
 
-        // 封面或背页时，所有 Y 偏移为 0
-        if pageIndex == 0 || pageIndex == pageCount - 2 {
-            return Array(repeating: 0, count: containerCount)
-        }
+        // // 封面或背页时，所有 Y 偏移为 0
+        // if pageIndex == 0 || pageIndex == pageCount - 2 {
+        //     return Array(repeating: 0, count: containerCount)
+        // }
 
-        var offsets = Array(repeating: CGFloat(0), count: containerCount)
-        if offsetIndex == 0, pageIndex == 0 {
-            for j in 2..<containerCount {
-                offsets[j] = CGFloat(j - 1) * baseOffset
-            }
-        } else if offsetIndex == containerCount - 1 && pageIndex == pageCount - 2 {
-            for j in 0..<(containerCount - 2) {
-                offsets[j] = CGFloat(containerCount - 2 - j) * baseOffset
-            }
-        } else {
-            for j in 0..<containerCount {
-                if j < offsetIndex {
-                    offsets[j] = CGFloat(offsetIndex - j) * baseOffset
-                } else if j > offsetIndex + 1 {
-                    offsets[j] = CGFloat(j - offsetIndex - 1) * baseOffset
-                } else {
-                    offsets[j] = 0
-                }
-            }
-        }
-        return offsets
+        // var offsets = Array(repeating: CGFloat(0), count: containerCount)
+        // if offsetIndex == 0, pageIndex == 0 {
+        //     for j in 2..<containerCount {
+        //         offsets[j] = CGFloat(j - 1) * baseOffset
+        //     }
+        // } else if offsetIndex == containerCount - 1 && pageIndex == pageCount - 2 {
+        //     for j in 0..<(containerCount - 2) {
+        //         offsets[j] = CGFloat(containerCount - 2 - j) * baseOffset
+        //     }
+        // } else {
+        //     for j in 0..<containerCount {
+        //         if j < offsetIndex {
+        //             offsets[j] = CGFloat(offsetIndex - j) * baseOffset
+        //         } else if j > offsetIndex + 1 {
+        //             offsets[j] = CGFloat(j - offsetIndex - 1) * baseOffset
+        //         } else {
+        //             offsets[j] = 0
+        //         }
+        //     }
+        // }
+        // return offsets
     }
 
     func computeXOffsets(pageIndex: Int) -> [CGFloat] {
@@ -246,7 +247,7 @@ class NotebookSpreadViewController: UIViewController {
             offsets[0] = -0.5
             offsets[1] = 0.5
             if containerCount > 2 {
-                for i in 2..<containerCount { offsets[i] = offsets[1] }
+                for i in 2..<containerCount { offsets[i] = 0.5 }
             }
             return offsets.map { $0 * baseOffset }
         }
@@ -256,7 +257,7 @@ class NotebookSpreadViewController: UIViewController {
             offsets[containerCount - 1] = 0.5
             offsets[containerCount - 2] = -0.5
             if containerCount > 2 {
-                for i in 0..<(containerCount - 2) { offsets[i] = offsets[containerCount - 2] }
+                for i in 0..<(containerCount - 2) { offsets[i] = -0.5 }
             }
             return offsets.map { $0 * baseOffset }
         }
@@ -268,7 +269,7 @@ class NotebookSpreadViewController: UIViewController {
             offsets[leftCenter] = -0.5
             offsets[rightCenter] = 0.5
             for i in 1..<(containerCount / 2) {
-                let offset = decayedOffset(i + 1)
+                let offset = computeDecay(i + 1)
                 let left = leftCenter - i
                 let right = rightCenter + i
                 if left >= 0 { offsets[left] = -offset + 0.5 }
@@ -277,7 +278,7 @@ class NotebookSpreadViewController: UIViewController {
         } else {
             offsets[offsetIndex] = 0
             for i in 1..<((containerCount + 1) / 2) {
-                let offset = decayedOffset(i)
+                let offset = computeDecay(i)
                 let left = offsetIndex - i
                 let right = offsetIndex + i
                 if left >= 0 { offsets[left] = -offset }
