@@ -35,6 +35,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         setupViews()
         setupNotebookSpreadVC()
         setupGestures()
+        setupTestFunctions()
     }
 
     override func viewDidLayoutSubviews() {
@@ -68,21 +69,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
-        // 设置边框以便调试
-        addTestBorder(for: scrollView, color: .red, width: 2.0)
 
-        spreadContainer = UIView()
+        spreadContainer = UIView(frame: CGRect(origin: .zero, size: paperSize.size))
         scrollView.addSubview(spreadContainer)
-        spreadContainer.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            spreadContainer.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            spreadContainer.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
-            spreadContainer.widthAnchor.constraint(equalToConstant: paperSize.size.width),
-            spreadContainer.heightAnchor.constraint(equalToConstant: paperSize.size.height)
-        ])
-        // 设置边框以便调试
-        addTestBorder(for: spreadContainer, color: .blue, width: 2.0)
-
     }
 
     private func setupNotebookSpreadVC() {
@@ -106,13 +95,19 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.addGestureRecognizer(doubleTap)
     }
 
+    private func setupTestFunctions() {
+        addTestBorder(for: scrollView, color: .red, width: 2.0)
+        addTestBorder(for: spreadContainer, color: .blue, width: 2.0)
+        addTestBorder(for: notebookSpreadVC.view, color: .green, width: 2.0)
+    }
+
     // MARK: - 调整内容位置
     private func centerContent(roleXOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
         let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
         let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
-        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX, bottom: insetY, right: insetX)
+        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + roleXOffset, bottom: insetY, right: insetX - roleXOffset)
         scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
     }
     
@@ -140,10 +135,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("📐 scrollView.zoomScale: \(format(scrollView.zoomScale))")
         print("📐 scrollView.frame: \(formatRect(scrollView.frame))")
         print("📐 scrollView.bounds: \(formatRect(scrollView.bounds))")
-        print("📐 scrollView.contentOffset: \(formatPoint(scrollView.contentOffset))")
-        print("📐 scrollView.contentInset: \(scrollView.contentInset)")
         print("📐 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
-        print("📐 spreadContainer.frame: \(formatRect(spreadContainer.frame))") // spreadContainer.frame 由 Auto Layout 管理，不必太关注
+        print("📐 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
         print("📐 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
         print("📐 spreadContainer.center: \(formatPoint(spreadContainer.center))")
         // print("📐 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
