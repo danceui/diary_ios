@@ -352,7 +352,7 @@ class FlipAnimatorController {
 
     // MARK: - 清理函数
     private func cleanupViews() {
-        print("🧹 Cleanup views.")
+        print("   🧹 Cleanup views.")
         animator?.stopAnimation(true)
         animator = nil
         flipContainer?.removeFromSuperview()
@@ -369,7 +369,7 @@ class FlipAnimatorController {
     }
 
     func cleanupAnimations() {
-        print("🧹 Cleanup animations [state was \(state)].")
+        print("   🧹 Cleanup animations [state was \(state)].")
         state = .idle
 
         if let next = pendingFlips.first {

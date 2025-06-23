@@ -95,12 +95,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.addGestureRecognizer(doubleTap)
     }
 
-    private func setupTestFunctions() {
-        addTestBorder(for: scrollView, color: .red, width: 2.0)
-        addTestBorder(for: spreadContainer, color: .blue, width: 2.0)
-        addTestBorder(for: notebookSpreadVC.view, color: .green, width: 2.0)
-    }
-
     // MARK: - 调整内容位置
     private func centerContent(roleXOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
@@ -127,20 +121,24 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         printLayoutInfo(context: "scrollViewDidZoom")
     }
 
-    // MARK: - 调试输出
+    // MARK: - 测试用
+    private func setupTestFunctions() {
+        addTestBorder(for: scrollView, color: .red, width: 2.0)
+        addTestBorder(for: spreadContainer, color: .blue, width: 2.0)
+        addTestBorder(for: notebookSpreadVC.view, color: .green, width: 2.0)
+    }
+
     private func printLayoutInfo(context: String) {
-        print("=======", terminator: " ")
-        print("\(context)", terminator: " ")
-        print("=======")
-        print("📐 scrollView.zoomScale: \(format(scrollView.zoomScale))")
-        print("📐 scrollView.frame: \(formatRect(scrollView.frame))")
-        print("📐 scrollView.bounds: \(formatRect(scrollView.bounds))")
-        print("📐 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
-        print("📐 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
-        print("📐 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
-        print("📐 spreadContainer.center: \(formatPoint(spreadContainer.center))")
-        // print("📐 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
-        // print("📐 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
+        print("📐 \(context)")
+        print("   📌 scrollView.zoomScale: \(format(scrollView.zoomScale))")
+        print("   📌 scrollView.frame: \(formatRect(scrollView.frame))")
+        print("   📌 scrollView.bounds: \(formatRect(scrollView.bounds))")
+        print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
+        print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
+        print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        print("   📌 spreadContainer.center: \(formatPoint(spreadContainer.center))")
+        // print("   📌 notebookView.frame: \(formatRect(notebookSpreadVC.view.frame))")
+        // print("   📌 notebookView.bounds: \(formatRect(notebookSpreadVC.view.bounds))")
         print("=======================")
     }
 }
