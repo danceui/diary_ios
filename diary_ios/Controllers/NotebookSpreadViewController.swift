@@ -268,22 +268,12 @@ class NotebookSpreadViewController: UIViewController {
             let rightCenter = offsetIndex + 1
             offsets[leftCenter] = -0.5
             offsets[rightCenter] = 0.5
-            for i in 1..<(containerCount / 2) {
-                let offset = computeDecay(i + 1)
-                let left = leftCenter - i
-                let right = rightCenter + i
-                if left >= 0 { offsets[left] = -offset + 0.5 }
-                if right < containerCount { offsets[right] = offset - 0.5 }
-            }
+            for i in 0..<leftCenter { offsets[i] = -computeDecay(leftCenter - i + 1) + 0.5 }
+            for i in (rightCenter + 1)..<containerCount { offsets[i] = computeDecay(i - rightCenter + 1) - 0.5 }
         } else {
             offsets[offsetIndex] = 0
-            for i in 1..<((containerCount + 1) / 2) {
-                let offset = computeDecay(i)
-                let left = offsetIndex - i
-                let right = offsetIndex + i
-                if left >= 0 { offsets[left] = -offset }
-                if right < containerCount { offsets[right] = offset }
-            }
+            for i in 0..<offsetIndex { offsets[i] = -computeDecay(offsetIndex - i) + 0.5 }
+            for i in (offsetIndex + 1)..<containerCount { offsets[i] = computeDecay(i - offsetIndex) - 0.5 }
         }
         return offsets.map { $0 * baseOffset }
     }
