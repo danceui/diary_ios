@@ -10,8 +10,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var notebookSpreadVC: NotebookSpreadViewController
     private var scrollView: UIScrollView!
     private var spreadContainer: UIView!
-    private var centerXConstraint: NSLayoutConstraint!
-    private var centerYConstraint: NSLayoutConstraint!
     private var layoutAnimator: UIViewPropertyAnimator?
     private var previousZoomScale = NotebookConstants.defaultZoomScale
 
@@ -74,13 +72,11 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         // scrollView.backgroundColor = .yellow 
 
         spreadContainer = UIView()
-        centerXConstraint = spreadContainer.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor)
-        centerYConstraint = spreadContainer.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor)
         scrollView.addSubview(spreadContainer)
         spreadContainer.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            centerXConstraint,
-            centerYConstraint,
+            spreadContainer.centerXAnchor.constraint(equalTo: scrollView.contentLayoutGuide.centerXAnchor),
+            spreadContainer.centerYAnchor.constraint(equalTo: scrollView.contentLayoutGuide.centerYAnchor),
             spreadContainer.widthAnchor.constraint(equalToConstant: paperSize.size.width),
             spreadContainer.heightAnchor.constraint(equalToConstant: paperSize.size.height)
         ])
@@ -111,10 +107,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 调整内容位置
     private func centerContent(roleXOffset: CGFloat = 0) {
-        // centerXConstraint.constant = roleXOffset
-        // UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut]) {
-        //     self.view.layoutIfNeeded()
-        // }
     }
 
     // private func centerContent(roleXOffset: CGFloat = 0) {
@@ -153,10 +145,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
         // centerContent()
-        let scrollViewSize = scrollView.bounds.size
-        let contentSize = scrollView.contentSize
-        let insetX = max((scrollViewSize.width - contentSize.width) / 2, 0)
-        let insetY = max((scrollViewSize.height - contentSize.height) / 2, 0)
+        let insetX = max((scrollView.bounds.width - scrollView.contentSize.width) / 2, 0)
+        let insetY = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX, bottom: 0, right: 0)
 
         printLayoutInfo(context: "scrollViewDidZoom")
@@ -168,6 +158,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("\(context)", terminator: " ")
         print("=======")
         print("📐 scrollView.frame: \(formatRect(scrollView.frame))")
+        print("📐 scrollView.bounds: \(formatRect(scrollView.bounds))")
         print("📐 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
         print("📐 scrollView.contentOffset: \(formatPoint(scrollView.contentOffset))")
         print("📐 scrollView.zoomScale: \(format(scrollView.zoomScale))")
