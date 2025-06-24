@@ -1,6 +1,6 @@
 import UIKit
-protocol NotebookSpreadViewControllerDelegate: AnyObject {
-    func currentContentWidth() -> CGFloat
+protocol NotebookSpreadLayoutDelegate: AnyObject {
+    func currentSpreadContentSize() -> CGSize
 }
 
 @available(iOS 16.0, *)
@@ -28,7 +28,7 @@ class NotebookSpreadViewController: UIViewController {
     var fromYOffsets: [CGFloat] = []
     var toYOffsets: [CGFloat] = []
 
-    weak var pageDelegate: NotebookSpreadViewControllerDelegate?
+    weak var layoutDelegate: NotebookSpreadLayoutDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
 
     // MARK: - 生命周期
@@ -238,7 +238,8 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - 随 progress 更新的变量
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
-        let width = pageDelegate?.currentContentWidth() ?? 0 
+        let contentSize = layoutDelegate?.currentSpreadContentSize() ?? .zero
+        let width = contentSize.width
         var offset: CGFloat = 0
         let easedProgress = easeInOutCubic(progress)
 
