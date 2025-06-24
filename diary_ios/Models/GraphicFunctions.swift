@@ -36,9 +36,9 @@ func insetRectSafe(from rect: CGRect, inset: CGFloat) -> CGRect? {
 }
 
 func computeXDecay(_ distance: Int, scale: CGFloat = 1, alpha: CGFloat = 1) -> CGFloat {
-    return pow(CGFloat(distance), alpha) * scale
+    return pow(CGFloat(distance), alpha) * scale * StackConstants.baseOffset
 }
 
 func computeYDecay(_ distance: Int, scale: CGFloat = 1.0, alpha: CGFloat = 1) -> CGFloat {
-    return pow(CGFloat(distance), alpha) * scale
+    return pow(CGFloat(distance), alpha) * scale * StackConstants.baseOffset
 }

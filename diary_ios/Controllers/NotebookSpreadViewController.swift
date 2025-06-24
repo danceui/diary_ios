@@ -210,35 +210,29 @@ class NotebookSpreadViewController: UIViewController {
     func computeYOffsets(pageIndex: Int) -> [CGFloat] {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
-
-        // 封面页和背页逻辑：Y 偏移量为 0
         if pageIndex == 0 || pageIndex == pageCount - 2 {
             return offsets
         }
 
-        // 普通情况：中间展开页面，根据 offsetIndex 对称收敛
         let leftCenter = offsetIndex
         let rightCenter = offsetIndex + 1
         offsets[leftCenter] = 0
         offsets[rightCenter] = 0
-        for i in 0..<leftCenter { offsets[i] = computeYDecay(leftCenter - i) * baseOffset }
-        for i in (rightCenter + 1)..<containerCount { offsets[i] = computeYDecay(i - rightCenter) * baseOffset }
+        for i in 0..<leftCenter { offsets[i] = computeYDecay(leftCenter - i) }
+        for i in (rightCenter + 1)..<containerCount { offsets[i] = computeYDecay(i - rightCenter) }
         return offsets
     }
 
     func computeXOffsets(pageIndex: Int) -> [CGFloat] {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
-
-        // 封面页和背页逻辑：X 偏移量为 0
         if pageIndex == 0 || pageIndex == pageCount - 2 {
             return offsets
         }
 
-        // 普通情况：中间展开页面，根据 offsetIndex 对称收敛
         offsets[offsetIndex] = 0
-        for i in 0..<offsetIndex { offsets[i] = -computeXDecay(offsetIndex - i) * baseOffset}
-        for i in (offsetIndex + 1)..<containerCount { offsets[i] = computeXDecay(i - offsetIndex) * baseOffset}
+        for i in 0..<offsetIndex { offsets[i] = -computeXDecay(offsetIndex - i) }
+        for i in (offsetIndex + 1)..<containerCount { offsets[i] = computeXDecay(i - offsetIndex) }
         return offsets
     }
 

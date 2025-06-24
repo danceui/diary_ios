@@ -12,6 +12,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var spreadContainer: UIView!
     private var layoutAnimator: UIViewPropertyAnimator?
     private var previousZoomScale = NotebookConstants.defaultZoomScale
+    private var previousXOffset: CGFloat = 0
 
     private let paperSize: PaperSize
 
@@ -21,7 +22,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         super.init(nibName: nil, bundle: nil)
         self.notebookSpreadViewController.pageDelegate = self
         self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
-            self?.centerContent(roleXOffset: offset)
+            self?.centerContent(xOffset: offset)
         }
     }
 
@@ -95,13 +96,15 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.addGestureRecognizer(doubleTap)
     }
 
-    // MARK: - 调整内容位置
-    private func centerContent(roleXOffset: CGFloat = 0) {
+    // MARK: - 居中函数
+    private func centerContent(xOffset: CGFloat? = nil) {
+        let xOffset = xOffset ?? previousXOffset
+        previousXOffset = xOffset
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
         let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
         let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
-        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + roleXOffset, bottom: insetY, right: insetX - roleXOffset)
+        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
         scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
     }
     

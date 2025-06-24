@@ -7,7 +7,7 @@ class FlipAnimatorController {
     // MARK: - 翻页相关属性
     private var flipContainer: UIView?
     private var containerPositionX: CGFloat = 0
-    private var containerDistance: CGFloat = 0
+    private var containerOffset: CGFloat = 0
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var frontOverlay: UIView?
@@ -45,7 +45,6 @@ class FlipAnimatorController {
     // MARK: - 动画开始
     func begin(direction: PageTurnDirection, type: AnimationType) {
         guard let host = host else { return }
-        
         guard state == .idle else {
             print("⏰ Begin with type \(type) but state is \(state). Enqueue.")
             pendingFlips.append(.init(direction: direction, type: .auto))
@@ -54,8 +53,7 @@ class FlipAnimatorController {
         cleanupViews()
         
         let targetIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        guard host.currentIndex >= 0, host.currentIndex <= host.pageCount - 2, 
-                targetIndex >= 0, targetIndex <= host.pageCount - 2 else {
+        guard host.currentIndex >= 0, host.currentIndex <= host.pageCount - 2, targetIndex >= 0, targetIndex <= host.pageCount - 2 else {
             print("❌ Page index invalid. Current index \(host.currentIndex). Target index \(targetIndex)")
             state = .idle
             return
@@ -64,13 +62,7 @@ class FlipAnimatorController {
         host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex)
         host.fromXOffsets = host.computeXOffsets(pageIndex: host.currentIndex)
         host.toXOffsets = host.computeXOffsets(pageIndex: targetIndex)
-        if direction == .nextPage, targetIndex == host.pageCount - 2 {
-            containerDistance = 0
-        } else if direction == .lastPage, targetIndex == 0 {
-            containerDistance = 0
-        } else {
-            containerDistance = StackConstants.baseOffset * computeXDecay(1)
-        }
+        containerOffset = computeContainerOffset(direction: direction, targetIndex: targetIndex)
 
         // 生成前后快照
         print("📸 Create snapshots.")
@@ -133,7 +125,7 @@ class FlipAnimatorController {
         var t = CATransform3DIdentity
         t.m34 = transformm34
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
-        flipContainer.layer.position.x = containerPositionX + progress * containerDistance
+        flipContainer.layer.position.x = containerPositionX + progress * containerOffset
 
         // 更新快照的投影
         guard let shadow = self.pageShadow else {
@@ -300,12 +292,12 @@ class FlipAnimatorController {
 
         // 外层容器：负责阴影和变换
         let containerShadow = UIView(frame: CGRect(origin: .zero, size: containerSize))
-        let originX = computeContainerOriginX(for: direction, isContainerCntEven: host.containerCount % 2 == 0)
+        let originX = computeContainerOriginX(direction: direction, offsetIndex: offsetIndex, containerSize: containerSize)
         containerShadow.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
         containerShadow.layer.position = CGPoint(x: direction == .nextPage ? originX : originX + containerSize.width, y: containerSize.height / 2)
         containerShadow.layer.transform.m34 = transformm34
         containerPositionX = containerShadow.layer.position.x
-        print("📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)).")
+        print("📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)), future offset: \(format(containerOffset)).")
 
         containerShadow.layer.masksToBounds = false
         containerShadow.layer.shadowOffset = CGSize(width: 0, height: 0)
@@ -335,14 +327,29 @@ class FlipAnimatorController {
         else { self.backOverlay = overlay }
     }
 
-    // MARK: - 获取容器位置
-    private func computeContainerOriginX(for direction: PageTurnDirection, isContainerCntEven: Bool) -> CGFloat {
+    // MARK: - 计算容器位置和偏移
+    private func computeContainerOriginX(direction: PageTurnDirection, offsetIndex: Int, containerSize: CGSize) -> CGFloat {
         guard let host = host else { return 0 }
-        if direction == .nextPage {
-            return computeXDecay(1) * baseOffset + host.view.bounds.width / 2
+        var originX: CGFloat = 0
+        
+        if host.currentIndex == 0 {
+            originX = containerSize.width
         } else {
-            return 0
+            originX = direction == .nextPage ? computeXDecay(1) + containerSize.width : 0
+        } 
+        return originX
+    }
+
+    private func computeContainerOffset(direction: PageTurnDirection, targetIndex: Int) -> CGFloat {
+        guard let host = host else { return 0 }
+        var containerOffset: CGFloat = 0
+
+        if host.currentIndex == 0 || targetIndex == 0 {
+            containerOffset = 0
+        } else {
+            containerOffset = computeXDecay(1)
         }
+        return containerOffset
     }
 
     // MARK: - 翻页时快照的投影
@@ -355,7 +362,6 @@ class FlipAnimatorController {
         shadow.layer.shadowColor = UIColor.black.cgColor
         shadow.layer.shadowOffset = CGSize(width: shadowOffset, height: shadowOffset)
 
-        updatePageShadow(for: shadow)
         targetView.addSubview(shadow)
         self.pageShadow = shadow
     }
