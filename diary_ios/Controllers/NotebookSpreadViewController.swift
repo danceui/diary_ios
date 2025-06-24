@@ -230,24 +230,9 @@ class NotebookSpreadViewController: UIViewController {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
 
-        // 封面页逻辑：集中在右侧
-        if pageIndex == 0 {
-            offsets[0] = -computeXDecay(1) / 2
-            offsets[1] = computeXDecay(1) / 2
-            if containerCount > 2 {
-                for i in 2..<containerCount { offsets[i] = offsets[1] }
-            }
-            return offsets.map { $0 * baseOffset }
-        }
-
-        // 背页逻辑：集中在左侧
-        if pageIndex == pageCount - 2 {
-            offsets[containerCount - 2] = -computeXDecay(1) / 2
-            offsets[containerCount - 1] = computeXDecay(1) / 2
-            if containerCount > 2 {
-                for i in 0..<(containerCount - 2) { offsets[i] = offsets[containerCount - 2] }
-            }
-            return offsets.map { $0 * baseOffset }
+        // 封面页和背页逻辑：X 偏移量为 0
+        if pageIndex == 0 || pageIndex == pageCount - 2 {
+            return offsets
         }
 
         // 普通情况：中间展开页面，根据 offsetIndex 对称收敛
