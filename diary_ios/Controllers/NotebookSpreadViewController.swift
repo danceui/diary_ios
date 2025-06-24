@@ -15,7 +15,6 @@ class NotebookSpreadViewController: UIViewController {
 
     private let pageShadowRadius = PageConstants.shadowRadius
     private let pageShadowOpacity = PageConstants.shadowOpacity
-    private let pageShadowCornerRadius = PageConstants.pageCornerRadius
     
     var pages: [NotebookPageViewController] = []
     var pageCount: Int {pages.count}
@@ -48,10 +47,10 @@ class NotebookSpreadViewController: UIViewController {
     private func setupInitialPages() {
         pages = [
             NotebookPageViewController(role: .empty),
-            NotebookPageViewController(role: .cover),
-            NotebookPageViewController(role: .normal),
-            NotebookPageViewController(role: .normal),
-            NotebookPageViewController(role: .back),
+            NotebookPageViewController(role: .cover, isLeft: false),
+            NotebookPageViewController(role: .normal, isLeft: true),
+            NotebookPageViewController(role: .normal, isLeft: false),
+            NotebookPageViewController(role: .back, isLeft: true),
             NotebookPageViewController(role: .empty)
         ]
     }
@@ -189,8 +188,8 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let insertIndex = currentIndex + 2
-        let leftPage = NotebookPageViewController(initialData: initialData)
-        let rightPage = NotebookPageViewController(initialData: initialData)
+        let leftPage = NotebookPageViewController(isLeft: true, initialData: initialData)
+        let rightPage = NotebookPageViewController(isLeft: false, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         updatePageContainers()
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")

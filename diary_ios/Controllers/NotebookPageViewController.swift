@@ -4,16 +4,21 @@ import PencilKit
 @available(iOS 16.0, *)
 class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     let pageRole: PageRole
+    let isLeft: Bool
     let canvas = HandwritingCanvas()
 
     private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
     private var snapshotIndex = 0
     private let maxSnapshots = 50
+
     private let pageCornerRadius = PageConstants.pageCornerRadius
+    private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
+    private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
     // MARK: - 生命周期
-    init(role: PageRole = .normal, initialData: Data? = nil) {
-        pageRole = role
+    init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
+        self.pageRole = role
+        self.isLeft = isLeft
         super.init(nibName: nil, bundle: nil)
         if let initialData = initialData {
             loadDrawing(data: initialData)
@@ -21,10 +26,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         setupViewStyle()
     }
 
-    required init?(coder: NSCoder) {
-        // This class is not intended to be initialized from a storyboard.
-        fatalError("init(coder:) has not been implemented")
-    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,6 +41,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     private func setupViewStyle() {
         view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
         view.layer.cornerRadius = pageCornerRadius
+        view.layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         view.layer.masksToBounds = true
     }
 
@@ -58,6 +61,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         }
 
         canvas.layer.cornerRadius = pageCornerRadius
+        canvas.layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         canvas.layer.masksToBounds = true
         view.addSubview(canvas)
     }

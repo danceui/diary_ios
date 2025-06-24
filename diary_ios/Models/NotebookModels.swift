@@ -7,6 +7,8 @@ struct PageConstants {
 
     static let shadowRadius: CGFloat = 3
     static let shadowOpacity: Float = 0.3
+    static let leftMaskedCorners: CACornerMask = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+    static let rightMaskedCorners: CACornerMask = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
 }
 
 struct NotebookConstants {

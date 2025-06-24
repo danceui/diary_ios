@@ -17,6 +17,8 @@ class FlipAnimatorController {
     
     private let defaultCornerRadius = PageConstants.pageCornerRadius
     private let pageShadowRadius = PageConstants.shadowRadius
+    private let leftMaskedCorners = PageConstants.leftMaskedCorners
+    private let rightMaskedCorners = PageConstants.rightMaskedCorners
     private let pageShadowOpacity = PageConstants.shadowOpacity
 
     private let baseVelocity = FlipConstants.baseVelocity
@@ -284,6 +286,7 @@ class FlipAnimatorController {
         // 内层容器：负责内容和圆角裁剪
         let container = UIView(frame: CGRect(origin: .zero, size: containerSize))
         container.layer.cornerRadius = defaultCornerRadius
+        container.layer.maskedCorners = direction == .nextPage ? rightMaskedCorners : leftMaskedCorners
         container.layer.masksToBounds = true
         configureSnapshot(for: container, snapshot: frontSnapshot, isFront: true)
         configureSnapshot(for: container, snapshot: backSnapshot, isFront: false)
