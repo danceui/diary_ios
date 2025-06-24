@@ -297,7 +297,7 @@ class FlipAnimatorController {
         containerShadow.layer.position = CGPoint(x: direction == .nextPage ? originX : originX + containerSize.width, y: containerSize.height / 2)
         containerShadow.layer.transform.m34 = transformm34
         containerPositionX = containerShadow.layer.position.x
-        print("📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)), future offset: \(format(containerOffset)).")
+        print("   📐 FlipContainer originX: \(format(containerShadow.frame.origin.x)), future offset: \(format(containerOffset)).")
 
         containerShadow.layer.masksToBounds = false
         containerShadow.layer.shadowOffset = CGSize(width: 0, height: 0)

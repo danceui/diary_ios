@@ -19,7 +19,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         self.notebookSpreadViewController = notebookSpreadViewController
         self.paperSize = paperSize
         super.init(nibName: nil, bundle: nil)
-        self.notebookSpreadViewController.pageDelegate = self
+        self.notebookSpreadViewController.layoutDelegate = self
         self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
             self?.centerContent(xOffset: offset)
         }

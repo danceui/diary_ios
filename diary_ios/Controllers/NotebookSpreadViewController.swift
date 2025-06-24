@@ -109,6 +109,7 @@ class NotebookSpreadViewController: UIViewController {
             let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
+            addEdgeShadow(to: thisPage.view)
             if i == offsetIndex { print("🏷️(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             pageContainers.append(thisContainer)
@@ -206,7 +207,7 @@ class NotebookSpreadViewController: UIViewController {
         updatePageContainers()
     }
 
-    // MARK: - 计算 X Y 偏移量
+    // MARK: - 计算 containers 偏移量
     func computeYOffsets(pageIndex: Int) -> [CGFloat] {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
@@ -236,7 +237,7 @@ class NotebookSpreadViewController: UIViewController {
         return offsets
     }
 
-    // MARK: - 随 progress 更新的变量
+    // MARK: - 随 progress 更新位置
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
         let contentSize = layoutDelegate?.currentSpreadContentSize() ?? .zero
         let width = contentSize.width
@@ -269,6 +270,9 @@ class NotebookSpreadViewController: UIViewController {
         }
     }
 
+    // MARK: - container 阴影
+    func addEdgeShadow(to view: UIView) {
+    }
 
     func exportAllDrawings() -> [Data] {
         return pages.map { $0.exportDrawing() }
