@@ -60,7 +60,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     private func setupViews() {
-        // scrollView.frame = view.bounds // 确保scrollView填满整个视图
         view.addSubview(scrollView)
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -75,7 +74,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     private func setupNotebookSpreadViewController() {
-        // notebookSpreadViewController.view.frame = spreadContainer.bounds // 确保notebookSpreadViewController.view填满spreadContainer
         addChild(notebookSpreadViewController)
         notebookSpreadViewController.view.translatesAutoresizingMaskIntoConstraints = false
         spreadContainer.addSubview(notebookSpreadViewController.view)
@@ -85,8 +83,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor),
             notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
         ])
+        // 强制立即布局，确保约束生效，frame 正确
+        spreadContainer.layoutIfNeeded()
         notebookSpreadViewController.didMove(toParent: self)
-        // notebookSpreadViewController.view.backgroundColor = .yellow // 设置背景颜色以便调试
     }
 
     private func setupGestures() {
@@ -103,9 +102,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
         scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
-        if abs(xOffset) >= spreadContainer.frame.size.width / 4 - 3 {
-            printLayoutInfo(context: "Center Content with X Offset: \(xOffset)")
-        }
     }
     
     // MARK: - 调整内容缩放

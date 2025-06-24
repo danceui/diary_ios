@@ -3,14 +3,15 @@ import PencilKit
 
 @available(iOS 16.0, *)
 class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
-    let pageRole: PageRole
-    let isLeft: Bool
-    let canvas = HandwritingCanvas()
+    private let pageRole: PageRole
+    private let isLeft: Bool
+    private let canvas: HandwritingCanvas = HandwritingCanvas()
 
     private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
     private var snapshotIndex = 0
-    private let maxSnapshots = 50
+    private var highlightLayer: CAGradientLayer?
 
+    private let maxSnapshots = 50
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
@@ -23,7 +24,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         if let initialData = initialData {
             loadDrawing(data: initialData)
         }
-        setupViewStyle()
+        setupView()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -31,14 +32,17 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCanvas()
+        setupStyle()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         canvas.frame = view.bounds
+        highlightLayer?.frame = view.bounds
     }
 
-    private func setupViewStyle() {
+    // MARK: - setup
+    private func setupView() {
         view.backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
         view.layer.cornerRadius = pageCornerRadius
         view.layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
@@ -66,11 +70,28 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         view.addSubview(canvas)
     }
 
+    private func setupStyle(){
+        if pageRole == .cover || pageRole == .back { addCoverHighlight() }
+    }
+
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
             saveSnapshot()
         }
+    }
+
+    // MARK: - 辅助函数
+    private func addCoverHighlight() {
+        let layer = CAGradientLayer()
+        layer.colors = [
+            UIColor.white.withAlphaComponent(0.3).cgColor,
+            UIColor.clear.cgColor
+        ]
+        layer.startPoint = CGPoint(x: 0, y: 0)
+        layer.endPoint = CGPoint(x: 1, y: 1)
+        view.layer.addSublayer(layer)
+        self.highlightLayer = layer
     }
 
     func loadDrawing(data: Data) {
