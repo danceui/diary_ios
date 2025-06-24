@@ -7,7 +7,7 @@ class FlipAnimatorController {
     // MARK: - 翻页相关属性
     private var flipContainer: UIView?
     private var containerPositionX: CGFloat = 0
-    private var containerOffset: CGFloat = 0
+    private var containerDistance: CGFloat = 0
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var frontOverlay: UIView?
@@ -65,11 +65,11 @@ class FlipAnimatorController {
         host.fromXOffsets = host.computeXOffsets(pageIndex: host.currentIndex)
         host.toXOffsets = host.computeXOffsets(pageIndex: targetIndex)
         if direction == .nextPage, targetIndex == host.pageCount - 2 {
-            containerOffset = 0
+            containerDistance = 0
         } else if direction == .lastPage, targetIndex == 0 {
-            containerOffset = 0
+            containerDistance = 0
         } else {
-            containerOffset = StackConstants.baseOffset * computeXDecay(1)
+            containerDistance = StackConstants.baseOffset * computeXDecay(1)
         }
 
         // 生成前后快照
@@ -133,7 +133,7 @@ class FlipAnimatorController {
         var t = CATransform3DIdentity
         t.m34 = transformm34
         flipContainer.layer.transform = CATransform3DRotate(t, progress * .pi, 0, 1, 0)
-        flipContainer.layer.position.x = containerPositionX + progress * containerOffset
+        flipContainer.layer.position.x = containerPositionX + progress * containerDistance
 
         // 更新快照的投影
         guard let shadow = self.pageShadow else {
@@ -338,18 +338,10 @@ class FlipAnimatorController {
     // MARK: - 获取容器位置
     private func computeContainerOriginX(for direction: PageTurnDirection, isContainerCntEven: Bool) -> CGFloat {
         guard let host = host else { return 0 }
-        if isContainerCntEven {
-            if direction == .nextPage {
-                return computeXDecay(1) * baseOffset / 2 + host.view.bounds.width / 2
-            } else {
-                return -computeXDecay(1) * baseOffset / 2
-            }
+        if direction == .nextPage {
+            return computeXDecay(1) * baseOffset + host.view.bounds.width / 2
         } else {
-            if direction == .nextPage {
-                return computeXDecay(1) * baseOffset + host.view.bounds.width / 2
-            } else {
-                return computeXDecay(0) * baseOffset
-            }
+            return 0
         }
     }
 

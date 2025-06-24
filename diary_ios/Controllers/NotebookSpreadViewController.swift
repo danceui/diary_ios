@@ -221,9 +221,9 @@ class NotebookSpreadViewController: UIViewController {
         let rightCenter = offsetIndex + 1
         offsets[leftCenter] = 0
         offsets[rightCenter] = 0
-        for i in 0..<leftCenter { offsets[i] = computeYDecay(leftCenter - i) }
-        for i in (rightCenter + 1)..<containerCount { offsets[i] = computeYDecay(i - rightCenter) }
-        return offsets.map { $0 * baseOffset }
+        for i in 0..<leftCenter { offsets[i] = computeYDecay(leftCenter - i) * baseOffset }
+        for i in (rightCenter + 1)..<containerCount { offsets[i] = computeYDecay(i - rightCenter) * baseOffset }
+        return offsets
     }
 
     func computeXOffsets(pageIndex: Int) -> [CGFloat] {
@@ -236,19 +236,10 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         // 普通情况：中间展开页面，根据 offsetIndex 对称收敛
-        if containerCount % 2 == 0 {
-            let leftCenter = offsetIndex
-            let rightCenter = offsetIndex + 1
-            offsets[leftCenter] = -computeXDecay(1) / 2
-            offsets[rightCenter] = computeXDecay(1) / 2
-            for i in 0..<leftCenter { offsets[i] = -computeXDecay(leftCenter - i + 1) + computeXDecay(1) / 2 }
-            for i in (rightCenter + 1)..<containerCount { offsets[i] = computeXDecay(i - rightCenter + 1) - computeXDecay(1) / 2 }
-        } else {
-            offsets[offsetIndex] = 0
-            for i in 0..<offsetIndex { offsets[i] = -computeXDecay(offsetIndex - i) }
-            for i in (offsetIndex + 1)..<containerCount { offsets[i] = computeXDecay(i - offsetIndex) }
-        }
-        return offsets.map { $0 * baseOffset }
+        offsets[offsetIndex] = 0
+        for i in 0..<offsetIndex { offsets[i] = -computeXDecay(offsetIndex - i) * baseOffset}
+        for i in (offsetIndex + 1)..<containerCount { offsets[i] = computeXDecay(i - offsetIndex) * baseOffset}
+        return offsets
     }
 
     // MARK: - 随 progress 更新的变量
