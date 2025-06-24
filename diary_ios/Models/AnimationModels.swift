@@ -8,7 +8,7 @@ struct FlipConstants {
     static let velocityThreshold: CGFloat = 800
     static let minSpeedFactor: CGFloat = 1
     static let maxSpeedFactor: CGFloat = 1.5
-    static let transformm34: CGFloat = -1 / 2000
+    static let transformm34: CGFloat = -1 / 2200
 
     static let epsilon: CGFloat = 0.01
 

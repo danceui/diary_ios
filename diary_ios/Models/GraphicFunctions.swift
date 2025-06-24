@@ -35,10 +35,13 @@ func insetRectSafe(from rect: CGRect, inset: CGFloat) -> CGRect? {
     return insetRect
 }
 
-func computeXDecay(_ distance: Int, scale: CGFloat = 1, alpha: CGFloat = 1) -> CGFloat {
-    return pow(CGFloat(distance), alpha) * scale * StackConstants.baseOffset
+func computeXDecay(_ n: Int) -> CGFloat {
+    let base: CGFloat = 8   // 控制最大偏移
+    let factor: CGFloat = 10 // 控制每层之间间距的快慢
+    return StackConstants.baseOffset * log(CGFloat(n + 1)) * log(factor)
 }
 
-func computeYDecay(_ distance: Int, scale: CGFloat = 1.0, alpha: CGFloat = 1) -> CGFloat {
-    return pow(CGFloat(distance), alpha) * scale * StackConstants.baseOffset
+func computeYDecay(_ n: Int) -> CGFloat {
+    // return pow(CGFloat(distance), alpha) * scale * StackConstants.baseOffset
+    return 0
 }

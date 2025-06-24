@@ -231,7 +231,7 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         offsets[offsetIndex] = 0
-        for i in 0..<offsetIndex { offsets[i] = -computeXDecay(offsetIndex - i) }
+        for i in 0..<offsetIndex { offsets[i] = -computeXDecay(offsetIndex - i + 1) + computeXDecay(1)}
         for i in (offsetIndex + 1)..<containerCount { offsets[i] = computeXDecay(i - offsetIndex) }
         return offsets
     }

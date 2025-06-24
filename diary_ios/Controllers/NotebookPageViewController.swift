@@ -67,10 +67,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
         view.addSubview(canvas)
     }
 
-    private func setupStyle(){
-        if pageRole == .cover || pageRole == .back { addCoverHighlight() }
-    }
-
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
