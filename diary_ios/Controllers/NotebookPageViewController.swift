@@ -9,7 +9,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
 
     private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
     private var snapshotIndex = 0
-    private var highlightLayer: CAGradientLayer?
 
     private let maxSnapshots = 50
     private let pageCornerRadius = PageConstants.pageCornerRadius
@@ -32,13 +31,11 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCanvas()
-        setupStyle()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         canvas.frame = view.bounds
-        highlightLayer?.frame = view.bounds
     }
 
     // MARK: - setup
@@ -82,18 +79,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     }
 
     // MARK: - 辅助函数
-    private func addCoverHighlight() {
-        let layer = CAGradientLayer()
-        layer.colors = [
-            UIColor.white.withAlphaComponent(0.3).cgColor,
-            UIColor.clear.cgColor
-        ]
-        layer.startPoint = CGPoint(x: 0, y: 0)
-        layer.endPoint = CGPoint(x: 1, y: 1)
-        view.layer.addSublayer(layer)
-        self.highlightLayer = layer
-    }
-
     func loadDrawing(data: Data) {
         do {
             canvas.drawing = try PKDrawing(data: data)
