@@ -7,6 +7,7 @@ class FlipAnimatorController {
     // MARK: - 翻页相关属性
     private var flipContainer: UIView?
     private var containerPositionX: CGFloat = 0
+    private var containerOffset: CGFloat = 0
     private var frontSnapshot: UIView?
     private var backSnapshot: UIView?
     private var frontOverlay: UIView?
@@ -23,7 +24,6 @@ class FlipAnimatorController {
     private let progressThreshold = FlipConstants.progressThreshold
     private let minSpeedFactor = FlipConstants.minSpeedFactor
     private let maxSpeedFactor = FlipConstants.maxSpeedFactor
-    private let containerOffset = StackConstants.baseOffset * computeXDecay(1)
 
     private let lightAngle = FlipConstants.lightAngle
     private let transformm34 = FlipConstants.transformm34
@@ -64,6 +64,13 @@ class FlipAnimatorController {
         host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex)
         host.fromXOffsets = host.computeXOffsets(pageIndex: host.currentIndex)
         host.toXOffsets = host.computeXOffsets(pageIndex: targetIndex)
+        if direction == .nextPage, targetIndex == host.pageCount - 2 {
+            containerOffset = 0
+        } else if direction == .lastPage, targetIndex == 0 {
+            containerOffset = 0
+        } else {
+            containerOffset = StackConstants.baseOffset * computeXDecay(1)
+        }
 
         // 生成前后快照
         print("📸 Create snapshots.")
@@ -293,7 +300,7 @@ class FlipAnimatorController {
 
         // 外层容器：负责阴影和变换
         let containerShadow = UIView(frame: CGRect(origin: .zero, size: containerSize))
-        let originX = calculateFlipContainerOriginX(for: direction, isContainerCntEven: host.containerCount % 2 == 0)
+        let originX = computeContainerOriginX(for: direction, isContainerCntEven: host.containerCount % 2 == 0)
         containerShadow.layer.anchorPoint = CGPoint(x: direction == .nextPage ? 0 : 1, y: 0.5)
         containerShadow.layer.position = CGPoint(x: direction == .nextPage ? originX : originX + containerSize.width, y: containerSize.height / 2)
         containerShadow.layer.transform.m34 = transformm34
@@ -329,7 +336,7 @@ class FlipAnimatorController {
     }
 
     // MARK: - 获取容器位置
-    private func calculateFlipContainerOriginX(for direction: PageTurnDirection, isContainerCntEven: Bool) -> CGFloat {
+    private func computeContainerOriginX(for direction: PageTurnDirection, isContainerCntEven: Bool) -> CGFloat {
         guard let host = host else { return 0 }
         if isContainerCntEven {
             if direction == .nextPage {
