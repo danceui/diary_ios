@@ -76,8 +76,8 @@ class NotebookSpreadViewController: UIViewController {
 
         // 根据 currentIndex 确定要展开的 pageContainer
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
-        let offsetsX = computeXOffsets(pageIndex: currentIndex)
-        let offsetsY = computeYOffsets(pageIndex: currentIndex)
+        let xOffsets = computeXOffsets(pageIndex: currentIndex)
+        let yOffsets = computeYOffsets(pageIndex: currentIndex)
         var baseX: CGFloat
         var pageIndex: Int
         
@@ -91,8 +91,8 @@ class NotebookSpreadViewController: UIViewController {
             if i == 0, currentIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
             else if i == containerCount - 1, currentIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
 
-            let originX = offsetsX[i] + baseX
-            let originY = offsetsY[i]
+            let originX = xOffsets[i] + baseX
+            let originY = yOffsets[i]
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
 
             thisContainer.layer.masksToBounds = false // 允许阴影
@@ -109,8 +109,8 @@ class NotebookSpreadViewController: UIViewController {
             let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
-            if i == offsetIndex { print("🏷️(\(format(offsetsX[i])), \(format(offsetsY[i])))", terminator: " ") }
-            else { print("(\(format(offsetsX[i])), \(format(offsetsY[i])))", terminator: " ") }
+            if i == offsetIndex { print("🏷️(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
+            else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             pageContainers.append(thisContainer)
         }
         print("].")
