@@ -137,6 +137,11 @@ class NotebookSpreadViewController: UIViewController {
             else if  i == containerCount - 1, currentIndex == pageCount - 2 { pageIndex = pageCount - 2 }
 
             let thisPage = pages[pageIndex]
+            if thisPage.parent != nil {
+                thisPage.willMove(toParent: nil)
+                thisPage.view.removeFromSuperview()
+                thisPage.removeFromParent()
+            }
             addChild(thisPage)
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)

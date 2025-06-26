@@ -7,9 +7,9 @@ extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
 }
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
-    private var notebookSpreadViewController: NotebookSpreadViewController
-    private var scrollView: UIScrollView!
-    private var spreadContainer: UIView!
+    private var scrollView = UIScrollView()
+    private var spreadContainer = UIView()
+    private var notebookSpreadViewController = NotebookSpreadViewController()
     private var layoutAnimator: UIViewPropertyAnimator?
     private var previousZoomScale = NotebookConstants.defaultZoomScale
 
@@ -35,7 +35,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
         setupScrollView()
         setupViews()
-        setupNotebookSpreadViewController()
+        setupViewControllers()
         setupGestures()
         // setupTestFunctions()
     }
@@ -47,6 +47,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        spreadContainer.frame.size = paperSize.size
         printLifeCycleInfo(context: "[\(type(of: self))] 6️⃣ viewDidLayoutSubviews", for: view)
         if scrollView.zoomScale != previousZoomScale {
             scrollView.setZoomScale(previousZoomScale, animated: false)
@@ -71,7 +72,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Setup
     private func setupScrollView() {
-        scrollView = UIScrollView()
         scrollView.delegate = self
         scrollView.backgroundColor = .clear
         scrollView.minimumZoomScale = NotebookConstants.minZoomScale
@@ -84,6 +84,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     private func setupViews() {
         view.addSubview(scrollView)
+        scrollView.addSubview(spreadContainer)
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -91,12 +92,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
-
-        spreadContainer = UIView(frame: CGRect(origin: .zero, size: paperSize.size))
-        scrollView.addSubview(spreadContainer)
     }
 
-    private func setupNotebookSpreadViewController() {
+    private func setupViewControllers() {
         addChild(notebookSpreadViewController)
         notebookSpreadViewController.view.translatesAutoresizingMaskIntoConstraints = false
         spreadContainer.addSubview(notebookSpreadViewController.view)
@@ -107,7 +105,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
         ])
         // 强制立即布局，确保约束生效，frame 正确
-        spreadContainer.layoutIfNeeded()
+        // spreadContainer.layoutIfNeeded()
         notebookSpreadViewController.didMove(toParent: self)
     }
 
