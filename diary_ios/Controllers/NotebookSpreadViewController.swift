@@ -32,13 +32,18 @@ class NotebookSpreadViewController: UIViewController {
     var onProgressChanged: ((CGFloat) -> Void)?
 
     // MARK: - 生命周期
+    override func loadView() {
+        super.loadView()
+        printLifeCycleInfo(context: "[\(type(of: self))] 2️⃣ loadView", for: view)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
         flipController = FlipAnimatorController(host: self)
         setupInitialPages()
         setupGestureRecognizers()
-        setupNotebookShadow()
+        // setupNotebookShadow()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -47,6 +52,30 @@ class NotebookSpreadViewController: UIViewController {
         updatePageContainers()
     }
     
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        printLifeCycleInfo(context: "[\(type(of: self))] 5️⃣ viewWillLayoutSubviews", for: view)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        printLifeCycleInfo(context: "[\(type(of: self))] 6️⃣ viewDidLayoutSubviews", for: view)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 7️⃣ viewDidAppear", for: view)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 8️⃣ viewWillDisappear", for: view)
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 9️⃣ viewDidDisappear", for: view)
+    }
     // MARK: - Setup
     private func setupInitialPages() {
         pages = [

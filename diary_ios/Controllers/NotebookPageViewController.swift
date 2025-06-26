@@ -11,6 +11,7 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     private var snapshotIndex = 0
 
     private let maxSnapshots = 50
+    // private let pageSize = PageConstants.defaultPageSize.size
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
@@ -28,16 +29,46 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    override func loadView() {
+        super.loadView()
+        printLifeCycleInfo(context: "[\(type(of: self))] 2️⃣ loadView", for: view)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
         setupCanvas()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        printLifeCycleInfo(context: "[\(type(of: self))] 5️⃣ viewWillLayoutSubviews", for: view)
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         printLifeCycleInfo(context: "[\(type(of: self))] 6️⃣ viewDidLayoutSubviews", for: view)
         canvas.frame = view.bounds
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 7️⃣ viewDidAppear", for: view)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 8️⃣ viewWillDisappear", for: view)
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 9️⃣ viewDidDisappear", for: view)
     }
 
     // MARK: - setup
