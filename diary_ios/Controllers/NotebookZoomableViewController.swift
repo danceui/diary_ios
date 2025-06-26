@@ -7,17 +7,15 @@ extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
 }
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
-    private var paperSize = PageConstants.defaultPageSize
     private var scrollView = UIScrollView()
-    private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.defaultPageSize.size))
+    private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageSize.a4a4.size))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var layoutAnimator: UIViewPropertyAnimator?
     private var previousZoomScale = NotebookConstants.defaultZoomScale
 
     // MARK: - 生命周期
-    init(notebookSpreadViewController: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
+    init(notebookSpreadViewController: NotebookSpreadViewController) {
         self.notebookSpreadViewController = notebookSpreadViewController
-        self.paperSize = paperSize
         super.init(nibName: nil, bundle: nil)
         self.notebookSpreadViewController.layoutDelegate = self
         self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in

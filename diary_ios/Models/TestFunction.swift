@@ -7,6 +7,6 @@ func addTestBorder(for view: UIView, color: UIColor = .red, width: CGFloat = 2.0
 
 
 func printLifeCycleInfo(context: String, for view: UIView){
-    print("⚙️ \(context)")
-    print("   📌 view.frame.size: \(formatSize(view.frame.size))")
+    // print("⚙️ \(context)")
+    // print("   📌 view.frame.size: \(formatSize(view.frame.size))")
 }
