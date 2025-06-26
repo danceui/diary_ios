@@ -1,16 +1,13 @@
 import UIKit
 
 extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
-    func currentSpreadContentSize() -> CGSize {
-        return spreadContainer.frame.size
-    }
+    func currentSpreadContentSize() -> CGSize { return spreadContainer.frame.size }
 }
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var scrollView = UIScrollView()
     private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.pageSize.doubleSize))
     private var notebookSpreadViewController = NotebookSpreadViewController()
-    private var layoutAnimator: UIViewPropertyAnimator?
     private var previousZoomScale = NotebookConstants.defaultZoomScale
 
     // MARK: - 生命周期

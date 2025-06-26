@@ -19,6 +19,8 @@ class NotebookSpreadViewController: UIViewController {
     var toXOffsets: [CGFloat] = []
     var fromYOffsets: [CGFloat] = []
     var toYOffsets: [CGFloat] = []
+    var fromShadowOpacities: [Float] = []
+    var toShadowOpacities: [Float] = []
 
     weak var layoutDelegate: NotebookSpreadLayoutDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
@@ -57,8 +59,8 @@ class NotebookSpreadViewController: UIViewController {
 
     private func updateNotebookShadow() {
         spineShadow.frame = view.bounds
-        spineShadow.layer.shadowPath = UIBezierPath(rect: CGRect(x: view.bounds.width / 2, y: 0, width: spineShadowWidth, height: view.bounds.height)).cgPath
-        spineShadow.layer.shadowColor = UIColor.red.cgColor
+        spineShadow.layer.shadowPath = UIBezierPath(rect: CGRect(x: view.bounds.width / 2 - spineShadowWidth / 2, y: 0, width: spineShadowWidth, height: view.bounds.height)).cgPath
+        spineShadow.layer.shadowColor = UIColor.black.cgColor
         spineShadow.layer.shadowOffset = .zero
         spineShadow.layer.shadowOpacity = spineShadowOpacity
         spineShadow.layer.shadowRadius = spineShadowRadius
@@ -83,6 +85,7 @@ class NotebookSpreadViewController: UIViewController {
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
         let xOffsets = computeXOffsets(pageIndex: currentIndex)
         let yOffsets = computeYOffsets(pageIndex: currentIndex)
+        let opacities = computeShadowOpacities(pageIndex: currentIndex)
         
         print("📐 PageContainers offsets: [", terminator: " ")
         for i in 0...containerCount - 1 {
@@ -95,13 +98,12 @@ class NotebookSpreadViewController: UIViewController {
 
             let originX = xOffsets[i] + baseX
             let originY = yOffsets[i]
-            let pageSize = PageConstants.pageSize.singleSize
+            thisContainer.layer.shadowOpacity = opacities[i]
+            
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
-
             thisContainer.layer.masksToBounds = false // 允许阴影
             thisContainer.layer.shadowOffset = CGSize(width: 0, height: 0)
             thisContainer.layer.shadowColor = UIColor.black.cgColor
-            thisContainer.layer.shadowOpacity = pageShadowOpacity
             thisContainer.layer.shadowRadius = pageShadowRadius
 
             // 确定这个容器的内容
@@ -240,6 +242,18 @@ class NotebookSpreadViewController: UIViewController {
         return offsets
     }
 
+    func computeShadowOpacities(pageIndex: Int) -> [Float] {
+        var opacities = Array(repeating: Float(0), count: containerCount)
+        if pageIndex == 0 {
+            opacities[0] = pageShadowOpacity
+        } else if pageIndex == pageCount - 2 {
+            opacities[containerCount - 1] = pageShadowOpacity
+        } else {
+            opacities = Array(repeating: pageShadowOpacity, count: containerCount)
+        }
+        return opacities
+    }
+
     // MARK: - 随 progress 更新位置
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
         let contentSize = layoutDelegate?.currentSpreadContentSize() ?? .zero
@@ -269,7 +283,11 @@ class NotebookSpreadViewController: UIViewController {
             let fromX = fromXOffsets[i]
             let toX = toXOffsets[i]
             let dx = (toX - fromX) * easedProgress
+            let fromOpacity = fromShadowOpacities[i]
+            let toOpacity = toShadowOpacities[i]
+            let opacity = fromOpacity + (toOpacity - fromOpacity) * Float(easedProgress)
             container.transform = CGAffineTransform(translationX: dx, y: dy)
+            container.layer.shadowOpacity = opacity
         }
     }
 

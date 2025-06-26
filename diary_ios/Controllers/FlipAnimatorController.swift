@@ -39,6 +39,8 @@ class FlipAnimatorController {
         host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex)
         host.fromXOffsets = host.computeXOffsets(pageIndex: host.currentIndex)
         host.toXOffsets = host.computeXOffsets(pageIndex: targetIndex)
+        host.fromShadowOpacities = host.computeShadowOpacities(pageIndex: host.currentIndex)
+        host.toShadowOpacities = host.computeShadowOpacities(pageIndex: targetIndex)
         containerOffset = computeContainerOffset(direction: direction, targetIndex: targetIndex)
 
         // 生成前后快照
@@ -121,6 +123,7 @@ class FlipAnimatorController {
             backSnapshot?.isHidden = true
         }
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
+        host?.updateStackTransforms(progress: abs(progress))
 
         // 打印调试信息
         var hostShouldPrint: Bool = false
@@ -137,7 +140,6 @@ class FlipAnimatorController {
             lastProgressForTesting = progress
             hostShouldPrint = true
         }
-        host?.updateStackTransforms(progress: abs(progress))
     }
 
     // MARK: - 动画完成、取消
