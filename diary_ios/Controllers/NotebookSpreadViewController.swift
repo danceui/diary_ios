@@ -6,8 +6,6 @@ protocol NotebookSpreadLayoutDelegate: AnyObject {
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIViewController {
     private lazy var flipController = FlipAnimatorController(host: self)
-    private var notebookShadow = UIView()
-    
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
     
@@ -44,7 +42,6 @@ class NotebookSpreadViewController: UIViewController {
         super.viewWillAppear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
         updatePageContainers()
-        updateNotebookShadow()
     }
 
     // MARK: - Setup
@@ -62,17 +59,6 @@ class NotebookSpreadViewController: UIViewController {
     private func setupGestureRecognizers() {
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         view.addGestureRecognizer(panGesture)
-    }
-
-    private func updateNotebookShadow() {
-        notebookShadow.frame = view.bounds
-        notebookShadow.layer.shadowPath = UIBezierPath(rect: notebookShadow.bounds).cgPath
-        notebookShadow.layer.shadowColor = UIColor.red.cgColor
-        notebookShadow.layer.shadowOffset = .zero
-        notebookShadow.layer.shadowOpacity = 0.3
-        notebookShadow.layer.shadowRadius = 20
-        notebookShadow.isUserInteractionEnabled = false
-        view.insertSubview(notebookShadow, at: 0)
     }
 
     // MARK: - 更新 containers
@@ -104,7 +90,8 @@ class NotebookSpreadViewController: UIViewController {
 
             let originX = xOffsets[i] + baseX
             let originY = yOffsets[i]
-            thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
+            let pageSize = PageConstants.pageSize.singleSize
+            thisContainer.frame = CGRect(x: originX, y: originY, width: pageSize.width, height: pageSize.height)
 
             thisContainer.layer.masksToBounds = false // 允许阴影
             thisContainer.layer.shadowOffset = CGSize(width: 0, height: 0)
@@ -118,7 +105,6 @@ class NotebookSpreadViewController: UIViewController {
             else if  i == containerCount - 1, currentIndex == pageCount - 2 { pageIndex = pageCount - 2 }
 
             let thisPage = pages[pageIndex]
-            thisPage.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage)
             if i == offsetIndex { print("🏷️(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
