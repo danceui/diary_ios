@@ -17,10 +17,10 @@ struct FlipConstants {
     static let thicknessScaleSensitivity: CGFloat = 0.4
     static let largerOverlayAlpha: CGFloat = 0.2
     static let smallerOverlayAlpha: CGFloat = 0.2
-    static let shadowOffset: CGFloat = 5
-    static let shadowRadius: CGFloat = 30
-    static let shadowOpacity: Float = 0.3
-    static let shadowInset: CGFloat = 30
+    static let flipShadowOffset: CGFloat = 5
+    static let flipShadowRadius: CGFloat = 30
+    static let flipShadowOpacity: Float = 0.3
+    static let flipShadowInset: CGFloat = 30
 }
 
 struct FlipRequest {

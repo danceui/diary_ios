@@ -7,14 +7,7 @@ protocol NotebookSpreadLayoutDelegate: AnyObject {
 class NotebookSpreadViewController: UIViewController {
     private lazy var flipController = FlipAnimatorController(host: self)
     private var lockedDirection: PageTurnDirection?
-    private var lastProgressForTesting: CGFloat?
-    
-    private let baseOffset = StackConstants.baseOffset
-    private let progressThreshold = FlipConstants.progressThreshold
-    private let velocityThreshold = FlipConstants.velocityThreshold
-
-    private let pageShadowRadius = PageConstants.shadowRadius
-    private let pageShadowOpacity = PageConstants.shadowOpacity
+    private var spineShadow = UIView()
     
     var pages: [NotebookPageView] = []
     var pageCount: Int {pages.count}
@@ -42,6 +35,7 @@ class NotebookSpreadViewController: UIViewController {
         super.viewWillAppear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
         updatePageContainers()
+        updateNotebookShadow()
     }
 
     // MARK: - Setup
@@ -59,6 +53,17 @@ class NotebookSpreadViewController: UIViewController {
     private func setupGestureRecognizers() {
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         view.addGestureRecognizer(panGesture)
+    }
+
+    private func updateNotebookShadow() {
+        spineShadow.frame = view.bounds
+        spineShadow.layer.shadowPath = UIBezierPath(rect: CGRect(x: view.bounds.width / 2, y: 0, width: spineShadowWidth, height: view.bounds.height)).cgPath
+        spineShadow.layer.shadowColor = UIColor.red.cgColor
+        spineShadow.layer.shadowOffset = .zero
+        spineShadow.layer.shadowOpacity = spineShadowOpacity
+        spineShadow.layer.shadowRadius = spineShadowRadius
+        spineShadow.isUserInteractionEnabled = false
+        view.insertSubview(spineShadow, at: 0)
     }
 
     // MARK: - 更新 containers
@@ -91,7 +96,7 @@ class NotebookSpreadViewController: UIViewController {
             let originX = xOffsets[i] + baseX
             let originY = yOffsets[i]
             let pageSize = PageConstants.pageSize.singleSize
-            thisContainer.frame = CGRect(x: originX, y: originY, width: pageSize.width, height: pageSize.height)
+            thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
 
             thisContainer.layer.masksToBounds = false // 允许阴影
             thisContainer.layer.shadowOffset = CGSize(width: 0, height: 0)
@@ -308,4 +313,20 @@ class NotebookSpreadViewController: UIViewController {
             pages[currentIndex + 1].redo()
         }
     }
+    
+    // MARK: - 常量
+    private let baseOffset = StackConstants.baseOffset
+    private let progressThreshold = FlipConstants.progressThreshold
+    private let velocityThreshold = FlipConstants.velocityThreshold
+
+    private let pageShadowRadius = PageConstants.pageShadowRadius
+    private let pageShadowOpacity = PageConstants.pageShadowOpacity
+
+    private let spineShadowOpacity = NotebookConstants.spineShadowOpacity
+    private let spineShadowRadius = NotebookConstants.spineShadowRadius
+    private let spineShadowWidth = NotebookConstants.spineShadowWidth
+    
+
+    // MARK: - 测试用
+    private var lastProgressForTesting: CGFloat?
 }

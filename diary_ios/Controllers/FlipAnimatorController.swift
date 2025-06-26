@@ -4,7 +4,6 @@ class FlipAnimatorController {
     private var animator: UIViewPropertyAnimator?
     private var state: AnimationState = .idle
     
-    // MARK: - 翻页相关属性
     private var flipContainer: UIView?
     private var containerPositionX: CGFloat = 0
     private var containerOffset: CGFloat = 0
@@ -14,35 +13,11 @@ class FlipAnimatorController {
     private var backOverlay: UIView?
     private var pageShadow: UIView?
     private var lastProgressForTesting: CGFloat?
-    
-    private let defaultCornerRadius = PageConstants.pageCornerRadius
-    private let pageShadowRadius = PageConstants.shadowRadius
-    private let leftMaskedCorners = PageConstants.leftMaskedCorners
-    private let rightMaskedCorners = PageConstants.rightMaskedCorners
-    private let pageShadowOpacity = PageConstants.shadowOpacity
-
-    private let baseVelocity = FlipConstants.baseVelocity
-    private let baseDuration = FlipConstants.baseDuration
-    private let progressThreshold = FlipConstants.progressThreshold
-    private let minSpeedFactor = FlipConstants.minSpeedFactor
-    private let maxSpeedFactor = FlipConstants.maxSpeedFactor
-
-    private let lightAngle = FlipConstants.lightAngle
-    private let transformm34 = FlipConstants.transformm34
-    private let baseOffset = StackConstants.baseOffset
-    private let largerOverlayAlpha = FlipConstants.largerOverlayAlpha
-    private let smallerOverlayAlpha = FlipConstants.smallerOverlayAlpha
-    private let shadowOffset = FlipConstants.shadowOffset
-    private let shadowOpacity = FlipConstants.shadowOpacity
-    private let shadowRadius = FlipConstants.shadowRadius
-    private let shadowInset = FlipConstants.shadowInset
 
     private var pendingFlips: [FlipRequest] = []
     var isAnimating: Bool { return state != .idle }
 
-    init(host: NotebookSpreadViewController) {
-        self.host = host
-    }
+    init(host: NotebookSpreadViewController) { self.host = host }
 
     // MARK: - 动画开始
     func begin(direction: PageTurnDirection, type: AnimationType) {
@@ -398,7 +373,7 @@ class FlipAnimatorController {
         lastProgressForTesting = nil
     }
 
-    func cleanupAnimations() {
+    private func cleanupAnimations() {
         print("🧹 Cleanup animations [state was \(state)].")
         state = .idle
 
@@ -422,4 +397,27 @@ class FlipAnimatorController {
             }
         }
     }
+
+    // MARK: - 常量
+    private let defaultCornerRadius = PageConstants.pageCornerRadius
+    private let pageShadowRadius = PageConstants.pageShadowRadius
+    private let leftMaskedCorners = PageConstants.leftMaskedCorners
+    private let rightMaskedCorners = PageConstants.rightMaskedCorners
+    private let pageShadowOpacity = PageConstants.pageShadowOpacity
+
+    private let baseVelocity = FlipConstants.baseVelocity
+    private let baseDuration = FlipConstants.baseDuration
+    private let progressThreshold = FlipConstants.progressThreshold
+    private let minSpeedFactor = FlipConstants.minSpeedFactor
+    private let maxSpeedFactor = FlipConstants.maxSpeedFactor
+
+    private let lightAngle = FlipConstants.lightAngle
+    private let transformm34 = FlipConstants.transformm34
+    private let baseOffset = StackConstants.baseOffset
+    private let largerOverlayAlpha = FlipConstants.largerOverlayAlpha
+    private let smallerOverlayAlpha = FlipConstants.smallerOverlayAlpha
+    private let shadowOffset = FlipConstants.flipShadowOffset
+    private let shadowOpacity = FlipConstants.flipShadowOpacity
+    private let shadowRadius = FlipConstants.flipShadowRadius
+    private let shadowInset = FlipConstants.flipShadowInset
 }

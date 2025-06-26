@@ -37,8 +37,8 @@ enum PageTurnDirection {
 struct PageConstants {
     static let pageSize: PageSize = .a4
     static let pageCornerRadius: CGFloat = 20
-    static let shadowRadius: CGFloat = 3
-    static let shadowOpacity: Float = 0.3
+    static let pageShadowRadius: CGFloat = 3
+    static let pageShadowOpacity: Float = 0.3
     static let leftMaskedCorners: CACornerMask = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
     static let rightMaskedCorners: CACornerMask = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
 }
@@ -47,6 +47,10 @@ struct NotebookConstants {
     static let defaultZoomScale: CGFloat = 0.8
     static let maxZoomScale: CGFloat = 3.0
     static let minZoomScale: CGFloat = 0.5
+
+    static let spineShadowWidth: CGFloat = 10
+    static let spineShadowOpacity: Float = 0.3
+    static let spineShadowRadius: CGFloat = 20
 }
 
 struct StackConstants {
