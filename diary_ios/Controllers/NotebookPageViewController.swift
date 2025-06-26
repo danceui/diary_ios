@@ -29,11 +29,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    override func loadView() {
-        super.loadView()
-        printLifeCycleInfo(context: "[\(type(of: self))] 2️⃣ loadView", for: view)
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
@@ -43,11 +38,6 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
-    }
-
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
-        printLifeCycleInfo(context: "[\(type(of: self))] 5️⃣ viewWillLayoutSubviews", for: view)
     }
 
     override func viewDidLayoutSubviews() {

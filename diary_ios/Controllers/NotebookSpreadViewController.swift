@@ -32,11 +32,6 @@ class NotebookSpreadViewController: UIViewController {
     var onProgressChanged: ((CGFloat) -> Void)?
 
     // MARK: - 生命周期
-    override func loadView() {
-        super.loadView()
-        printLifeCycleInfo(context: "[\(type(of: self))] 2️⃣ loadView", for: view)
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
@@ -50,11 +45,6 @@ class NotebookSpreadViewController: UIViewController {
         super.viewWillAppear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
         updatePageContainers()
-    }
-    
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
-        printLifeCycleInfo(context: "[\(type(of: self))] 5️⃣ viewWillLayoutSubviews", for: view)
     }
 
     override func viewDidLayoutSubviews() {
@@ -147,8 +137,10 @@ class NotebookSpreadViewController: UIViewController {
             else if  i == containerCount - 1, currentIndex == pageCount - 2 { pageIndex = pageCount - 2 }
 
             let thisPage = pages[pageIndex]
+            addChild(thisPage)
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
+            thisPage.didMove(toParent: self)
             if i == offsetIndex { print("🏷️(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             pageContainers.append(thisContainer)
@@ -229,11 +221,11 @@ class NotebookSpreadViewController: UIViewController {
         }
 
         let insertIndex = currentIndex + 2
+        print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
         let leftPage = NotebookPageViewController(isLeft: true, initialData: initialData)
         let rightPage = NotebookPageViewController(isLeft: false, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         updatePageContainers()
-        print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
         flipController.autoFlip(direction: .nextPage)
     }
 
