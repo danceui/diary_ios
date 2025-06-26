@@ -68,14 +68,10 @@ class FlipAnimatorController {
 
         // 生成前后快照
         print("📸 Create snapshots.")
-        guard let currentLeftView = host.pages[host.currentIndex].view,
-            let currentRightView = host.pages[host.currentIndex + 1].view,
-            let targetLeftView = host.pages[targetIndex].view,
-            let targetRightView = host.pages[targetIndex + 1].view else {
-            print("❌ View does not exist.")
-            state = .idle
-            return
-        }
+        let currentLeftView = host.pages[host.currentIndex]
+        let currentRightView = host.pages[host.currentIndex + 1]
+        let targetLeftView = host.pages[targetIndex]
+        let targetRightView = host.pages[targetIndex + 1]
         guard let frontSnapshot = direction == .nextPage ? currentRightView.snapshotView(afterScreenUpdates: true) : currentLeftView.snapshotView(afterScreenUpdates: true),
             let backSnapshot = direction == .nextPage ? targetLeftView.snapshotView(afterScreenUpdates: true) : targetRightView.snapshotView(afterScreenUpdates: true) else {
             print("❌ Snapshot generation failed.")

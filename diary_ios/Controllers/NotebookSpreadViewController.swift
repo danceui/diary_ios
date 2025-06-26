@@ -17,7 +17,7 @@ class NotebookSpreadViewController: UIViewController {
     private let pageShadowRadius = PageConstants.shadowRadius
     private let pageShadowOpacity = PageConstants.shadowOpacity
     
-    var pages: [NotebookPageViewController] = []
+    var pages: [NotebookPageView] = []
     var pageCount: Int {pages.count}
     var currentIndex: Int = 2
 
@@ -69,12 +69,12 @@ class NotebookSpreadViewController: UIViewController {
     // MARK: - Setup
     private func setupInitialPages() {
         pages = [
-            NotebookPageViewController(role: .empty),
-            NotebookPageViewController(role: .cover, isLeft: false),
-            NotebookPageViewController(role: .normal, isLeft: true),
-            NotebookPageViewController(role: .normal, isLeft: false),
-            NotebookPageViewController(role: .back, isLeft: true),
-            NotebookPageViewController(role: .empty)
+            NotebookPageView(role: .empty),
+            NotebookPageView(role: .cover, isLeft: false),
+            NotebookPageView(role: .normal, isLeft: true),
+            NotebookPageView(role: .normal, isLeft: false),
+            NotebookPageView(role: .back, isLeft: true),
+            NotebookPageView(role: .empty)
         ]
     }
 
@@ -137,15 +137,8 @@ class NotebookSpreadViewController: UIViewController {
             else if  i == containerCount - 1, currentIndex == pageCount - 2 { pageIndex = pageCount - 2 }
 
             let thisPage = pages[pageIndex]
-            if thisPage.parent != nil {
-                thisPage.willMove(toParent: nil)
-                thisPage.view.removeFromSuperview()
-                thisPage.removeFromParent()
-            }
-            addChild(thisPage)
-            thisPage.view.frame = thisContainer.bounds
-            thisContainer.addSubview(thisPage.view)
-            thisPage.didMove(toParent: self)
+            thisPage.frame = thisContainer.bounds
+            thisContainer.addSubview(thisPage)
             if i == offsetIndex { print("🏷️(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             pageContainers.append(thisContainer)
@@ -227,8 +220,8 @@ class NotebookSpreadViewController: UIViewController {
 
         let insertIndex = currentIndex + 2
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
-        let leftPage = NotebookPageViewController(isLeft: true, initialData: initialData)
-        let rightPage = NotebookPageViewController(isLeft: false, initialData: initialData)
+        let leftPage = NotebookPageView(isLeft: true, initialData: initialData)
+        let rightPage = NotebookPageView(isLeft: false, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         updatePageContainers()
         flipController.autoFlip(direction: .nextPage)

@@ -1,7 +1,7 @@
 import UIKit
 
 struct PageConstants {
-    static let defaultPageSize: PaperSize = .a4
+    static let defaultPageSize: PaperSize = .a4a4
     static let defaultPageRole: PageRole = .normal
     static let pageCornerRadius: CGFloat = 20
 
