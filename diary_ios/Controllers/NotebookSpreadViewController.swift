@@ -7,6 +7,7 @@ protocol NotebookSpreadLayoutDelegate: AnyObject {
 class NotebookSpreadViewController: UIViewController {
     private lazy var flipController = FlipAnimatorController(host: self)
     private var notebookShadow = UIView()
+    
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
     
