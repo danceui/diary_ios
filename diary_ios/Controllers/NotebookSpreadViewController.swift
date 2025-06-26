@@ -7,7 +7,6 @@ protocol NotebookSpreadLayoutDelegate: AnyObject {
 class NotebookSpreadViewController: UIViewController {
     private lazy var flipController = FlipAnimatorController(host: self)
     private var lockedDirection: PageTurnDirection?
-    private var spineShadow = UIView()
     
     var pages: [NotebookPageView] = []
     var pageCount: Int {pages.count}
@@ -37,7 +36,6 @@ class NotebookSpreadViewController: UIViewController {
         super.viewWillAppear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
         updatePageContainers()
-        updateNotebookShadow()
     }
 
     // MARK: - Setup
@@ -55,17 +53,6 @@ class NotebookSpreadViewController: UIViewController {
     private func setupGestureRecognizers() {
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         view.addGestureRecognizer(panGesture)
-    }
-
-    private func updateNotebookShadow() {
-        spineShadow.frame = view.bounds
-        spineShadow.layer.shadowPath = UIBezierPath(rect: CGRect(x: view.bounds.width / 2 - spineShadowWidth / 2, y: 0, width: spineShadowWidth, height: view.bounds.height)).cgPath
-        spineShadow.layer.shadowColor = UIColor.black.cgColor
-        spineShadow.layer.shadowOffset = .zero
-        spineShadow.layer.shadowOpacity = spineShadowOpacity
-        spineShadow.layer.shadowRadius = spineShadowRadius
-        spineShadow.isUserInteractionEnabled = false
-        view.insertSubview(spineShadow, at: 0)
     }
 
     // MARK: - 更新 containers
@@ -99,7 +86,7 @@ class NotebookSpreadViewController: UIViewController {
             let originX = xOffsets[i] + baseX
             let originY = yOffsets[i]
             thisContainer.layer.shadowOpacity = opacities[i]
-            
+
             thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
             thisContainer.layer.masksToBounds = false // 允许阴影
             thisContainer.layer.shadowOffset = CGSize(width: 0, height: 0)
