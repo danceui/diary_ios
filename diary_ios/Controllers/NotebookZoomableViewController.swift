@@ -15,6 +15,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     private let paperSize: PaperSize
 
+    // MARK: - 生命周期
     init(notebookSpreadViewController: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
         self.notebookSpreadViewController = notebookSpreadViewController
         self.paperSize = paperSize
@@ -31,6 +32,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
         setupScrollView()
         setupViews()
         setupNotebookSpreadViewController()
@@ -40,6 +42,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        printLifeCycleInfo(context: "[\(type(of: self))] 6️⃣ viewDidLayoutSubviews", for: view)
         if scrollView.zoomScale != previousZoomScale {
             scrollView.setZoomScale(previousZoomScale, animated: false)
         }

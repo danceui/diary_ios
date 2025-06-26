@@ -30,11 +30,13 @@ class NotebookPageViewController: UIViewController, PKCanvasViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
         setupCanvas()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        printLifeCycleInfo(context: "[\(type(of: self))] 6️⃣ viewDidLayoutSubviews", for: view)
         canvas.frame = view.bounds
     }
 

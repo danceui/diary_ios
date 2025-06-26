@@ -8,6 +8,7 @@ class NotebookSpreadViewController: UIViewController {
     private var flipController: FlipAnimatorController!
     private var lockedDirection: PageTurnDirection?
     private var lastProgressForTesting: CGFloat?
+    private var notebookShadow = UIView()
     
     private let baseOffset = StackConstants.baseOffset
     private let progressThreshold = FlipConstants.progressThreshold
@@ -33,16 +34,19 @@ class NotebookSpreadViewController: UIViewController {
     // MARK: - 生命周期
     override func viewDidLoad() {
         super.viewDidLoad()
+        printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
         flipController = FlipAnimatorController(host: self)
         setupInitialPages()
         setupGestureRecognizers()
+        setupNotebookShadow()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
         updatePageContainers()
     }
-
+    
     // MARK: - Setup
     private func setupInitialPages() {
         pages = [
@@ -60,7 +64,18 @@ class NotebookSpreadViewController: UIViewController {
         view.addGestureRecognizer(panGesture)
     }
 
-    // MARK: - 更新PageContainers
+    private func setupNotebookShadow() {
+        notebookShadow.isUserInteractionEnabled = false
+        notebookShadow.frame = view.bounds
+        notebookShadow.layer.shadowPath = UIBezierPath(rect: notebookShadow.bounds).cgPath
+        notebookShadow.layer.shadowColor = UIColor.red.cgColor
+        notebookShadow.layer.shadowOffset = CGSize(width: 20, height: 20)
+        notebookShadow.layer.shadowOpacity = 0.3
+        notebookShadow.layer.shadowRadius = 100
+        view.insertSubview(notebookShadow, at: 0)
+    }
+
+    // MARK: - 更新 containers
     private func updatePageContainers() {
         // 清空 pageContainers
         pageContainers.forEach { $0.removeFromSuperview() }
@@ -77,16 +92,13 @@ class NotebookSpreadViewController: UIViewController {
         let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
         let xOffsets = computeXOffsets(pageIndex: currentIndex)
         let yOffsets = computeYOffsets(pageIndex: currentIndex)
-        var baseX: CGFloat
-        var pageIndex: Int
         
-        // 确定每个 pageContainer 的位置和内容
         print("📐 PageContainers offsets: [", terminator: " ")
         for i in 0...containerCount - 1 {
             // 确定这个容器的位置
             let thisContainer = UIView()
 
-            baseX = i <= offsetIndex ? 0 : view.bounds.width / 2
+            var baseX: CGFloat = i <= offsetIndex ? 0 : view.bounds.width / 2
             if i == 0, currentIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
             else if i == containerCount - 1, currentIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
 
@@ -101,14 +113,13 @@ class NotebookSpreadViewController: UIViewController {
             thisContainer.layer.shadowRadius = pageShadowRadius
 
             // 确定这个容器的内容
-            pageIndex = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
+            var pageIndex: Int = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
             if i == 0, currentIndex == 0 { pageIndex = 1 }
             else if  i == containerCount - 1, currentIndex == pageCount - 2 { pageIndex = pageCount - 2 }
 
             let thisPage = pages[pageIndex]
             thisPage.view.frame = thisContainer.bounds
             thisContainer.addSubview(thisPage.view)
-            addEdgeShadow(to: thisPage.view)
             if i == offsetIndex { print("🏷️(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             pageContainers.append(thisContainer)
@@ -122,6 +133,7 @@ class NotebookSpreadViewController: UIViewController {
         for i in stride(from: containerCount - 1, through: offsetIndex + 1, by: -1) where offsetIndex + 1 <= containerCount - 1 {
             view.addSubview(pageContainers[i])
         }
+
         // 特殊处理封面和背页
         if currentIndex == 0 {
             view.addSubview(pageContainers[0])
@@ -267,10 +279,6 @@ class NotebookSpreadViewController: UIViewController {
             let dx = (toX - fromX) * easedProgress
             container.transform = CGAffineTransform(translationX: dx, y: dy)
         }
-    }
-
-    // MARK: - container 阴影
-    func addEdgeShadow(to view: UIView) {
     }
 
     func exportAllDrawings() -> [Data] {
