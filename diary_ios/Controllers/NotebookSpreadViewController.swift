@@ -64,14 +64,13 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     private func updateNotebookShadow() {
-        notebookShadow.isUserInteractionEnabled = false
         notebookShadow.frame = view.bounds
-        print("notebookShadow.frame \(notebookShadow.frame)")
         notebookShadow.layer.shadowPath = UIBezierPath(rect: notebookShadow.bounds).cgPath
         notebookShadow.layer.shadowColor = UIColor.red.cgColor
-        notebookShadow.layer.shadowOffset = CGSize(width: 20, height: 20)
+        notebookShadow.layer.shadowOffset = .zero
         notebookShadow.layer.shadowOpacity = 0.3
         notebookShadow.layer.shadowRadius = 20
+        notebookShadow.isUserInteractionEnabled = false
         view.insertSubview(notebookShadow, at: 0)
     }
 
@@ -189,22 +188,23 @@ class NotebookSpreadViewController: UIViewController {
 
     // MARK: - 页面管理
     func addNewPagePair(initialData: Data? = nil) {
-        if flipController.isAnimating {
+        guard !flipController.isAnimating else {
             print("❌ Cannot add page during animation.")
             return
         }
-
         guard currentIndex + 2 < pages.count else {
             print("❌ Cannot add page at the end.")
             return
         }
 
         let insertIndex = currentIndex + 2
-        print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
         let leftPage = NotebookPageView(isLeft: true, initialData: initialData)
         let rightPage = NotebookPageView(isLeft: false, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
+        print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
+
         updatePageContainers()
+        view.layoutIfNeeded()
         flipController.autoFlip(direction: .nextPage)
     }
 
@@ -282,7 +282,6 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     // MARK: - 生命周期测试函数
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         printLifeCycleInfo(context: "[\(type(of: self))] 6️⃣ viewDidLayoutSubviews", for: view)

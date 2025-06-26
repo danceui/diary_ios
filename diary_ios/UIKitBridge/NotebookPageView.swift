@@ -18,12 +18,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
         self.pageRole = role
         self.isLeft = isLeft
-        super.init(frame: .zero)
+        super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.singleSize))
         setupView()
         setupCanvas()
-        if let initialData = initialData {
-            loadDrawing(data: initialData)
-        }
+        if let initialData = initialData { loadDrawing(data: initialData) }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

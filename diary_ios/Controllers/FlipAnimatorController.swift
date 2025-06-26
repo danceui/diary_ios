@@ -67,7 +67,6 @@ class FlipAnimatorController {
         containerOffset = computeContainerOffset(direction: direction, targetIndex: targetIndex)
 
         // 生成前后快照
-        print("📸 Create snapshots.")
         let currentLeftView = host.pages[host.currentIndex]
         let currentRightView = host.pages[host.currentIndex + 1]
         let targetLeftView = host.pages[targetIndex]
@@ -139,8 +138,13 @@ class FlipAnimatorController {
         // 更新快照的阴影层和可见性
         frontOverlay?.alpha = computeOverlayAlpha(alphaProgress: abs(progress), overlayAlpha: direction == .nextPage ? smallerOverlayAlpha : largerOverlayAlpha)
         backOverlay?.alpha = computeOverlayAlpha(alphaProgress: 1 - abs(progress), overlayAlpha: direction == .nextPage ? largerOverlayAlpha : smallerOverlayAlpha)
-        frontSnapshot?.isHidden = abs(progress) >= progressThreshold
-        backSnapshot?.isHidden = abs(progress) < progressThreshold
+        if abs(progress) >= progressThreshold {
+            frontSnapshot?.isHidden = true
+            backSnapshot?.isHidden = false
+        } else {
+            frontSnapshot?.isHidden = false
+            backSnapshot?.isHidden = true
+        }
         host?.updateProgressOffset(direction: direction, progress: abs(progress))
 
         // 打印调试信息
@@ -378,7 +382,7 @@ class FlipAnimatorController {
 
     // MARK: - 清理函数
     private func cleanupViews() {
-        print("   🧹 Cleanup views.")
+        print("🧹 Cleanup views.")
         animator?.stopAnimation(true)
         animator = nil
         flipContainer?.removeFromSuperview()
@@ -395,7 +399,7 @@ class FlipAnimatorController {
     }
 
     func cleanupAnimations() {
-        print("   🧹 Cleanup animations [state was \(state)].")
+        print("🧹 Cleanup animations [state was \(state)].")
         state = .idle
 
         if let next = pendingFlips.first {

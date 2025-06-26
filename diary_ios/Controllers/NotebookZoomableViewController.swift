@@ -8,7 +8,7 @@ extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var scrollView = UIScrollView()
-    private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageSize.a4a4.size))
+    private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.pageSize.doubleSize))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var layoutAnimator: UIViewPropertyAnimator?
     private var previousZoomScale = NotebookConstants.defaultZoomScale
