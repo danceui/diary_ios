@@ -290,9 +290,8 @@ class NotebookSpreadViewController: UIViewController {
             let opacity = fromOpacity + (toOpacity - fromOpacity) * Float(easedProgress)
             container.layer.shadowOpacity = opacity
         }
-        let spineShadowProgress = Float(progressThreshold - abs(progressThreshold - abs(progress))) / Float(progressThreshold)
-        spineShadow.layer.shadowOpacity = spineShadowOpacity * spineShadowProgress
-        print("\(spineShadowProgress)")
+        spineShadow.layer.shadowOpacity = computeSpineShadowOpacity(absProgress: abs(progress))
+        print("\(spineShadow.layer.shadowOpacity)")
     }
 
     // MARK: - 生命周期测试函数
@@ -340,11 +339,9 @@ class NotebookSpreadViewController: UIViewController {
     private let baseOffset = StackConstants.baseOffset
     private let progressThreshold = FlipConstants.progressThreshold
     private let velocityThreshold = FlipConstants.velocityThreshold
-
     private let pageShadowRadius = PageConstants.pageShadowRadius
     private let pageShadowOpacity = PageConstants.pageShadowOpacity
     private let spineShadowWidth = computeXDecay(1)
-    private let spineShadowOpacity = NotebookConstants.spineShadowOpacity
 
     
 

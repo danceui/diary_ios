@@ -16,6 +16,14 @@ func computeShadowWidth(shadowProgress: CGFloat,
     }
 }
 
+func computeSpineShadowOpacity(absProgress: CGFloat) -> Float {
+    let progressThreshold = FlipConstants.progressThreshold
+    let shadowOpacity = NotebookConstants.spineShadowOpacity
+    let shadowProgress = progressThreshold - abs(progressThreshold - absProgress)
+    let shadowOpacityFactor = 1 - cos(Float(shadowProgress) * .pi)
+    return Float(shadowOpacity * shadowOpacityFactor)
+}
+
 func computeOverlayAlpha(alphaProgress: CGFloat,
                          overlayAlpha: CGFloat) -> CGFloat {
     guard alphaProgress >= 0 && alphaProgress <= 1 else {
