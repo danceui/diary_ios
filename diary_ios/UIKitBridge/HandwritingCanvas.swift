@@ -22,7 +22,7 @@ class HandwritingCanvas: PKCanvasView {
         isOpaque = false
     }
 
-    // MARK: - Listening touches
+    // MARK: - 监听笔画
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
         waitingForStrokeFinish = true
@@ -33,7 +33,7 @@ class HandwritingCanvas: PKCanvasView {
         waitingForStrokeFinish = true
     }
 
-    // MARK: - Set tools
+    // MARK: - 设置笔刷
     func setBrush(color: UIColor, width: CGFloat, type: String) {
         let inkType: PKInkingTool.InkType
         switch type {
@@ -47,5 +47,12 @@ class HandwritingCanvas: PKCanvasView {
 
     func setEraser(partial: Bool, size: CGFloat = 10) {
         tool = PKEraserTool(partial ? .bitmap : .vector, width: size)
+    }
+
+    // MARK: - 更新 Drawing
+    func updateDrawing(_ newDrawing: PKDrawing) {
+        self.tool = self.tool
+        self.drawing = newDrawing
+        self.setNeedsDisplay()
     }
 }

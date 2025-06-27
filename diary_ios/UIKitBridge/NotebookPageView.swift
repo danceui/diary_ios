@@ -21,7 +21,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.singleSize))
         setupView()
         setupCanvas()
-        if let initialData = initialData { loadDrawing(data: initialData) }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -31,6 +30,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         canvas.frame = bounds
     }
 
+func printCanvasDrawingInfo(tag: String = "") {
+    let strokes = self.canvas.drawing.strokes
+    print("🖊️ Drawing Info \(tag.isEmpty ? "" : "[\(tag)]"): Total Strokes: \(strokes.count).")
+}
     // MARK: - setup
     private func setupView() {
         backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
@@ -60,45 +63,29 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         addSubview(canvas)
     }
 
-    // MARK: - PKCanvasViewDelegate
+    // MARK: - 快照管理
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
             let drawingCopy = canvas.drawing
             snapshotQueue.async {
                 let snapshot = PageSnapshot(drawing: drawingCopy)
+                self.printCanvasDrawingInfo(tag: "Saving Snapshot.")
                 self.snapshotManager.addSnapshot(snapshot)
             }
         }
     }
 
-    // MARK: - Drawing 管理
-    func loadDrawing(data: Data) {
-        do {
-            canvas.drawing = try PKDrawing(data: data)
-        } catch {
-            print("NotebookPageView: Failed to load drawing: \(error)")
-        }
-    }
-
-    func exportDrawing() -> Data {
-        return canvas.drawing.dataRepresentation()
-    }
-
-    // MARK: - 快照管理
     func undo() {
         if let prev = snapshotManager.undo() {
-            canvas.drawing = prev.drawing
-        canvas.tool = canvas.tool
-        canvas.setNeedsDisplay()
+            printCanvasDrawingInfo(tag: "After Undo")
         }
     }
 
     func redo() {
         if let next = snapshotManager.redo() {
-            canvas.drawing = next.drawing
-        // canvas.tool = canvas.tool
-        // canvas.setNeedsDisplay()
+            canvas.updateDrawing(next.drawing)
+            printCanvasDrawingInfo(tag: "After Redo")
         }
     }
 

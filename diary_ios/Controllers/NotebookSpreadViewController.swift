@@ -114,7 +114,7 @@ class NotebookSpreadViewController: UIViewController {
 
             let thisPage = pages[pageIndex]
             thisContainer.addSubview(thisPage)
-            if i == offsetIndex { print("🏷️(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
+            if i == offsetIndex { print("🔸(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
             pageContainers.append(thisContainer)
         }
