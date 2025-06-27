@@ -5,14 +5,14 @@ import PencilKit
 class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageRole: PageRole
     private let isLeft: Bool
-    private let canvas: HandwritingCanvas = HandwritingCanvas()
-private var undoThrottle = false
-    private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
     private let snapshotQueue = DispatchQueue(label: "com.notebook.snapshotQueue")
 
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
+
+    private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
+    private var canvas: HandwritingCanvas?
 
     // MARK: - 生命周期
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
@@ -20,7 +20,7 @@ private var undoThrottle = false
         self.isLeft = isLeft
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.singleSize))
         setupView()
-        setupCanvas()
+        rebuildCanvas(with: snapshotManager.currentSnapshot.drawing)
     }
 
     required init?(coder: NSCoder) { 
@@ -29,25 +29,15 @@ private var undoThrottle = false
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        canvas.frame = bounds
+        canvas?.frame = bounds
     }
 
     // MARK: - setup
     private func setupView() {
-        backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
+        backgroundColor = backgroundColorForRole(pageRole) // 浅绿色背景
         layer.cornerRadius = pageCornerRadius
         layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         layer.masksToBounds = true
-    }
-
-    private func setupCanvas() {
-        guard pageRole != .empty else { return }
-        canvas.delegate = self
-        canvas.backgroundColor = backgroundColorForRole(pageRole)
-        canvas.layer.cornerRadius = pageCornerRadius
-        canvas.layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
-        canvas.layer.masksToBounds = true
-        addSubview(canvas)
     }
 
     private func backgroundColorForRole(_ role: PageRole) -> UIColor {
@@ -61,40 +51,37 @@ private var undoThrottle = false
         }
     }
 
+    // MARK: - canvas 管理
+    private func rebuildCanvas(with drawing: PKDrawing) {
+        DispatchQueue.main.async {
+            // 在主线程异步执行这些代码
+            self.canvas?.removeFromSuperview()
+            guard self.pageRole != .empty else { return }
+            let newCanvas = HandwritingCanvas(drawing)
+            newCanvas.delegate = self
+            newCanvas.frame = self.bounds
+            self.addSubview(newCanvas)
+            self.canvas = newCanvas
+        }
+    }
+
     // MARK: - 快照管理
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+        guard let canvas = canvas else { return }
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                let drawingCopy = self.canvas.drawing
-                self.snapshotQueue.async {
-                    let snapshot = PageSnapshot(drawing: drawingCopy)
-                    printCanvasDrawingInfo(canvas: self.canvas, tag: "Saving Snapshot.")
-                    self.snapshotManager.addSnapshot(snapshot)
-                }
+            // 将当前 canvas 的 drawing 内容提前复制一份，在后台线程中使用，避免直接跨线程访问 UI 对象。
+            let drawingCopy = canvas.drawing
+            snapshotQueue.async {
+                let snapshot = PageSnapshot(drawing: drawingCopy)
+                self.snapshotManager.addSnapshot(snapshot)
             }
         }
     }
 
-    func undo() {
-    guard !undoThrottle else { return }
-    undoThrottle = true
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-        self.undoThrottle = false
-    }
+    func undo() { if let prev = snapshotManager.undo() { rebuildCanvas(with: prev.drawing) } }
 
-    if let prev = snapshotManager.undo() {
-        canvas.safeUpdateDrawing(prev.drawing)
-        printCanvasDrawingInfo(canvas: canvas, tag: "After Undo")
-    }
-    }
-
-    func redo() {
-        if let next = snapshotManager.redo() {
-            canvas.safeUpdateDrawing(next.drawing)
-            printCanvasDrawingInfo(canvas: canvas, tag: "After Redo")
-        }
-    }
+    func redo() { if let next = snapshotManager.redo() { rebuildCanvas(with: next.drawing) } }
 
     private func currentSnapshot() -> PageSnapshot { return snapshotManager.currentSnapshot }
 }

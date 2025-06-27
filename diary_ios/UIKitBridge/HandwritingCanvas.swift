@@ -5,8 +5,9 @@ import UIKit
 class HandwritingCanvas: PKCanvasView {
     var waitingForStrokeFinish: Bool = false
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(_ drawing: PKDrawing) {
+        super.init(frame: .zero)
+        self.drawing = drawing
         commonInit()
     }
 
@@ -14,7 +15,7 @@ class HandwritingCanvas: PKCanvasView {
         super.init(coder: coder)
         commonInit()
     }
-
+    
     private func commonInit() {
         backgroundColor = .clear
         drawingPolicy = .pencilOnly
@@ -47,23 +48,5 @@ class HandwritingCanvas: PKCanvasView {
 
     func setEraser(partial: Bool, size: CGFloat = 10) {
         tool = PKEraserTool(partial ? .bitmap : .vector, width: size)
-    }
-    
-    func safeUpdateDrawing(_ newDrawing: PKDrawing) {
-        let currentTool = self.tool
-        self.isUserInteractionEnabled = false
-        self.tool = PKInkingTool(.pen, color: .clear, width: 1)
-        
-    RunLoop.main.perform(inModes: [.default]) {
-        self.becomeFirstResponder()
-        self.resignFirstResponder()
-        self.drawing = newDrawing
-        self.setNeedsDisplay()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            self.tool = currentTool
-            self.isUserInteractionEnabled = true
-        }
-    }
     }
 }
