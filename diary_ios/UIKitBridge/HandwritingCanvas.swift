@@ -51,8 +51,11 @@ class HandwritingCanvas: PKCanvasView {
 
     // MARK: - 更新 Drawing
     func updateDrawing(_ newDrawing: PKDrawing) {
-        self.tool = self.tool
+        self.drawing = PKDrawing()
         self.drawing = newDrawing
+        self.tool = self.tool
+        becomeFirstResponder()
+        resignFirstResponder()
         self.setNeedsDisplay()
     }
 }
