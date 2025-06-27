@@ -1,10 +1,10 @@
 import PencilKit
 import UIKit
 
+@available(iOS 16.0, *)
 class HandwritingCanvas: PKCanvasView {
-    var waitingForStrokeFinish = false
+    var waitingForStrokeFinish: Bool = false
 
-    // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         commonInit()
@@ -17,7 +17,7 @@ class HandwritingCanvas: PKCanvasView {
 
     private func commonInit() {
         backgroundColor = .clear
-        drawingPolicy = .pencilOnly  // 也可以设置为 .anyInput
+        drawingPolicy = .pencilOnly
         alwaysBounceVertical = false
         isOpaque = false
     }
@@ -33,7 +33,7 @@ class HandwritingCanvas: PKCanvasView {
         waitingForStrokeFinish = true
     }
 
-    // MARK: - 设置笔刷
+    // MARK: - 设置工具
     func setBrush(color: UIColor, width: CGFloat, type: String) {
         let inkType: PKInkingTool.InkType
         switch type {
@@ -48,15 +48,22 @@ class HandwritingCanvas: PKCanvasView {
     func setEraser(partial: Bool, size: CGFloat = 10) {
         tool = PKEraserTool(partial ? .bitmap : .vector, width: size)
     }
-
+    
     func safeUpdateDrawing(_ newDrawing: PKDrawing) {
-        // 通过临时切换工具清除内部缓存
-        self.isUserInteractionEnabled = false
         let currentTool = self.tool
-        self.tool = PKInkingTool(.pen, color: .clear, width: 2)
+        self.isUserInteractionEnabled = false
+        self.tool = PKInkingTool(.pen, color: .clear, width: 1)
+        
+    RunLoop.main.perform(inModes: [.default]) {
+        self.becomeFirstResponder()
+        self.resignFirstResponder()
         self.drawing = newDrawing
         self.setNeedsDisplay()
-        self.tool = currentTool
-        self.isUserInteractionEnabled = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            self.tool = currentTool
+            self.isUserInteractionEnabled = true
+        }
+    }
     }
 }

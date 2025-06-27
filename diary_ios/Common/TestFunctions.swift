@@ -18,3 +18,8 @@ func printAllSnapshotsInfo(snapshots: [PageSnapshot], currentIndex: Int) {
         print("   [#\(index)] StrokeCount: \(snapshot.drawing.strokes.count) \(mark)")
     }
 }
+
+func printCanvasDrawingInfo(canvas: PKCanvasView, tag: String = "") {
+    let strokes = canvas.drawing.strokes
+    print("🖊️ Drawing Info \(tag.isEmpty ? "" : "[\(tag)]"): Total Strokes: \(strokes.count).") 
+}

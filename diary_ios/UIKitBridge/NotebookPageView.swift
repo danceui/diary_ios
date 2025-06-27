@@ -6,7 +6,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageRole: PageRole
     private let isLeft: Bool
     private let canvas: HandwritingCanvas = HandwritingCanvas()
-
+private var undoThrottle = false
     private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
     private let snapshotQueue = DispatchQueue(label: "com.notebook.snapshotQueue")
 
@@ -23,17 +23,15 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         setupCanvas()
     }
 
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    required init?(coder: NSCoder) { 
+        fatalError("init(coder:) has not been implemented") 
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()
         canvas.frame = bounds
     }
 
-func printCanvasDrawingInfo(tag: String = "") {
-    let strokes = self.canvas.drawing.strokes
-    print("🖊️ Drawing Info \(tag.isEmpty ? "" : "[\(tag)]"): Total Strokes: \(strokes.count).")
-}
     // MARK: - setup
     private func setupView() {
         backgroundColor = UIColor(red: 0.93, green: 0.91, blue: 0.86, alpha: 1.00) // 浅绿色背景
@@ -45,33 +43,33 @@ func printCanvasDrawingInfo(tag: String = "") {
     private func setupCanvas() {
         guard pageRole != .empty else { return }
         canvas.delegate = self
-        switch pageRole {
-        case .normal:
-            canvas.backgroundColor = UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 1) // 正常浅绿色
-        case .cover:
-            canvas.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1) // 灰色封面
-            canvas.isUserInteractionEnabled = false // 禁止写字
-        case .back:
-            canvas.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1) // 灰色背页
-            canvas.isUserInteractionEnabled = false
-        case .empty: break
-        }
-
+        canvas.backgroundColor = backgroundColorForRole(pageRole)
         canvas.layer.cornerRadius = pageCornerRadius
         canvas.layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         canvas.layer.masksToBounds = true
         addSubview(canvas)
     }
 
+    private func backgroundColorForRole(_ role: PageRole) -> UIColor {
+        switch role {
+        case .normal:
+            return UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 1)
+        case .cover, .back:
+            return UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
+        case .empty:
+            return .clear
+        }
+    }
+
     // MARK: - 快照管理
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 let drawingCopy = self.canvas.drawing
                 self.snapshotQueue.async {
                     let snapshot = PageSnapshot(drawing: drawingCopy)
-                    self.printCanvasDrawingInfo(tag: "Saving Snapshot.")
+                    printCanvasDrawingInfo(canvas: self.canvas, tag: "Saving Snapshot.")
                     self.snapshotManager.addSnapshot(snapshot)
                 }
             }
@@ -79,16 +77,22 @@ func printCanvasDrawingInfo(tag: String = "") {
     }
 
     func undo() {
-        if let prev = snapshotManager.undo() {
-            canvas.safeUpdateDrawing(prev.drawing)
-            printCanvasDrawingInfo(tag: "After Undo")
-        }
+    guard !undoThrottle else { return }
+    undoThrottle = true
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        self.undoThrottle = false
+    }
+
+    if let prev = snapshotManager.undo() {
+        canvas.safeUpdateDrawing(prev.drawing)
+        printCanvasDrawingInfo(canvas: canvas, tag: "After Undo")
+    }
     }
 
     func redo() {
         if let next = snapshotManager.redo() {
             canvas.safeUpdateDrawing(next.drawing)
-            printCanvasDrawingInfo(tag: "After Redo")
+            printCanvasDrawingInfo(canvas: canvas, tag: "After Redo")
         }
     }
 
