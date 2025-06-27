@@ -1,0 +1,62 @@
+
+for i in 0..<stripeCount {
+    let stripe = UIView()
+    stripe.tag = 9999
+    stripe.backgroundColor = UIColor(red: 0.83, green: 0.77, blue: 0.98, alpha: 1)
+    stripe.layer.cornerRadius = 1.0
+    stripe.layer.borderColor = UIColor.black.cgColor
+    stripe.layer.borderWidth = 0.5
+
+    let offset = CGFloat(i) * stripeSpacing
+    let x = isLeftPage ? -12 + offset : view.bounds.width - offset
+
+    stripe.frame = CGRect(
+        x: x,
+        y: verticalInset,
+        width: stripeWidth,
+        height: view.bounds.height - verticalInset * 2
+    )
+    stripe.autoresizingMask = [.flexibleHeight]
+    view.addSubview(stripe)
+}
+
+
+
+// 准备 rightPageContainer/leftPageContainer 未来的显示内容
+let preloadLeft = pages[newIndex]
+let preloadRight = pages[newIndex + 1]
+preloadLeft.view.frame = leftPageContainer.bounds
+preloadRight.view.frame = rightPageContainer.bounds
+
+leftPageContainer.subviews.forEach { $0.removeFromSuperview() }
+rightPageContainer.subviews.forEach { $0.removeFromSuperview() }
+
+leftPageContainer.addSubview(preloadLeft.view)
+rightPageContainer.addSubview(preloadRight.view)
+
+
+        // offsetsY = Array(repeating: 0, count: containerCount)
+        // if currentIndex == 0 {
+        //     offsetsY[offsetIndex] = 0
+        //     if offsetIndex + 1 <= containerCount - 1 {
+        //         offsetsY[offsetIndex + 1] = 0
+        //     }
+        //     for i in stride(from: offsetIndex + 2, through: containerCount - 1, by: 1) where offsetIndex + 2 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
+        // } else if currentIndex == pageCount - 2 {
+        //     offsetsY[offsetIndex] = 0
+        //     if offsetIndex - 1 >= 0 {
+        //         offsetsY[offsetIndex - 1] = 0
+        //     }
+        //     for i in stride(from: offsetIndex - 2, through: 0, by: -1) where offsetIndex - 2 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
+        // } else {
+        //     if offsetIndex - 1 >= 0 {
+        //         offsetsY[offsetIndex - 1] = 0
+        //     }
+        //     offsetsY[offsetIndex] = 0
+        //     offsetsY[offsetIndex + 1] = 0
+        //     if offsetIndex + 2 <= containerCount - 1 {
+        //         offsetsY[offsetIndex + 2] = 0
+        //     }
+        //     for i in stride(from: offsetIndex + 3, through: containerCount - 1, by: 1) where offsetIndex + 3 <= containerCount - 1 { offsetsY[i] = offsetsY[i - 1] + 1 }
+        //     for i in stride(from: offsetIndex - 2, through: 0, by: -1) where offsetIndex - 2 >= 0 { offsetsY[i] = offsetsY[i + 1] + 1 }
+        // }

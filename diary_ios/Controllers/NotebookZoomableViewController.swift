@@ -1,151 +1,160 @@
 import UIKit
 
-class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
-    let notebookSpreadVC: NotebookSpreadViewController
-    let paperSize: PaperSize
-    private let scrollView = UIScrollView()
-    private let containerView = UIView()
-    private var currentPageRole: PageRole = .cover
+extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
+    func currentSpreadContentSize() -> CGSize { return spreadContainer.frame.size }
+}
 
-    init(notebookSpreadVC: NotebookSpreadViewController, paperSize: PaperSize = .a4a4) {
-        self.notebookSpreadVC = notebookSpreadVC
-        self.paperSize = paperSize
+class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
+    private var scrollView = UIScrollView()
+    private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.pageSize.doubleSize))
+    private var notebookSpreadViewController = NotebookSpreadViewController()
+    private var previousZoomScale = NotebookConstants.defaultZoomScale
+
+    // MARK: - 生命周期
+    init(notebookSpreadViewController: NotebookSpreadViewController) {
+        self.notebookSpreadViewController = notebookSpreadViewController
         super.init(nibName: nil, bundle: nil)
-        self.notebookSpreadVC.pageDelegate = self
+        self.notebookSpreadViewController.layoutDelegate = self
+        self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
+            self?.centerContent(xOffset: offset)
+        }
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        printLifeCycleInfo(context: "[\(type(of: self))] 3️⃣ viewDidLoad", for: view)
+        setupScrollView()
+        setupSpreadViewController()
+        setupGestures()
+        // setupTestFunctions()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        printLifeCycleInfo(context: "[\(type(of: self))] 6️⃣ viewDidLayoutSubviews", for: view)
+        if scrollView.zoomScale != previousZoomScale {
+            scrollView.setZoomScale(previousZoomScale, animated: false)
+        }
+        centerContent()
+    }
+
+    // MARK: - Setup
+    private func setupScrollView() {
+        view.addSubview(scrollView)
+        scrollView.addSubview(spreadContainer)
+
+        scrollView.delegate = self
+        scrollView.backgroundColor = .clear
+        scrollView.minimumZoomScale = NotebookConstants.minZoomScale
+        scrollView.maximumZoomScale = NotebookConstants.maxZoomScale
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.decelerationRate = .fast
+        scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
+
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+    }
+
+    private func setupSpreadViewController() {
+        addChild(notebookSpreadViewController)
+        spreadContainer.addSubview(notebookSpreadViewController.view)
+
+        notebookSpreadViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor),
+            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor),
+            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor),
+            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
+        ])
+        // 强制立即布局，确保约束生效，spreadContainer frame 正确
+        spreadContainer.layoutIfNeeded()
+        notebookSpreadViewController.didMove(toParent: self)
+    }
+
+    private func setupGestures() {
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        scrollView.addGestureRecognizer(doubleTap)
+    }
+
+    // MARK: - 居中函数
+    private func centerContent(xOffset: CGFloat = 0) {
+        let scrollSize = scrollView.bounds.size
+        let contentSize = scrollView.contentSize
+        let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
+        let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
+        scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
+        scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
+    }
+    
+    // MARK: - 调整内容缩放
+    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        let targetScale: CGFloat = scrollView.zoomScale > 0.9 ? 0.8 : 1.0
+        scrollView.setZoomScale(targetScale, animated: true)
+        previousZoomScale = targetScale
+        printLayoutInfo(context: "Double Tap")
+    }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? { return spreadContainer }
+
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        previousZoomScale = scrollView.zoomScale
+        if notebookSpreadViewController.currentIndex == 0 {
+            centerContent(xOffset: -spreadContainer.frame.size.width / 4)
+        } else if notebookSpreadViewController.currentIndex == notebookSpreadViewController.pageCount - 2 {
+            centerContent(xOffset: spreadContainer.frame.size.width / 4)
+        } else {
+            centerContent()
+        }
+    }
+
+    // MARK: - 生命周期测试函数
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupScrollView()
-        embedNotebookContent()
-        setupDoubleTapGesture()
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 7️⃣ viewDidAppear", for: view)
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        setupContainerIfNeeded()
-        centerContent()
-        scrollView.setZoomScale(0.8, animated: false)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 8️⃣ viewWillDisappear", for: view)
     }
 
-    // MARK: - Setup
-    private func setupScrollView() {
-        scrollView.delegate = self
-        scrollView.minimumZoomScale = 0.7
-        scrollView.maximumZoomScale = 2.0
-        // scrollView.bouncesZoom = true
-        // scrollView.contentInsetAdjustmentBehavior = .never
-        // scrollView.showsHorizontalScrollIndicator = false
-        // scrollView.showsVerticalScrollIndicator = false
-        scrollView.frame = view.bounds
-        scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(scrollView)
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        printLifeCycleInfo(context: "[\(type(of: self))] 9️⃣ viewDidDisappear", for: view)
     }
 
-    private func embedNotebookContent() {
-        addChild(notebookSpreadVC)
-        scrollView.addSubview(containerView)
-        containerView.addSubview(notebookSpreadVC.view)
-        notebookSpreadVC.didMove(toParent: self)
+    // MARK: - 测试用
+    private func setupTestFunctions() {
+        addTestBorder(for: scrollView, color: .red, width: 2.0)
+        addTestBorder(for: spreadContainer, color: .blue, width: 2.0)
+        addTestBorder(for: notebookSpreadViewController.view, color: .green, width: 2.0)
     }
 
-    private func setupContainerIfNeeded() {
-        guard containerView.bounds.size == .zero else { return }
-        let size = paperSize.size
-        scrollView.contentSize = size
-        containerView.frame.size = size
-        notebookSpreadVC.view.frame.size = size
-    }
-
-    private func setupDoubleTapGesture() {
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
-        doubleTap.numberOfTapsRequired = 2
-        scrollView.addGestureRecognizer(doubleTap)
-    }
-    
-    private func centerContent(animated: Bool = false) {
-        let scrollSize = scrollView.bounds.size
-        let contentSize = containerView.frame.size
-        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
-        let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
-
-        var roleXOffset: CGFloat = 0
-        switch currentPageRole {
-        case .cover:
-            roleXOffset = -contentSize.width / 4
-        case .back:
-            roleXOffset = contentSize.width / 4
-        default:
-            roleXOffset = 0
-        }
-
-        let newCenter = CGPoint(
-            x: contentSize.width / 2 + offsetX + roleXOffset,
-            y: contentSize.height / 2 + offsetY
-        )
-
-        if animated {
-            let animator = UIViewPropertyAnimator(
-                duration: 0.5, // 稍长，给用户一点“惯性”感
-                dampingRatio: 0.8, // 弹性值越低，弹簧越强（0.7~0.85是常用范围）
-                animations: {
-                    self.containerView.center = newCenter
-                }
-            )
-            animator.startAnimation()
-        } else {
-            containerView.center = newCenter
-        }
-    }
-
-    @objc private func handleCoverPage(_ notification: Notification) {
-        currentPageRole = .cover
-    }
-
-    @objc private func handleBackPage(_ notification: Notification) {
-        currentPageRole = .back
-    }
-    
-    @objc private func handleNormalPage(_ notification: Notification) {
-        currentPageRole = .normal
-    }
-
-    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        scrollView.setZoomScale(0.8, animated: true)
-        printLayoutInfo(context: "handleDoubleTap")
-    }
-
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-        return containerView
-    }
-
-    func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        centerContent()
-        printLayoutInfo(context: "scrollViewDidZoom")
-    }
-
-    // MARK: - Debug Info
     private func printLayoutInfo(context: String) {
-        print("======== \(context) ========")
-        print("📐 scrollView.frame: \(scrollView.frame)")
-        print("📐 scrollView.contentSize: \(scrollView.contentSize)")
-        print("📐 scrollView.contentOffset: \(scrollView.contentOffset)")
-        print("📐 scrollView.zoomScale: \(scrollView.zoomScale)")
-        print("📐 containerView.frame: \(containerView.frame)")
-        print("📐 containerView.bounds: \(containerView.bounds)")
-        print("📐 notebookView.frame: \(notebookSpreadVC.view.frame)")
-        print("📐 notebookView.bounds: \(notebookSpreadVC.view.bounds)")
-        print("================")
-    }
-}
-
-extension NotebookZoomableViewController: NotebookSpreadViewControllerDelegate {
-    func notebookSpreadViewController(_ controller: NotebookSpreadViewController, didUpdatePageRole role: PageRole) {
-        currentPageRole = role
-        centerContent(animated: true)
+        print("📐 \(context)")
+        print("   📌 scrollView.zoomScale: \(format(scrollView.zoomScale))")
+        // print("   📌 scrollView.frame: \(formatRect(scrollView.frame))")
+        print("   📌 scrollView.bounds: \(formatRect(scrollView.bounds))")
+        print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
+        print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
+        print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        // print("   📌 notebookView.frame: \(formatRect(notebookSpreadViewController.view.frame))")
+        // print("   📌 notebookView.bounds: \(formatRect(notebookSpreadViewController.view.bounds))")
     }
 }
