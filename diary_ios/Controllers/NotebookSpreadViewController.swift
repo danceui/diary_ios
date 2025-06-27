@@ -7,6 +7,7 @@ protocol NotebookSpreadLayoutDelegate: AnyObject {
 class NotebookSpreadViewController: UIViewController {
     private lazy var flipController = FlipAnimatorController(host: self)
     private var lockedDirection: PageTurnDirection?
+    private var spineShadow = UIView()
     
     var pages: [NotebookPageView] = []
     var pageCount: Int {pages.count}
@@ -36,6 +37,7 @@ class NotebookSpreadViewController: UIViewController {
         super.viewWillAppear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
         updatePageContainers()
+        setupSpineShadow()
     }
 
     // MARK: - Setup
@@ -55,6 +57,18 @@ class NotebookSpreadViewController: UIViewController {
         view.addGestureRecognizer(panGesture)
     }
 
+    private func setupSpineShadow() {
+        spineShadow.removeFromSuperview()
+        spineShadow.frame = view.bounds
+        spineShadow.backgroundColor = .clear
+        spineShadow.isUserInteractionEnabled = false
+        spineShadow.layer.shadowPath = UIBezierPath(rect: CGRect(x: view.bounds.width / 2, y: 0, width: spineShadowWidth, height: view.bounds.height)).cgPath
+        spineShadow.layer.shadowColor = UIColor.black.cgColor
+        spineShadow.layer.shadowOffset = .zero
+        spineShadow.layer.shadowOpacity = 0
+        spineShadow.layer.shadowRadius = pageShadowRadius
+        view.insertSubview(spineShadow, at: 0)
+    }
     // MARK: - 更新 containers
     private func updatePageContainers() {
         // 清空 pageContainers
@@ -199,7 +213,7 @@ class NotebookSpreadViewController: UIViewController {
         updatePageContainers()
     }
 
-    // MARK: - 计算 containers 偏移量
+    // MARK: - containers 相关计算
     func computeYOffsets(pageIndex: Int) -> [CGFloat] {
         let offsetIndex = min(max(0, pageIndex / 2 - 1), containerCount - 1)
         var offsets = Array(repeating: CGFloat(0), count: containerCount)
@@ -241,7 +255,7 @@ class NotebookSpreadViewController: UIViewController {
         return opacities
     }
 
-    // MARK: - 随 progress 更新位置
+    // MARK: - 翻页时更新的函数
     func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
         let contentSize = layoutDelegate?.currentSpreadContentSize() ?? .zero
         let width = contentSize.width
@@ -270,12 +284,15 @@ class NotebookSpreadViewController: UIViewController {
             let fromX = fromXOffsets[i]
             let toX = toXOffsets[i]
             let dx = (toX - fromX) * easedProgress
+            container.transform = CGAffineTransform(translationX: dx, y: dy)
             let fromOpacity = fromShadowOpacities[i]
             let toOpacity = toShadowOpacities[i]
             let opacity = fromOpacity + (toOpacity - fromOpacity) * Float(easedProgress)
-            container.transform = CGAffineTransform(translationX: dx, y: dy)
             container.layer.shadowOpacity = opacity
         }
+        let spineShadowProgress = Float(progressThreshold - abs(progressThreshold - abs(progress))) / Float(progressThreshold)
+        spineShadow.layer.shadowOpacity = spineShadowOpacity * spineShadowProgress
+        print("\(spineShadowProgress)")
     }
 
     // MARK: - 生命周期测试函数
@@ -326,10 +343,9 @@ class NotebookSpreadViewController: UIViewController {
 
     private let pageShadowRadius = PageConstants.pageShadowRadius
     private let pageShadowOpacity = PageConstants.pageShadowOpacity
-
+    private let spineShadowWidth = computeXDecay(1)
     private let spineShadowOpacity = NotebookConstants.spineShadowOpacity
-    private let spineShadowRadius = NotebookConstants.spineShadowRadius
-    private let spineShadowWidth = NotebookConstants.spineShadowWidth
+
     
 
     // MARK: - 测试用

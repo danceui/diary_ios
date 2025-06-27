@@ -47,10 +47,7 @@ struct NotebookConstants {
     static let defaultZoomScale: CGFloat = 0.8
     static let maxZoomScale: CGFloat = 3.0
     static let minZoomScale: CGFloat = 0.5
-
-    static let spineShadowWidth: CGFloat = 20
-    static let spineShadowOpacity: Float = 0.3
-    static let spineShadowRadius: CGFloat = 20
+    static let spineShadowOpacity: Float = 0.5
 }
 
 struct StackConstants {
