@@ -67,11 +67,13 @@ func printCanvasDrawingInfo(tag: String = "") {
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
-            let drawingCopy = canvas.drawing
-            snapshotQueue.async {
-                let snapshot = PageSnapshot(drawing: drawingCopy)
-                self.printCanvasDrawingInfo(tag: "Saving Snapshot.")
-                self.snapshotManager.addSnapshot(snapshot)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                let drawingCopy = self.canvas.drawing
+                self.snapshotQueue.async {
+                    let snapshot = PageSnapshot(drawing: drawingCopy)
+                    self.printCanvasDrawingInfo(tag: "Saving Snapshot.")
+                    self.snapshotManager.addSnapshot(snapshot)
+                }
             }
         }
     }

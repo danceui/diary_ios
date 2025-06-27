@@ -51,12 +51,12 @@ class HandwritingCanvas: PKCanvasView {
 
     func safeUpdateDrawing(_ newDrawing: PKDrawing) {
         // 通过临时切换工具清除内部缓存
-        self.becomeFirstResponder()
-        self.resignFirstResponder()
+        self.isUserInteractionEnabled = false
         let currentTool = self.tool
         self.tool = PKInkingTool(.pen, color: .clear, width: 2)
         self.drawing = newDrawing
-        self.tool = currentTool
         self.setNeedsDisplay()
+        self.tool = currentTool
+        self.isUserInteractionEnabled = true
     }
 }
