@@ -78,14 +78,14 @@ func printCanvasDrawingInfo(tag: String = "") {
 
     func undo() {
         if let prev = snapshotManager.undo() {
-            canvas.updateDrawing(prev.drawing)
+            canvas.safeUpdateDrawing(prev.drawing)
             printCanvasDrawingInfo(tag: "After Undo")
         }
     }
 
     func redo() {
         if let next = snapshotManager.redo() {
-            canvas.updateDrawing(next.drawing)
+            canvas.safeUpdateDrawing(next.drawing)
             printCanvasDrawingInfo(tag: "After Redo")
         }
     }

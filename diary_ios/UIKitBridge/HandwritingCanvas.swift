@@ -49,13 +49,14 @@ class HandwritingCanvas: PKCanvasView {
         tool = PKEraserTool(partial ? .bitmap : .vector, width: size)
     }
 
-    // MARK: - 更新 Drawing
-    func updateDrawing(_ newDrawing: PKDrawing) {
-        self.drawing = PKDrawing()
+    func safeUpdateDrawing(_ newDrawing: PKDrawing) {
+        // 通过临时切换工具清除内部缓存
+        self.becomeFirstResponder()
+        self.resignFirstResponder()
+        let currentTool = self.tool
+        self.tool = PKInkingTool(.pen, color: .clear, width: 2)
         self.drawing = newDrawing
-        self.tool = self.tool
-        becomeFirstResponder()
-        resignFirstResponder()
+        self.tool = currentTool
         self.setNeedsDisplay()
     }
 }
