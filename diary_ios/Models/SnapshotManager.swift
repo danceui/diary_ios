@@ -34,7 +34,7 @@ class SnapshotManager {
             snapshots.removeFirst()
             currentIndex -= 1
         }
-        print("📸 Added snapshot #\(currentIndex).")
+        print("📸 Added snapshot #\(currentIndex) on thread: \(Thread.isMainThread ? "main" : "background").")
     }
 
     func undo() -> PageSnapshot? {

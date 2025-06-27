@@ -8,6 +8,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let canvas: HandwritingCanvas = HandwritingCanvas()
 
     private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
+    private let snapshotQueue = DispatchQueue(label: "com.notebook.snapshotQueue")
+
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
@@ -62,7 +64,11 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
-            snapshotManager.addSnapshot(PageSnapshot(drawing: canvas.drawing))
+            let drawingCopy = canvas.drawing
+            snapshotQueue.async {
+                let snapshot = PageSnapshot(drawing: drawingCopy)
+                self.snapshotManager.addSnapshot(snapshot)
+            }
         }
     }
 
@@ -83,8 +89,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     func undo() {
         if let prev = snapshotManager.undo() {
             canvas.drawing = prev.drawing
-        // canvas.tool = canvas.tool
-        // canvas.setNeedsDisplay()
+        canvas.tool = canvas.tool
+        canvas.setNeedsDisplay()
         }
     }
 
