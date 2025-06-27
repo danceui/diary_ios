@@ -1,13 +1,13 @@
 import PencilKit
 
 @available(iOS 16.0, *)
-class DrawingSnapshotManager {
+class SnapshotManager {
     private var snapshots: [PageSnapshot]
     private var currentIndex: Int
     private let maxSnapshots: Int
 
-    init(initialDrawing: PageSnapshot, maxSnapshots: Int = 50) {
-        self.snapshots = [initialDrawing]
+    init(initialSnapshot: PageSnapshot, maxSnapshots: Int = 50) {
+        self.snapshots = [initialSnapshot]
         self.currentIndex = 0
         self.maxSnapshots = maxSnapshots
     }
@@ -34,20 +34,20 @@ class DrawingSnapshotManager {
             snapshots.removeFirst()
             currentIndex -= 1
         }
-        print("📸 Added snapshot #\(currentIndex)")
+        print("📸 Added snapshot #\(currentIndex).")
     }
 
     func undo() -> PageSnapshot? {
         guard canUndo else { return nil }
         currentIndex -= 1
-        print("🎞️ Undo to #\(currentIndex)")
+        print("🎞️ Undo to snapshot \(currentIndex).")
         return snapshots[currentIndex]
     }
 
     func redo() -> PageSnapshot? {
         guard canRedo else { return nil }
         currentIndex += 1
-        print("🎞️ Redo to #\(currentIndex)")
+        print("🎞️ Redo to snapshot #\(currentIndex).")
         return snapshots[currentIndex]
     }
 

@@ -291,7 +291,6 @@ class NotebookSpreadViewController: UIViewController {
             container.layer.shadowOpacity = opacity
         }
         spineShadow.layer.shadowOpacity = computeSpineShadowOpacity(absProgress: abs(progress))
-        print("\(spineShadow.layer.shadowOpacity)")
     }
 
     // MARK: - 生命周期测试函数
@@ -316,7 +315,7 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     func undo() {
-        print("↩️ Undo at index: \(currentIndex)")
+        print("↩️ Undo on page #\(currentIndex).", terminator:" ")
         if currentIndex < pages.count {
             pages[currentIndex].undo()
         }
@@ -326,7 +325,7 @@ class NotebookSpreadViewController: UIViewController {
     }
 
     func redo() {
-        print("↪️ Redo at index: \(currentIndex)")
+        print("↪️ Redo on page #\(currentIndex).", terminator:" ")
         if currentIndex < pages.count {
             pages[currentIndex].redo()
         }

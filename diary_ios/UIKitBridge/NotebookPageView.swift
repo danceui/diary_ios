@@ -7,9 +7,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let isLeft: Bool
     private let canvas: HandwritingCanvas = HandwritingCanvas()
 
-    private var pageSnapshots: [PageSnapshot] = [PageSnapshot(drawing: PKDrawing())]
-    private var snapshotIndex = 0
-    private let maxSnapshots = 50
+    private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
@@ -64,7 +62,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
-            saveSnapshot()
+            snapshotManager.addSnapshot(PageSnapshot(drawing: canvas.drawing))
         }
     }
 
@@ -83,47 +81,20 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - 快照管理
     func undo() {
-        guard snapshotIndex > 0 else { return }
-        snapshotIndex -= 1
-        print("Undo.", terminator: " ")
-        applySnapshotOfIndex(snapshotIndex)
+        if let prev = snapshotManager.undo() {
+            canvas.drawing = prev.drawing
+        // canvas.tool = canvas.tool
+        // canvas.setNeedsDisplay()
+        }
     }
 
     func redo() {
-        guard snapshotIndex < pageSnapshots.count - 1 else { return }
-        snapshotIndex += 1
-        print("Redo.", terminator: " ")
-        applySnapshotOfIndex(snapshotIndex)
-    }
-
-    private func currentSnapshot() -> PageSnapshot {
-        return pageSnapshots[snapshotIndex]
-    }
-
-    private func saveSnapshot() {
-        let currentSnapshot = PageSnapshot(drawing: PKDrawing(strokes: canvas.drawing.strokes))
-        guard currentSnapshot != pageSnapshots[snapshotIndex] else {
-            print("Skip snapshot!")
-            return
+        if let next = snapshotManager.redo() {
+            canvas.drawing = next.drawing
+        // canvas.tool = canvas.tool
+        // canvas.setNeedsDisplay()
         }
-
-        if snapshotIndex < pageSnapshots.count - 1 {
-            pageSnapshots = Array(pageSnapshots.prefix(snapshotIndex + 1))
-        }
-
-        pageSnapshots.append(currentSnapshot)
-        snapshotIndex += 1
-        if pageSnapshots.count > maxSnapshots {
-            pageSnapshots.removeFirst()
-            snapshotIndex -= 1
-        }
-        print("Saved snapshot #\(snapshotIndex).")
     }
 
-    private func applySnapshotOfIndex(_ index: Int) {
-        canvas.drawing = pageSnapshots[index].drawing
-        canvas.tool = canvas.tool
-        print("Apply snapshot #\(snapshotIndex)/\(pageSnapshots.count).")
-        canvas.setNeedsDisplay()
-    }
+    private func currentSnapshot() -> PageSnapshot { return snapshotManager.currentSnapshot }
 }
