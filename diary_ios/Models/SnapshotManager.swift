@@ -35,14 +35,14 @@ class SnapshotManager {
             currentIndex -= 1
         }
         print("📸 Added snapshot #\(currentIndex).")
-        printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
+        // printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
     }
 
     func undo() -> PageSnapshot? {
         guard canUndo else { return nil }
         currentIndex -= 1
-        print("🎞️ Undo to snapshot \(currentIndex).")
-        printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
+        print("🎞️ Undo to snapshot #\(currentIndex).")
+        // printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
         return snapshots[currentIndex]
     }
 
@@ -50,7 +50,7 @@ class SnapshotManager {
         guard canRedo else { return nil }
         currentIndex += 1
         print("🎞️ Redo to snapshot #\(currentIndex).")
-        printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
+        // printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
         return snapshots[currentIndex]
     }
 

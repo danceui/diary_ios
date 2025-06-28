@@ -60,16 +60,26 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             let newCanvas = HandwritingCanvas(drawing)
             newCanvas.delegate = self
             newCanvas.frame = self.bounds
+            newCanvas.alpha = 0 // 初始透明
             
             if let oldCanvas = self.canvas {
                 self.addSubview(newCanvas)
                 self.canvas = newCanvas
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                
+                UIView.animate(withDuration: 0.2, delay: 0, options: [.curveLinear],
+                animations: {
+                    newCanvas.alpha = 1
+                    oldCanvas.alpha = 0
+                }, completion: { _ in
                     oldCanvas.removeFromSuperview()
-                }
+                    print("✅ Loaded new canvas & Hided old canvas.")
+                })
             } else {
                 self.addSubview(newCanvas)
                 self.canvas = newCanvas
+                UIView.animate(withDuration: 0.2) {
+                    newCanvas.alpha = 1 // 没有旧画布时也做个淡入
+                }
             }
         }
     }
@@ -88,9 +98,13 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         }
     }
 
-    func undo() { if let prev = snapshotManager.undo() { rebuildCanvas(with: prev.drawing) } }
+    func undo() { 
+        if let prev = snapshotManager.undo() { rebuildCanvas(with: prev.drawing) } 
+    }
 
-    func redo() { if let next = snapshotManager.redo() { rebuildCanvas(with: next.drawing) } }
+    func redo() { 
+        if let next = snapshotManager.redo() { rebuildCanvas(with: next.drawing) } 
+    }
 
     private func currentSnapshot() -> PageSnapshot { return snapshotManager.currentSnapshot }
 }
