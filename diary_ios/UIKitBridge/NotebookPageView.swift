@@ -53,21 +53,20 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - canvas 管理
     private func rebuildCanvas(with drawing: PKDrawing) {
+        // 在主线程异步执行这些代码
         DispatchQueue.main.async {
-            // 在主线程异步执行这些代码
-            self.canvas?.removeFromSuperview()
             guard self.pageRole != .empty else { return }
+
             let newCanvas = HandwritingCanvas(drawing)
             newCanvas.delegate = self
             newCanvas.frame = self.bounds
             
-            if let oldCanvas = self.canvas, let snapshot = oldCanvas.snapshotView(afterScreenUpdates: true) {
-                snapshot.frame = oldCanvas.bounds
-                self.addSubview(snapshot)
+            if let oldCanvas = self.canvas {
                 self.addSubview(newCanvas)
                 self.canvas = newCanvas
-                snapshot.removeFromSuperview()
-                oldCanvas.removeFromSuperview()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    oldCanvas.removeFromSuperview()
+                }
             } else {
                 self.addSubview(newCanvas)
                 self.canvas = newCanvas

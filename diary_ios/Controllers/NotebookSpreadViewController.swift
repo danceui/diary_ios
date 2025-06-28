@@ -4,7 +4,7 @@ protocol NotebookSpreadLayoutDelegate: AnyObject {
 }
 
 @available(iOS 16.0, *)
-class NotebookSpreadViewController: UIViewController {
+class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegate  {
     private lazy var flipController = FlipAnimatorController(host: self)
     private var lockedDirection: PageTurnDirection?
     private var spineShadow = UIView()
@@ -52,11 +52,6 @@ class NotebookSpreadViewController: UIViewController {
         ]
     }
 
-    private func setupGestureRecognizers() {
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        view.addGestureRecognizer(panGesture)
-    }
-
     private func setupSpineShadow() {
         spineShadow.removeFromSuperview()
         spineShadow.frame = view.bounds
@@ -69,6 +64,18 @@ class NotebookSpreadViewController: UIViewController {
         spineShadow.layer.shadowRadius = pageShadowRadius
         view.insertSubview(spineShadow, at: 0)
     }
+
+    private func setupGestureRecognizers() {
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        panGesture.delegate = self
+        view.addGestureRecognizer(panGesture)
+    }
+
+    // MARK: - 手势相关函数
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        return touch.type == .direct
+    }
+
     // MARK: - 更新 containers
     private func updatePageContainers() {
         // 清空 pageContainers
