@@ -60,8 +60,18 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             let newCanvas = HandwritingCanvas(drawing)
             newCanvas.delegate = self
             newCanvas.frame = self.bounds
-            self.addSubview(newCanvas)
-            self.canvas = newCanvas
+            
+            if let oldCanvas = self.canvas, let snapshot = oldCanvas.snapshotView(afterScreenUpdates: true) {
+                snapshot.frame = oldCanvas.bounds
+                self.addSubview(snapshot)
+                self.addSubview(newCanvas)
+                self.canvas = newCanvas
+                snapshot.removeFromSuperview()
+                oldCanvas.removeFromSuperview()
+            } else {
+                self.addSubview(newCanvas)
+                self.canvas = newCanvas
+            }
         }
     }
 
