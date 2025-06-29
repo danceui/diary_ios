@@ -40,17 +40,19 @@ class SnapshotManager {
 
     func undo() -> PageSnapshot? {
         guard canUndo else { return nil }
+    let startTime = CFAbsoluteTimeGetCurrent()
         currentIndex -= 1
-        print("🎞️ Undo to snapshot #\(currentIndex).")
-        // printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
+    let duration = CFAbsoluteTimeGetCurrent() - startTime
+        print("🎞️ Undo to snapshot #\(currentIndex). Took \(duration) seconds.")
         return snapshots[currentIndex]
     }
 
     func redo() -> PageSnapshot? {
         guard canRedo else { return nil }
+    let startTime = CFAbsoluteTimeGetCurrent()
         currentIndex += 1
-        print("🎞️ Redo to snapshot #\(currentIndex).")
-        // printAllSnapshotsInfo(snapshots: snapshots, currentIndex: currentIndex)
+    let duration = CFAbsoluteTimeGetCurrent() - startTime
+    print("🎞️ Redo to snapshot #\(currentIndex). Took \(duration) seconds")
         return snapshots[currentIndex]
     }
 

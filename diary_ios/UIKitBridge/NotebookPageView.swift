@@ -12,7 +12,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
     private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
-    private var canvas: HandwritingCanvas?
+    private var canvas = HandwritingCanvas(PKDrawing())
 
     // MARK: - 生命周期
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
@@ -20,7 +20,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         self.isLeft = isLeft
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.singleSize))
         setupView()
-        rebuildCanvas(with: snapshotManager.currentSnapshot.drawing)
     }
 
     required init?(coder: NSCoder) { 
@@ -29,7 +28,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        canvas?.frame = bounds
+        canvas.frame = bounds
     }
 
     // MARK: - setup
@@ -61,22 +60,17 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             newCanvas.delegate = self
             newCanvas.frame = self.bounds
             
-            if let oldCanvas = self.canvas {
-                self.addSubview(newCanvas)
-                self.canvas = newCanvas
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    oldCanvas.removeFromSuperview()
-                }
-            } else {
-                self.addSubview(newCanvas)
-                self.canvas = newCanvas
+            let oldCanvas = self.canvas
+            self.addSubview(newCanvas)
+            self.canvas = newCanvas
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                oldCanvas.removeFromSuperview()
             }
         }
     }
 
     // MARK: - 快照管理
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        guard let canvas = canvas else { return }
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
             // 将当前 canvas 的 drawing 内容提前复制一份，在后台线程中使用，避免直接跨线程访问 UI 对象。
