@@ -63,12 +63,24 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             let newCanvas = HandwritingCanvas(drawing)
             newCanvas.delegate = self
             newCanvas.frame = self.bounds
+            newCanvas.alpha = isUndo ? 1.0 : 0.0
             
             let oldCanvas = self.canvas
             self.canvas = newCanvas
-            self.addSubview(newCanvas)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                oldCanvas.removeFromSuperview()
+                self.insertSubview(newCanvas, belowSubview: oldCanvas)
+            
+            if isUndo {
+                UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut], animations: {
+                    oldCanvas.alpha = 0.0
+                }, completion: { _ in
+                    oldCanvas.removeFromSuperview()
+                })
+            } else {
+                UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut], animations: {
+                    newCanvas.alpha = 1.0
+                }, completion: { _ in
+                    oldCanvas.removeFromSuperview()
+                })
             }
         }
     }
