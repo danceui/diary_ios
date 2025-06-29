@@ -12,7 +12,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
     private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
-    private var canvas = HandwritingCanvas(PKDrawing())
+    private var canvas: HandwritingCanvas = HandwritingCanvas(PKDrawing())
 
     // MARK: - 生命周期
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
@@ -20,6 +20,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         self.isLeft = isLeft
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.singleSize))
         setupView()
+        if role == .normal {
+            canvas.delegate = self 
+            addSubview(canvas) 
+        }
     }
 
     required init?(coder: NSCoder) { 
@@ -51,18 +55,18 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     }
 
     // MARK: - canvas 管理
-    private func rebuildCanvas(with drawing: PKDrawing) {
+    private func rebuildCanvas(with drawing: PKDrawing, isUndo: Bool = true) {
         // 在主线程异步执行这些代码
         DispatchQueue.main.async {
-            guard self.pageRole != .empty else { return }
+            guard self.pageRole == .normal else { return }
 
             let newCanvas = HandwritingCanvas(drawing)
             newCanvas.delegate = self
             newCanvas.frame = self.bounds
             
             let oldCanvas = self.canvas
-            self.addSubview(newCanvas)
             self.canvas = newCanvas
+            self.addSubview(newCanvas)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 oldCanvas.removeFromSuperview()
             }
@@ -82,9 +86,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         }
     }
 
-    func undo() { if let prev = snapshotManager.undo() { rebuildCanvas(with: prev.drawing) } }
+    func undo() { if let prev = snapshotManager.undo() { rebuildCanvas(with: prev.drawing, isUndo: true) } }
 
-    func redo() { if let next = snapshotManager.redo() { rebuildCanvas(with: next.drawing) } }
+    func redo() { if let next = snapshotManager.redo() { rebuildCanvas(with: next.drawing, isUndo: false) } }
 
     private func currentSnapshot() -> PageSnapshot { return snapshotManager.currentSnapshot }
 }
