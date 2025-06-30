@@ -2,16 +2,16 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookPageView: UIView {
+class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageRole: PageRole
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
-    private var canvas: 
-    private var canvasState = CanvasState()
+    private var canvas = CustomCanvasView()
     private var undoRedoManager = UndoRedoManager()
+    private var canvasState = CanvasState() { didSet { canvas.drawing = canvasState.drawing} }
 
     // MARK: - 生命周期
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
@@ -20,7 +20,7 @@ class NotebookPageView: UIView {
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.singleSize))
         setupView()
         if role == .normal {
-            canvas.onStrokeFinished = { [weak self] stroke in self?.handleNewStroke(stroke) }
+            canvas.delegate = self 
             addSubview(canvas) 
         }
     }
@@ -53,24 +53,27 @@ class NotebookPageView: UIView {
         }
     }
 
-    private func handleNewStroke(_ stroke: PKStroke) {
-        let command = DrawStrokeCommand(stroke: stroke)
-        print("✍️ Added new stroke.")
-        undoRedoManager.executeCommand(command)
-        canvasState = undoRedoManager.canvasState
+    @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+        if canvas.waitingForStrokeFinish {
+            canvas.waitingForStrokeFinish = false
+            if let newStroke = canvas.drawing.strokes.last {
+                print("✍️ Added new stroke.")
+                let command = DrawStrokeCommand(stroke: newStroke)
+                undoRedoManager.executeCommand(command)
+            }
+        }
     }
 
     func undo() {
         print("✍️ Call undoCommand.")
+    Thread.callStackSymbols.forEach { print($0) } // 打印调用栈
         undoRedoManager.undoCommand()
         canvasState = undoRedoManager.canvasState
-        canvas.drawing = canvasState.drawing
     }
 
     func redo() {
         print("✍️ Call redoCommand.")
         undoRedoManager.redoCommand()
         canvasState = undoRedoManager.canvasState
-        canvas.drawing = canvasState.drawing
     }
 }
