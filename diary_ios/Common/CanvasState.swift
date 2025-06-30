@@ -1,24 +1,22 @@
 import PencilKit
 
 protocol CanvasCommand {
-    func execute()
-    func undo()
+    func execute(on handwritingLayer: HandwritingLayer)
+    func undo(on handwritingLayer: HandwritingLayer)
 }
 
 class AddStrokeCommand: CanvasCommand {
     let stroke: PKStroke
-    let handwritingLayer: HandwritingLayer
     
-    init(stroke: PKStroke, handwritingLayer: HandwritingLayer) {
+    init(stroke: PKStroke) {
         self.stroke = stroke
-        self.handwritingLayer = handwritingLayer
     }
 
-    func execute() {
+    func execute(on handwritingLayer: HandwritingLayer) {
         handwritingLayer.add(stroke: stroke)
     }
 
-    func undo() {
+    func undo(on handwritingLayer: HandwritingLayer) {
         handwritingLayer.remove(stroke: stroke)
     }
 }

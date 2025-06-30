@@ -34,10 +34,14 @@ class HandwritingLayer: PKCanvasView {
 
     // MARK: - API for Commands
     func add(stroke: PKStroke) {
-        drawing.strokes.append(stroke)
+        var currentDrawing = self.drawing
+        currentDrawing.strokes.append(stroke)
+        self.drawing = currentDrawing
     }
 
     func remove(stroke: PKStroke) {
-        drawing.strokes.removeLast()
+        var currentDrawing = self.drawing
+        currentDrawing.strokes.removeLast()
+        self.drawing = currentDrawing
     }
 }
