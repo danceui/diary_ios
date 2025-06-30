@@ -9,7 +9,7 @@ class NotebookPageView: UIView {
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
-    private var canvas: HandwritingCanvas = HandwritingCanvas()
+    private var canvas: 
     private var canvasState = CanvasState()
     private var undoRedoManager = UndoRedoManager()
 
@@ -55,21 +55,22 @@ class NotebookPageView: UIView {
 
     private func handleNewStroke(_ stroke: PKStroke) {
         let command = DrawStrokeCommand(stroke: stroke)
+        print("✍️ Added new stroke.")
         undoRedoManager.executeCommand(command)
         canvasState = undoRedoManager.canvasState
     }
 
     func undo() {
+        print("✍️ Call undoCommand.")
         undoRedoManager.undoCommand()
         canvasState = undoRedoManager.canvasState
+        canvas.drawing = canvasState.drawing
     }
 
     func redo() {
+        print("✍️ Call redoCommand.")
         undoRedoManager.redoCommand()
         canvasState = undoRedoManager.canvasState
-    }
-
-    private func currentCanvasState() -> CanvasState {
-        return canvasState
+        canvas.drawing = canvasState.drawing
     }
 }

@@ -322,7 +322,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     func undo() {
-        print("↩️ Undo on page #\(currentIndex).", terminator:" ")
+        // print("↩️ Undo on page #\(currentIndex).", terminator:" ")
         if currentIndex < pages.count {
             pages[currentIndex].undo()
         }
@@ -332,7 +332,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     func redo() {
-        print("↪️ Redo on page #\(currentIndex).", terminator:" ")
+        // print("↪️ Redo on page #\(currentIndex).", terminator:" ")
         if currentIndex < pages.count {
             pages[currentIndex].redo()
         }

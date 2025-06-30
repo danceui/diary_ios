@@ -2,12 +2,13 @@ import PencilKit
 import UIKit
 
 @available(iOS 16.0, *)
-class HandwritingCanvas: PKCanvasView {
+class HandwritingCanvas: PKCanvasView, PKCanvasViewDelegate {
     var onStrokeFinished: ((PKStroke) -> Void)?
+    private var waitingForStrokeFinish = false
+    private var lastStrokeCount = 0
 
-    init(drawing: PKDrawing = PKDrawing()) {
-        super.init(frame: .zero)
-        self.drawing = drawing
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         commonInit()
     }
 
@@ -15,30 +16,39 @@ class HandwritingCanvas: PKCanvasView {
         super.init(coder: coder)
         commonInit()
     }
-    
+
     private func commonInit() {
         backgroundColor = .clear
         drawingPolicy = .pencilOnly
         alwaysBounceVertical = false
         isOpaque = false
+        delegate = self
     }
 
-    // MARK: - 监听笔画
+    // 等待笔画完成信号
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
-        if let newStroke = drawing.strokes.last {
-            onStrokeFinished?(newStroke)
-        }
+        waitingForStrokeFinish = true
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
-        if let newStroke = drawing.strokes.last {
-            onStrokeFinished?(newStroke)
-        }
+        waitingForStrokeFinish = true
     }
 
-    // MARK: - 设置工具
+    func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+        guard waitingForStrokeFinish else { return }
+        waitingForStrokeFinish = false
+
+        let strokes = drawing.strokes
+        guard strokes.count > lastStrokeCount else { return }
+
+        let newStroke = strokes.last!
+        lastStrokeCount = strokes.count
+        onStrokeFinished?(newStroke)
+    }
+
+    // 设置工具
     func setBrush(color: UIColor, width: CGFloat, type: String) {
         let inkType: PKInkingTool.InkType
         switch type {
