@@ -5,14 +5,13 @@ import PencilKit
 class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageRole: PageRole
     private let isLeft: Bool
-    private let snapshotQueue = DispatchQueue(label: "com.notebook.snapshotQueue")
-
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
-    private var snapshotManager = SnapshotManager(initialSnapshot: PageSnapshot(drawing: PKDrawing()))
     private var canvas: HandwritingCanvas = HandwritingCanvas(PKDrawing())
+    private var canvasState = CanvasState()
+    private var undoRedoManager = UndoRedoManager(initialState: CanvasState())
 
     // MARK: - 生命周期
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
@@ -54,53 +53,36 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         }
     }
 
-    // MARK: - canvas 管理
-    private func rebuildCanvas(with drawing: PKDrawing, isUndo: Bool = true) {
-        // 在主线程异步执行这些代码
-        DispatchQueue.main.async {
-            guard self.pageRole == .normal else { return }
-
-            let newCanvas = HandwritingCanvas(drawing)
-            newCanvas.delegate = self
-            newCanvas.frame = self.bounds
-            newCanvas.alpha = isUndo ? 1.0 : 0.0
-            
-            let oldCanvas = self.canvas
-            self.canvas = newCanvas
-                self.insertSubview(newCanvas, belowSubview: oldCanvas)
-            
-            if isUndo {
-                UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut], animations: {
-                    oldCanvas.alpha = 0.0
-                }, completion: { _ in
-                    oldCanvas.removeFromSuperview()
-                })
-            } else {
-                UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut], animations: {
-                    newCanvas.alpha = 1.0
-                }, completion: { _ in
-                    oldCanvas.removeFromSuperview()
-                })
-            }
-        }
-    }
-
-    // MARK: - 快照管理
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if canvas.waitingForStrokeFinish {
             canvas.waitingForStrokeFinish = false
-            // 将当前 canvas 的 drawing 内容提前复制一份，在后台线程中使用，避免直接跨线程访问 UI 对象。
+
+            let drawing = canvas.drawing
+            let oldStrokes = canvasState.drawing.strokes
+            let newStrokes = drawing.strokes
             let drawingCopy = canvas.drawing
-            snapshotQueue.async {
-                let snapshot = PageSnapshot(drawing: drawingCopy)
-                self.snapshotManager.addSnapshot(snapshot)
-            }
+            guard newStrokes.count > oldStrokes.count else { return }
+            
+            let addedStroke = newStrokes.last!
+            let command = DrawStrokeCommand(stroke: addedStroke)
+            undoRedoManager.executeCommand(command)
+            canvasState = undoRedoManager.canvasState
         }
     }
 
-    func undo() { if let prev = snapshotManager.undo() { rebuildCanvas(with: prev.drawing, isUndo: true) } }
+    func undo() {
+        undoRedoManager.undoCommand()
+        canvasState = undoRedoManager.canvasState
+        rebuildCanvas(with: canvasState.drawing, isUndo: true)
+    }
 
-    func redo() { if let next = snapshotManager.redo() { rebuildCanvas(with: next.drawing, isUndo: false) } }
+    func redo() {
+        undoRedoManager.redoCommand()
+        canvasState = undoRedoManager.canvasState
+        rebuildCanvas(with: canvasState.drawing, isUndo: false)
+    }
 
-    private func currentSnapshot() -> PageSnapshot { return snapshotManager.currentSnapshot }
+    private func currentCanvasState() -> CanvasState {
+        return canvasState
+    }
 }

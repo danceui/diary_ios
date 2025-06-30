@@ -24,9 +24,9 @@ protocol CanvasCommand {
     func undo(on state: CanvasState)
 }
 
-class AddStrokeCommand: CanvasCommand {
+class DrawStrokeCommand: CanvasCommand {
     let stroke: PKStroke
-
+    
     init(stroke: PKStroke) {
         self.stroke = stroke
     }

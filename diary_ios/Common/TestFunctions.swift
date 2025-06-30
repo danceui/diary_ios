@@ -11,10 +11,3 @@ func printLifeCycleInfo(context: String, for view: UIView){
     // print("   📌 view.frame.size: \(formatSize(view.frame.size))")
 }
 
-func printAllSnapshotsInfo(snapshots: [PageSnapshot], currentIndex: Int) {
-    print("📊 Snapshots Info (Total: \(snapshots.count)):")
-    for (index, snapshot) in snapshots.enumerated() {
-        let mark = (index == currentIndex) ? "🔸" : "  "
-        print("   [#\(index)] StrokeCount: \(snapshot.drawing.strokes.count) \(mark)")
-    }
-}

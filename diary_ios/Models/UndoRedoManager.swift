@@ -2,7 +2,7 @@ import PencilKit
 
 @available(iOS 16.0, *)
 class UndoRedoManager {
-    private(set) var canvasState: CanvasState
+    private var canvasState: CanvasState
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
 
@@ -10,20 +10,20 @@ class UndoRedoManager {
         self.canvasState = initialState
     }
 
-    func perform(_ command: CanvasCommand) {
+    func executeCommand(_ command: CanvasCommand) {
         command.execute(on: canvasState)
         undoStack.append(command)
         print("📸 Updated undo stack & Cleared redo stack.")
         redoStack.removeAll()
     }
 
-    func undo() {
+    func undoCommand() {
         guard let command = undoStack.popLast() else { return }
         command.undo(on: canvasState)
         redoStack.append(command)
     }
 
-    func redo() {
+    func redoCommand() {
         guard let command = redoStack.popLast() else { return }
         command.execute(on: canvasState)
         print("🎞️ Redo.")
