@@ -3,9 +3,9 @@ import UIKit
 
 @available(iOS 16.0, *)
 class HandwritingCanvas: PKCanvasView {
-    var waitingForStrokeFinish: Bool = false
+    var onStrokeFinished: ((PKStroke) -> Void)?
 
-    init(_ drawing: PKDrawing) {
+    init(drawing: PKDrawing = PKDrawing()) {
         super.init(frame: .zero)
         self.drawing = drawing
         commonInit()
@@ -26,12 +26,16 @@ class HandwritingCanvas: PKCanvasView {
     // MARK: - 监听笔画
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
-        waitingForStrokeFinish = true
+        if let newStroke = drawing.strokes.last {
+            onStrokeFinished?(newStroke)
+        }
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
-        waitingForStrokeFinish = true
+        if let newStroke = drawing.strokes.last {
+            onStrokeFinished?(newStroke)
+        }
     }
 
     // MARK: - 设置工具
