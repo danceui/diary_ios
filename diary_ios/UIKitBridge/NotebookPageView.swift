@@ -66,7 +66,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     func undo() {
         print("✍️ Call undoCommand.")
-    Thread.callStackSymbols.forEach { print($0) } // 打印调用栈
         undoRedoManager.undoCommand()
         canvasState = undoRedoManager.canvasState
     }
