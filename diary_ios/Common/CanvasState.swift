@@ -1,8 +1,8 @@
 import PencilKit
 
 protocol CanvasCommand {
-    func execute(on state: CanvasState)
-    func undo(on state: CanvasState)
+    func execute()
+    func undo()
 }
 
 class AddStrokeCommand: CanvasCommand {

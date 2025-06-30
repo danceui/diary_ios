@@ -38,6 +38,6 @@ class HandwritingLayer: PKCanvasView {
     }
 
     func remove(stroke: PKStroke) {
-        drawing.strokes.removeAll { $0 == stroke }
+        drawing.strokes.removeLast()
     }
 }

@@ -8,8 +8,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
-、
-    let handwritingLayer = HandwritingLayer()
+
+    private var handwritingLayer = HandwritingLayer()
 
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
@@ -59,32 +59,35 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             handwritingLayer.waitingForStrokeFinish = false
             if let newStroke = handwritingLayer.drawing.strokes.last {
                 print("✍️ Added new stroke.")
-                let command = DrawStrokeCommand(stroke: newStroke)
-                undoRedoManager.executeCommand(command)
+                let command = AddStrokeCommand(stroke: newStroke, handwritingLayer: handwritingLayer)
+                execute(command)
             }
         }
     }
 
     // MARK: - Undo Redo Manager
-    func executeCommand(_ command: CanvasCommand) {
+    func execute(_ command: CanvasCommand) {
         command.execute()
         undoStack.append(command)
         redoStack.removeAll()
         print("🕹️ Added new command.")
+        printUndoStackInfo()
     }
 
-    func undoCommand() {
+    func undo() {
         guard let command = undoStack.popLast() else { return }
         command.undo()
         redoStack.append(command)
         print("🕹️ Undo command.")
+        printUndoStackInfo()
     }
 
-    func redoCommand() {
+    func redo() {
         guard let command = redoStack.popLast() else { return }
         command.execute()
         print("🕹️ Redo command.")
         undoStack.append(command)
+        printUndoStackInfo()
     }
 
     func reset() {
