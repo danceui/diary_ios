@@ -20,7 +20,3 @@ class AddStrokeCommand: CanvasCommand {
         handwritingLayer.remove()
     }
 }
-struct MyStroke {
-    let id: UUID
-    let stroke: PKStroke
-}

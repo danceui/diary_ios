@@ -54,16 +54,24 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         }
     }
 
-    @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-            print("canvasViewDrawingDidChange.")
+    // @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+    //     if handwritingLayer.waitingForStrokeFinish {
+    //         print("canvasViewDrawingDidChange & waitingForStrokeFinish.")
+    //         handwritingLayer.waitingForStrokeFinish = false
+    //         if let newStroke = handwritingLayer.drawing.strokes.last {
+    //             let command = AddStrokeCommand(stroke: newStroke)
+    //             execute(command: command)
+    //         }
+    //     }
+    // }
+    @objc func canvasViewDidFinishRendering(_ canvasView: PKCanvasView) {
         if handwritingLayer.waitingForStrokeFinish {
+            print("canvasViewDrawingDidChange & waitingForStrokeFinish.")
             handwritingLayer.waitingForStrokeFinish = false
             if let newStroke = handwritingLayer.drawing.strokes.last {
                 let command = AddStrokeCommand(stroke: newStroke)
                 execute(command: command)
             }
-        } else {
-           
         }
     }
 
