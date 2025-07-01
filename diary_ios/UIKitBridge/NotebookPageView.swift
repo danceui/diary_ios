@@ -54,17 +54,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         }
     }
 
-    // @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-    //     if handwritingLayer.waitingForStrokeFinish {
-    //         print("canvasViewDrawingDidChange & waitingForStrokeFinish.")
-    //         handwritingLayer.waitingForStrokeFinish = false
-    //         if let newStroke = handwritingLayer.drawing.strokes.last {
-    //             let command = AddStrokeCommand(stroke: newStroke)
-    //             execute(command: command)
-    //         }
-    //     }
-    // }
-    @objc func canvasViewDidFinishRendering(_ canvasView: PKCanvasView) {
+    @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if handwritingLayer.waitingForStrokeFinish {
             print("canvasViewDrawingDidChange & waitingForStrokeFinish.")
             handwritingLayer.waitingForStrokeFinish = false
@@ -74,6 +64,17 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             }
         }
     }
+    
+    // @objc func canvasViewDidFinishRendering(_ canvasView: PKCanvasView) {
+    //     print("canvasViewDidFinishRendering & waitingForStrokeFinish.")
+    //     guard handwritingLayer.waitingForStrokeFinish else { return }
+    //     handwritingLayer.waitingForStrokeFinish = false
+    //     if let newStroke = handwritingLayer.drawing.strokes.last {
+    //         let command = AddStrokeCommand(stroke: newStroke)
+    //         print("✅ Finished rendering stroke with \(newStroke.path.count) points.")
+    //         execute(command: command)
+    //     }
+    // }
 
     // MARK: - Undo Redo Manager
     func execute(command: CanvasCommand) {
