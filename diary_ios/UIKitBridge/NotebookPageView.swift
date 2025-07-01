@@ -55,13 +55,15 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     }
 
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+            print("canvasViewDrawingDidChange.")
         if handwritingLayer.waitingForStrokeFinish {
             handwritingLayer.waitingForStrokeFinish = false
             if let newStroke = handwritingLayer.drawing.strokes.last {
-                print("✍️ Added new stroke.")
                 let command = AddStrokeCommand(stroke: newStroke)
                 execute(command: command)
             }
+        } else {
+           
         }
     }
 

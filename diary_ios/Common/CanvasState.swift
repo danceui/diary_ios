@@ -17,6 +17,10 @@ class AddStrokeCommand: CanvasCommand {
     }
 
     func undo(on handwritingLayer: HandwritingLayer) {
-        handwritingLayer.remove(stroke: stroke)
+        handwritingLayer.remove()
     }
+}
+struct MyStroke {
+    let id: UUID
+    let stroke: PKStroke
 }
