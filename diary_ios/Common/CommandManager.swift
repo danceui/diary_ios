@@ -7,12 +7,18 @@ protocol CanvasCommand {
 
 class AddStrokeCommand: CanvasCommand {
     let stroke: PKStroke
+    private var isUserStroke: Bool
     
-    init(stroke: PKStroke) {
+    init(stroke: PKStroke, isUserStroke: Bool) {
         self.stroke = stroke
+        self.isUserStroke = isUserStroke
     }
 
     func execute(on handwritingLayer: HandwritingLayer) {
+        guard !isUserStroke else { 
+            isUserStroke = false
+            return 
+        }
         handwritingLayer.add(stroke: stroke)
     }
 

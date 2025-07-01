@@ -56,47 +56,35 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if handwritingLayer.waitingForStrokeFinish {
-            print("canvasViewDrawingDidChange & waitingForStrokeFinish.")
             handwritingLayer.waitingForStrokeFinish = false
             if let newStroke = handwritingLayer.drawing.strokes.last {
-                let command = AddStrokeCommand(stroke: newStroke)
+                let command = AddStrokeCommand(stroke: newStroke, isUserStroke: true)
                 execute(command: command)
             }
         }
     }
-    
-    // @objc func canvasViewDidFinishRendering(_ canvasView: PKCanvasView) {
-    //     print("canvasViewDidFinishRendering & waitingForStrokeFinish.")
-    //     guard handwritingLayer.waitingForStrokeFinish else { return }
-    //     handwritingLayer.waitingForStrokeFinish = false
-    //     if let newStroke = handwritingLayer.drawing.strokes.last {
-    //         let command = AddStrokeCommand(stroke: newStroke)
-    //         print("✅ Finished rendering stroke with \(newStroke.path.count) points.")
-    //         execute(command: command)
-    //     }
-    // }
 
     // MARK: - Undo Redo Manager
     func execute(command: CanvasCommand) {
         command.execute(on: handwritingLayer)
         undoStack.append(command)
         redoStack.removeAll()
-        print("🕹️ Added new command.")
+        print("🕹️ Added new command :", terminator:"")
         printUndoStackInfo(undoStack: undoStack)
     }
 
     func undo() {
         guard let command = undoStack.popLast() else { return }
+        print("🕹️ Undo command :", terminator:"")
         command.undo(on: handwritingLayer)
         redoStack.append(command)
-        print("🕹️ Undo command.")
         printUndoStackInfo(undoStack: undoStack)
     }
 
     func redo() {
         guard let command = redoStack.popLast() else { return }
+        print("🕹️ Redo command :", terminator:"")
         command.execute(on: handwritingLayer)
-        print("🕹️ Redo command.")
         undoStack.append(command)
         printUndoStackInfo(undoStack: undoStack)
     }
