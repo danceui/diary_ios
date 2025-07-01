@@ -22,16 +22,16 @@ class HandwritingLayer: PKCanvasView, ToolObserver {
     }
 
     // MARK: - 监听触摸
-    var waitingForStrokeFinish = false
+    var strokeFinished = false
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
-        waitingForStrokeFinish = true
+        strokeFinished = true
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
-        waitingForStrokeFinish = true
+        strokeFinished = true
     }
 
     // MARK: - API for commands

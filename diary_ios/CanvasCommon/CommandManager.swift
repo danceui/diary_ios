@@ -6,17 +6,17 @@ protocol CanvasCommand {
 }
 
 class AddStrokeCommand: CanvasCommand {
-    let stroke: PKStroke
-    private var isUserStroke: Bool
+    private let stroke: PKStroke
+    private var hasAppearedOnce: Bool
     
-    init(stroke: PKStroke, isUserStroke: Bool) {
+    init(stroke: PKStroke, hasAppearedOnce: Bool) {
         self.stroke = stroke
-        self.isUserStroke = isUserStroke
+        self.hasAppearedOnce = hasAppearedOnce
     }
 
     func execute(on handwritingLayer: HandwritingLayer) {
-        guard !isUserStroke else { 
-            isUserStroke = false
+        guard !hasAppearedOnce else { 
+            hasAppearedOnce = true
             return 
         }
         handwritingLayer.add(stroke: stroke)
