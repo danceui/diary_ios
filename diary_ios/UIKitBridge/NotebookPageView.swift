@@ -35,7 +35,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         handwritingLayer.frame = bounds
     }
 
-    // MARK: - setup
+    // MARK: - Setup
     private func setupView() {
         backgroundColor = backgroundColorForRole(pageRole) // 浅绿色背景
         layer.cornerRadius = pageCornerRadius
@@ -64,18 +64,18 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         }
     }
 
-    // MARK: - Undo Redo Manager
+    // MARK: - Undo/Redo Manager
     func execute(command: CanvasCommand) {
         command.execute(on: handwritingLayer)
         undoStack.append(command)
         redoStack.removeAll()
-        print("🕹️ Added new command :", terminator:"")
+        print("🕹️ Added new command:", terminator:" ")
         printUndoStackInfo(undoStack: undoStack)
     }
 
     func undo() {
         guard let command = undoStack.popLast() else { return }
-        print("🕹️ Undo command :", terminator:"")
+        print("🕹️ Undo command:", terminator:" ")
         command.undo(on: handwritingLayer)
         redoStack.append(command)
         printUndoStackInfo(undoStack: undoStack)
@@ -83,7 +83,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     func redo() {
         guard let command = redoStack.popLast() else { return }
-        print("🕹️ Redo command :", terminator:"")
+        print("🕹️ Redo command:", terminator:" ")
         command.execute(on: handwritingLayer)
         undoStack.append(command)
         printUndoStackInfo(undoStack: undoStack)

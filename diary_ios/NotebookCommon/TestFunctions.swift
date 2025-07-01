@@ -20,7 +20,7 @@ func printUndoStackInfo(undoStack: [CanvasCommand]) {
 }
 
 func printDrawingInfo(drawing: PKDrawing) {
-    print("🖊️ Drawing has \(drawing.strokes.count) strokes.")
+    print("🖊️ Drawing has \(drawing.strokes.count) strokes.", terminator:" ")
     // for (index, stroke) in drawing.strokes.enumerated() {
     //     let pointCount = stroke.path.count
     //     let toolType = stroke.ink.inkType.rawValue
