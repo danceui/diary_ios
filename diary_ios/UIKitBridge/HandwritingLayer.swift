@@ -18,7 +18,6 @@ class HandwritingLayer: PKCanvasView, ToolObserver {
         backgroundColor = .clear
         isOpaque = false
         drawingPolicy = .pencilOnly
-        // tool = PKInkingTool(.pen, color: .black, width: 5) // 默认工具
     }
 
     // MARK: - 监听触摸
