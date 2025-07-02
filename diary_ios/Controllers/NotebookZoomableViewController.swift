@@ -22,7 +22,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         self.notebookSpreadViewController.layoutDelegate = self
         self.notebookSpreadViewController.zoomStateDelegate = self
         self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
-            self?.centerContent(xOffset: offset)
+            self?.centerContent(xOffset: offset, animated: false)
         }
     }
 
@@ -41,7 +41,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         if scrollView.zoomScale != previousZoomScale {
             scrollView.setZoomScale(previousZoomScale, animated: false)
         }
-        centerContent()
+        centerContent(xOffset: 0, animated: false)
     }
 
     // MARK: - Setup
@@ -90,7 +90,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - 居中函数
-    private func centerContent(xOffset: CGFloat = 0) {
+    private func centerContent(xOffset: CGFloat = 0, animated: Bool = true) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
         let insetX = (scrollSize.width - contentSize.width) / 2
@@ -112,7 +112,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { return spreadContainer }
 
-    // func scrollViewDidZoom(_ scrollView: UIScrollView) {
     func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
         previousZoomScale = scrollView.zoomScale
         if notebookSpreadViewController.currentIndex == 0 {
