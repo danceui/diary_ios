@@ -22,7 +22,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         self.notebookSpreadViewController.layoutDelegate = self
         self.notebookSpreadViewController.zoomStateDelegate = self
         self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
-            self?.centerContent(xOffset: offset, animated: false)
+            self?.centerContent(xOffset: offset)
         }
     }
 
@@ -41,7 +41,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         if scrollView.zoomScale != previousZoomScale {
             scrollView.setZoomScale(previousZoomScale, animated: false)
         }
-        centerContent(xOffset: 0, animated: false)
+        centerContent()
     }
 
     // MARK: - Setup
@@ -90,23 +90,14 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - 居中函数
-    private func centerContent(xOffset: CGFloat = 0, animated: Bool = true) {
+    private func centerContent(xOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
         let insetX = (scrollSize.width - contentSize.width) / 2
         let insetY = (scrollSize.height - contentSize.height) / 2
-        let newInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
-        let targetOffset = CGPoint(x: -newInset.left, y: -newInset.top)
-        
-        print("===")
-        print("Center Content. InsetX: \(format(insetX)), insetY: \(format(insetY))")
-        guard insetX > 0.01, insetY > 0.01 else { return }
-        print("   scrollView.contentOffset: \(scrollView.contentOffset), scrollView.contentInset: \(scrollView.contentInset)")
+        print("insetX: \(insetX), insetY: \(insetY)")
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
-        print("   scrollView.contentOffset: \(scrollView.contentOffset), scrollView.contentInset: \(scrollView.contentInset)")
-        scrollView.contentOffset = CGPoint(x: -insetX - xOffset, y: -insetY)
-        print("   scrollView.contentOffset: \(scrollView.contentOffset), scrollView.contentInset: \(scrollView.contentInset)")
-        print("===")
+        scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
     }
     
     
@@ -120,7 +111,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { return spreadContainer }
 
-    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
         if notebookSpreadViewController.currentIndex == 0 {
             centerContent(xOffset: -spreadContainer.frame.size.width / 4)
