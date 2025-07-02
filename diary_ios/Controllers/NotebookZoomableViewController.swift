@@ -4,6 +4,10 @@ extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
     func currentSpreadContentSize() -> CGSize { return spreadContainer.frame.size }
 }
 
+extension NotebookZoomableViewController: NotebookZoomStateDelegate {
+    func isNotebookZoomedIn() -> Bool { return scrollView.zoomScale > 1.21}
+}
+
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var scrollView = UIScrollView()
     private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.pageSize.doubleSize))
@@ -12,9 +16,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 生命周期
     init(notebookSpreadViewController: NotebookSpreadViewController) {
-        self.notebookSpreadViewController = notebookSpreadViewController
         super.init(nibName: nil, bundle: nil)
+        self.notebookSpreadViewController = notebookSpreadViewController
         self.notebookSpreadViewController.layoutDelegate = self
+        self.notebookSpreadViewController.zoomStateDelegate = self
         self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
             self?.centerContent(xOffset: offset)
         }

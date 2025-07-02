@@ -15,7 +15,7 @@ class AddStrokeCommand: CanvasCommand {
     }
 
     func execute(on handwritingLayer: HandwritingLayer) {
-        guard !hasAppearedOnce else { 
+        guard hasAppearedOnce else {
             hasAppearedOnce = true
             return 
         }

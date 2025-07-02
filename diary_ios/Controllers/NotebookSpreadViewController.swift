@@ -1,7 +1,4 @@
 import UIKit
-protocol NotebookSpreadLayoutDelegate: AnyObject {
-    func currentSpreadContentSize() -> CGSize
-}
 
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegate  {
@@ -23,6 +20,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     var toShadowOpacities: [Float] = []
 
     weak var layoutDelegate: NotebookSpreadLayoutDelegate?
+    weak var zoomStateDelegate: NotebookZoomStateDelegate?
     var onProgressChanged: ((CGFloat) -> Void)?
 
     // MARK: - 生命周期
@@ -73,7 +71,8 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
 
     // MARK: - 手势相关函数
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        return touch.type == .direct
+        let isZoomed = zoomStateDelegate?.isNotebookZoomedIn() ?? false
+        return !isZoomed && touch.type == .direct
     }
 
     // MARK: - 更新 containers
