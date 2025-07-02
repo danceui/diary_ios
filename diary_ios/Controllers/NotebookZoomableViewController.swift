@@ -95,7 +95,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let contentSize = scrollView.contentSize
         let insetX = (scrollSize.width - contentSize.width) / 2
         let insetY = (scrollSize.height - contentSize.height) / 2
-        print("insetX: \(insetX), insetY: \(insetY)")
+        print("Center Content. InsetX: \(format(insetX)), insetY: \(format(insetY))")
+        guard insetX > 0.01, insetY > 0.01 else { return }
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
         scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
     }
@@ -111,7 +112,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { return spreadContainer }
 
-    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+    // func scrollViewDidZoom(_ scrollView: UIScrollView) {
+    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
         previousZoomScale = scrollView.zoomScale
         if notebookSpreadViewController.currentIndex == 0 {
             centerContent(xOffset: -spreadContainer.frame.size.width / 4)
