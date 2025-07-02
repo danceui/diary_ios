@@ -5,7 +5,7 @@ extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
 }
 
 extension NotebookZoomableViewController: NotebookZoomStateDelegate {
-    func isNotebookZoomedIn() -> Bool { return scrollView.zoomScale > 1.21}
+    func isNotebookZoomedIn() -> Bool { return scrollView.zoomScale > zoomScaleThreshold}
 }
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
@@ -13,6 +13,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.pageSize.doubleSize))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var previousZoomScale = NotebookConstants.defaultZoomScale
+    private let zoomScaleThreshold = NotebookConstants.zoomScaleThreshold
 
     // MARK: - 生命周期
     init(notebookSpreadViewController: NotebookSpreadViewController) {
@@ -92,10 +93,17 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private func centerContent(xOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
+
+        guard scrollView.zoomScale < zoomScaleThreshold else {
+            scrollView.contentInset = .zero
+            return
+        }
+
         let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
         let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
         scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
+        if insetX < 1 { printLayoutInfo(context: "Center Content") }
     }
     
     // MARK: - 调整内容缩放

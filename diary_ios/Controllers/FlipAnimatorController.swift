@@ -1,4 +1,5 @@
 import UIKit
+
 class FlipAnimatorController {
     private weak var host: NotebookSpreadViewController?
     private var animator: UIViewPropertyAnimator?
