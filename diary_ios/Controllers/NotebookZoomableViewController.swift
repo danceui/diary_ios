@@ -93,18 +93,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private func centerContent(xOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
-
-        guard scrollView.zoomScale < zoomScaleThreshold else {
-            scrollView.contentInset = .zero
-            return
-        }
-
-        let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
-        let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
+        let insetX = (scrollSize.width - contentSize.width) / 2
+        let insetY = (scrollSize.height - contentSize.height) / 2
+        print("insetX: \(insetX), insetY: \(insetY)")
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
         scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
-        if insetX < 1 { printLayoutInfo(context: "Center Content") }
     }
+    
     
     // MARK: - 调整内容缩放
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
