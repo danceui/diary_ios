@@ -95,10 +95,18 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let contentSize = scrollView.contentSize
         let insetX = (scrollSize.width - contentSize.width) / 2
         let insetY = (scrollSize.height - contentSize.height) / 2
+        let newInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
+        let targetOffset = CGPoint(x: -newInset.left, y: -newInset.top)
+        
+        print("===")
         print("Center Content. InsetX: \(format(insetX)), insetY: \(format(insetY))")
         guard insetX > 0.01, insetY > 0.01 else { return }
+        print("   scrollView.contentOffset: \(scrollView.contentOffset), scrollView.contentInset: \(scrollView.contentInset)")
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
+        print("   scrollView.contentOffset: \(scrollView.contentOffset), scrollView.contentInset: \(scrollView.contentInset)")
         scrollView.contentOffset = CGPoint(x: -insetX - xOffset, y: -insetY)
+        print("   scrollView.contentOffset: \(scrollView.contentOffset), scrollView.contentInset: \(scrollView.contentInset)")
+        print("===")
     }
     
     
