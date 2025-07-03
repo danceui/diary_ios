@@ -59,7 +59,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.decelerationRate = .fast
-        scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
+        // scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -113,18 +113,22 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
-        guard previousZoomScale <= maxZoomScaleForCentering else {
-            // stop centering
-            return
-        }
-        if notebookSpreadViewController.currentIndex == 0 {
-            centerContent(xOffset: -spreadContainer.frame.size.width / 4)
-        } else if notebookSpreadViewController.currentIndex == notebookSpreadViewController.pageCount - 2 {
-            centerContent(xOffset: spreadContainer.frame.size.width / 4)
+        if previousZoomScale <= maxZoomScaleForCentering{
+            // need centering
+            scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
+            if notebookSpreadViewController.currentIndex == 0 {
+                centerContent(xOffset: -spreadContainer.frame.size.width / 4)
+            } else if notebookSpreadViewController.currentIndex == notebookSpreadViewController.pageCount - 2 {
+                centerContent(xOffset: spreadContainer.frame.size.width / 4)
+            } else {
+                centerContent()
+            }
+            printLayoutInfo(context: "Need Centering")
         } else {
-            centerContent()
+            // stop centering
+            scrollView.panGestureRecognizer.minimumNumberOfTouches = 1
+            printLayoutInfo(context: "Stop Centering")
         }
-        printLayoutInfo(context: "Scroll View Did Zoom")
     }
 
     // MARK: - 生命周期测试函数
