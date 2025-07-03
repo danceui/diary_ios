@@ -11,6 +11,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
     private var handwritingLayer = HandwritingLayer()
+    private var previousStrokes: [PKStroke] = []
 
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
@@ -58,10 +59,25 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if handwritingLayer.strokeFinished {
             handwritingLayer.strokeFinished = false
-            if let newStroke = handwritingLayer.drawing.strokes.last {
-                let addStrokeCommand = AddStrokeCommand(stroke: newStroke, hasAppearedOnce: false)
-                executeAndSave(command: addStrokeCommand)
-                printDrawingInfo(drawing: handwritingLayer.drawing)
+
+            if handwritingLayer.tool is PKInkingTool {
+                // 笔迹添加
+                print("✏️")
+                if let newStroke = handwritingLayer.drawing.strokes.last {
+                    let addStrokeCommand = AddStrokeCommand(stroke: newStroke, hasAppearedOnce: false)
+                    executeAndSave(command: addStrokeCommand)
+                }
+            } else if handwritingLayer.tool is PKEraserTool {
+                // 橡皮擦出
+                print("🗑️")
+                let currentStrokes = handwritingLayer.drawing.strokes
+                let erasedStrokes = previousStrokes.filter { oldStroke in 
+                    !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
+                }
+                if !erasedStrokes.isEmpty {
+                    let eraseCommand = EraseStrokesCommand(erasedStrokes: erasedStrokes)
+                    executeAndSave(command: eraseCommand)
+                }
             }
         }
     }
@@ -74,6 +90,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         print("🕹️ Added new command.", terminator:" ")
         lastEditedTimestamp = Date()
         printUndoStackInfo(undoStack: undoStack)
+        printDrawingInfo(drawing: handwritingLayer.drawing)
     }
 
     func undo() {
