@@ -116,9 +116,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         if previousZoomScale <= maxZoomScaleForCentering{
             // need centering
             scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
-            if notebookSpreadViewController.currentIndex == 0 {
+            if notebookSpreadViewController.currentLeftIndex == 0 {
                 centerContent(xOffset: -spreadContainer.frame.size.width / 4)
-            } else if notebookSpreadViewController.currentIndex == notebookSpreadViewController.pageCount - 2 {
+            } else if notebookSpreadViewController.currentLeftIndex == notebookSpreadViewController.pageCount - 2 {
                 centerContent(xOffset: spreadContainer.frame.size.width / 4)
             } else {
                 centerContent()

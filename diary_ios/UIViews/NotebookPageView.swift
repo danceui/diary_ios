@@ -5,6 +5,7 @@ import PencilKit
 class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageRole: PageRole
     private let isLeft: Bool
+    private(set) var lastEditedTimestamp: Date?
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
@@ -70,12 +71,13 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         undoStack.append(command)
         redoStack.removeAll()
         print("🕹️ Added new command:", terminator:" ")
+        lastEditedTimestamp = Date()
         printUndoStackInfo(undoStack: undoStack)
     }
 
     func undo() {
         guard let command = undoStack.popLast() else { return }
-        print("🕹️ Undo command:", terminator:" ")
+        print("🕹️ UndoStack pops command.", terminator:" ")
         command.undo(on: handwritingLayer)
         redoStack.append(command)
         printUndoStackInfo(undoStack: undoStack)
@@ -83,7 +85,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     func redo() {
         guard let command = redoStack.popLast() else { return }
-        print("🕹️ Redo command:", terminator:" ")
+        print("🕹️ RedoStack pops command.", terminator:" ")
         command.execute(on: handwritingLayer)
         undoStack.append(command)
         printUndoStackInfo(undoStack: undoStack)

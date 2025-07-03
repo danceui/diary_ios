@@ -8,7 +8,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     
     var pages: [NotebookPageView] = []
     var pageCount: Int {pages.count}
-    var currentIndex: Int = 2
+    var currentLeftIndex: Int = 2
 
     var pageContainers: [UIView] = []
     var containerCount: Int = 2
@@ -89,11 +89,11 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             return 
         }
 
-        // 根据 currentIndex 确定要展开的 pageContainer
-        let offsetIndex: Int = min(max(0, currentIndex / 2 - 1), containerCount - 1)
-        let xOffsets = computeXOffsets(pageIndex: currentIndex)
-        let yOffsets = computeYOffsets(pageIndex: currentIndex)
-        let opacities = computeShadowOpacities(pageIndex: currentIndex)
+        // 根据 currentLeftIndex 确定要展开的 pageContainer
+        let offsetIndex: Int = min(max(0, currentLeftIndex / 2 - 1), containerCount - 1)
+        let xOffsets = computeXOffsets(pageIndex: currentLeftIndex)
+        let yOffsets = computeYOffsets(pageIndex: currentLeftIndex)
+        let opacities = computeShadowOpacities(pageIndex: currentLeftIndex)
         
         print("📐 PageContainers offsets: [", terminator: " ")
         for i in 0...containerCount - 1 {
@@ -101,8 +101,8 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             let thisContainer = UIView()
 
             var baseX: CGFloat = i <= offsetIndex ? 0 : view.bounds.width / 2
-            if i == 0, currentIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
-            else if i == containerCount - 1, currentIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
+            if i == 0, currentLeftIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
+            else if i == containerCount - 1, currentLeftIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
 
             let originX = xOffsets[i] + baseX
             let originY = yOffsets[i]
@@ -116,8 +116,8 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
 
             // 确定这个容器的内容
             var pageIndex: Int = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
-            if i == 0, currentIndex == 0 { pageIndex = 1 }
-            else if  i == containerCount - 1, currentIndex == pageCount - 2 { pageIndex = pageCount - 2 }
+            if i == 0, currentLeftIndex == 0 { pageIndex = 1 }
+            else if  i == containerCount - 1, currentLeftIndex == pageCount - 2 { pageIndex = pageCount - 2 }
 
             let thisPage = pages[pageIndex]
             thisContainer.addSubview(thisPage)
@@ -136,10 +136,10 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         }
 
         // 特殊处理封面和背页
-        if currentIndex == 0 {
+        if currentLeftIndex == 0 {
             view.addSubview(pageContainers[0])
         }
-        else if currentIndex == pageCount - 2 {
+        else if currentLeftIndex == pageCount - 2 {
             view.addSubview(pageContainers.last!)
         }
     }
@@ -194,12 +194,12 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             print("❌ Cannot add page during animation.")
             return
         }
-        guard currentIndex + 2 < pages.count else {
+        guard currentLeftIndex + 2 < pages.count else {
             print("❌ Cannot add page at the end.")
             return
         }
 
-        let insertIndex = currentIndex + 2
+        let insertIndex = currentLeftIndex + 2
         let leftPage = NotebookPageView(isLeft: true, initialData: initialData)
         let rightPage = NotebookPageView(isLeft: false, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
@@ -216,8 +216,44 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             return
         }
         print("▶️ Go to page pair \(index), \(index + 1).")
-        currentIndex = index
+        currentLeftIndex = index
         updatePageContainers()
+    }
+
+    // MARK: - undo redo
+    func undo() {
+        let index = computeLastEditedIndex()
+        pages[index].undo()
+        print("↩️ Undo on page #\(index).", terminator:" ")
+    }
+
+    func redo() {
+        let index = computeLastEditedIndex()
+        pages[index].undo()
+        print("↪️ Redo on page #\(index).", terminator:" ")
+    }
+    
+    private func computeLastEditedIndex() -> Int {
+        var lastEditedIndex: Int = 0
+        let left = pages[currentLeftIndex]
+        let right = pages[currentLeftIndex + 1]
+        let lTime = left.lastEditedTimestamp
+        let rTime = right.lastEditedTimestamp
+
+        if let l = lTime, let r = rTime {
+            (l > r ? left : right).undo()
+            lastEditedIndex = l > r ? 0 : 1
+        } else if lTime != nil {
+            lastEditedIndex = 0
+            left.undo()
+        } else if rTime != nil {
+            lastEditedIndex = 1
+            right.undo()
+        } else {
+            lastEditedIndex = 0
+            left.undo()
+        }
+        return currentLeftIndex + lastEditedIndex
     }
 
     // MARK: - containers 相关计算
@@ -269,13 +305,13 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         var offset: CGFloat = 0
         let easedProgress = easeInOutCubic(progress)
 
-        if currentIndex == 2 && direction == .lastPage {
+        if currentLeftIndex == 2 && direction == .lastPage {
             offset = -width / 4 * easedProgress
-        } else if currentIndex + 4 == pages.count && direction == .nextPage {
+        } else if currentLeftIndex + 4 == pages.count && direction == .nextPage {
             offset = width / 4 * easedProgress
-        } else if currentIndex == 0 && direction == .nextPage {
+        } else if currentLeftIndex == 0 && direction == .nextPage {
             offset = -width / 4 * (1 - easedProgress)
-        } else if currentIndex == pages.count - 2 && direction == .lastPage {
+        } else if currentLeftIndex == pages.count - 2 && direction == .lastPage {
             offset = width / 4 * (1 - easedProgress)
         }
         onProgressChanged?(offset)
@@ -321,26 +357,6 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         printLifeCycleInfo(context: "[\(type(of: self))] 9️⃣ viewDidDisappear", for: view)
     }
 
-    func undo() {
-        // print("↩️ Undo on page #\(currentIndex).", terminator:" ")
-        if currentIndex < pages.count {
-            pages[currentIndex].undo()
-        }
-        if currentIndex + 1 < pages.count {
-            pages[currentIndex + 1].undo()
-        }
-    }
-
-    func redo() {
-        // print("↪️ Redo on page #\(currentIndex).", terminator:" ")
-        if currentIndex < pages.count {
-            pages[currentIndex].redo()
-        }
-        if currentIndex + 1 < pages.count {
-            pages[currentIndex + 1].redo()
-        }
-    }
-    
     // MARK: - 常量
     private let baseOffset = StackConstants.baseOffset
     private let progressThreshold = FlipConstants.progressThreshold

@@ -30,23 +30,23 @@ class FlipAnimatorController {
         }
         cleanupViews()
         
-        let targetIndex = direction == .nextPage ? host.currentIndex + 2 : host.currentIndex - 2
-        guard host.currentIndex >= 0, host.currentIndex <= host.pageCount - 2, targetIndex >= 0, targetIndex <= host.pageCount - 2 else {
-            print("❌ Page index invalid. Current index \(host.currentIndex). Target index \(targetIndex)")
+        let targetIndex = direction == .nextPage ? host.currentLeftIndex + 2 : host.currentLeftIndex - 2
+        guard host.currentLeftIndex >= 0, host.currentLeftIndex <= host.pageCount - 2, targetIndex >= 0, targetIndex <= host.pageCount - 2 else {
+            print("❌ Page index invalid. Current index \(host.currentLeftIndex). Target index \(targetIndex)")
             state = .idle
             return
         }
-        host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentIndex)
+        host.fromYOffsets = host.computeYOffsets(pageIndex: host.currentLeftIndex)
         host.toYOffsets = host.computeYOffsets(pageIndex: targetIndex)
-        host.fromXOffsets = host.computeXOffsets(pageIndex: host.currentIndex)
+        host.fromXOffsets = host.computeXOffsets(pageIndex: host.currentLeftIndex)
         host.toXOffsets = host.computeXOffsets(pageIndex: targetIndex)
-        host.fromShadowOpacities = host.computeShadowOpacities(pageIndex: host.currentIndex)
+        host.fromShadowOpacities = host.computeShadowOpacities(pageIndex: host.currentLeftIndex)
         host.toShadowOpacities = host.computeShadowOpacities(pageIndex: targetIndex)
         containerOffset = computeContainerOffset(direction: direction, targetIndex: targetIndex)
 
         // 生成前后快照
-        let currentLeftView = host.pages[host.currentIndex]
-        let currentRightView = host.pages[host.currentIndex + 1]
+        let currentLeftView = host.pages[host.currentLeftIndex]
+        let currentRightView = host.pages[host.currentLeftIndex + 1]
         let targetLeftView = host.pages[targetIndex]
         let targetRightView = host.pages[targetIndex + 1]
         guard let frontSnapshot = direction == .nextPage ? currentRightView.snapshotView(afterScreenUpdates: true) : currentLeftView.snapshotView(afterScreenUpdates: true),
@@ -59,16 +59,16 @@ class FlipAnimatorController {
         self.backSnapshot = backSnapshot
 
         // 隐藏即将被旋转的 pageContainer, 这一步必须在snapshot后面
-        let offsetIndex = min(max(host.currentIndex / 2 - 1, 0), host.containerCount - 1)
+        let offsetIndex = min(max(host.currentLeftIndex / 2 - 1, 0), host.containerCount - 1)
         var offsetIndexToRemove: Int
         if direction == .nextPage {
-            if host.currentIndex == 0 {
+            if host.currentLeftIndex == 0 {
                 offsetIndexToRemove = 0
             } else {
                 offsetIndexToRemove = offsetIndex + 1
             }
         } else {
-            if host.currentIndex == host.pageCount - 2 {
+            if host.currentLeftIndex == host.pageCount - 2 {
                 offsetIndexToRemove = host.containerCount - 1
             } else {
                 offsetIndexToRemove = offsetIndex
@@ -174,7 +174,7 @@ class FlipAnimatorController {
             if i >= predictedProgress.count {
                 timer.invalidate()
                 print("🔘 Complete animation [state was \(self.state)].")
-                self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentIndex + 2 : self.host!.currentIndex - 2)
+                self.host?.goToPagePair(to: direction == .nextPage ? self.host!.currentLeftIndex + 2 : self.host!.currentLeftIndex - 2)
                 self.cleanupViews()
                 self.cleanupAnimations()
                 return
@@ -203,7 +203,7 @@ class FlipAnimatorController {
 
         if abs(progress) < 0.002 {
             print("🔘 Cancel animation [progress < 0.002].")
-            host.goToPagePair(to: host.currentIndex)
+            host.goToPagePair(to: host.currentLeftIndex)
             self.cleanupViews()
             self.cleanupAnimations()
             return
@@ -230,7 +230,7 @@ class FlipAnimatorController {
         Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
             if i >= predictedProgress.count {
                 timer.invalidate()
-                host.goToPagePair(to: host.currentIndex)
+                host.goToPagePair(to: host.currentLeftIndex)
                 print("🔘 Cancel animation.")
                 self.cleanupViews()
                 self.cleanupAnimations()
@@ -313,7 +313,7 @@ class FlipAnimatorController {
         guard let host = host else { return 0 }
         var originX: CGFloat = 0
         
-        if host.currentIndex == 0 {
+        if host.currentLeftIndex == 0 {
             originX = containerSize.width
         } else {
             originX = direction == .nextPage ? computeXDecay(1) + containerSize.width : 0
@@ -325,7 +325,7 @@ class FlipAnimatorController {
         guard let host = host else { return 0 }
         var containerOffset: CGFloat = 0
 
-        if host.currentIndex == 0 || targetIndex == 0 {
+        if host.currentLeftIndex == 0 || targetIndex == 0 {
             containerOffset = 0
         } else {
             containerOffset = computeXDecay(1)
