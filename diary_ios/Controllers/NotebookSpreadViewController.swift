@@ -223,13 +223,13 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     // MARK: - undo redo
     func undo() {
         let index = computeLastEditedIndex()
-        print("↩️ Undo on page #\(index).", terminator:" ")
+        print("↩️ Undo on page #\(index).")
         pages[index].undo()
     }
 
     func redo() {
         let index = computeLastEditedIndex()
-        print("↪️ Redo on page #\(index).", terminator:" ")
+        print("↪️ Redo on page #\(index).")
         pages[index].redo()
     }
     

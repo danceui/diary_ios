@@ -61,6 +61,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             if let newStroke = handwritingLayer.drawing.strokes.last {
                 let addStrokeCommand = AddStrokeCommand(stroke: newStroke, hasAppearedOnce: false)
                 executeAndSave(command: addStrokeCommand)
+                printDrawingInfo(drawing: handwritingLayer.drawing)
             }
         }
     }
@@ -70,7 +71,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         command.execute(on: handwritingLayer)
         undoStack.append(command)
         redoStack.removeAll()
-        print("🕹️ Added new command:", terminator:" ")
+        print("🕹️ Added new command.", terminator:" ")
         lastEditedTimestamp = Date()
         printUndoStackInfo(undoStack: undoStack)
     }
