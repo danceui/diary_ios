@@ -13,7 +13,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.pageSize.doubleSize))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var previousZoomScale = NotebookConstants.defaultZoomScale
+
+    private let defaultZoomScale = NotebookConstants.defaultZoomScale
     private let maxZoomScaleForFlipping = NotebookConstants.maxZoomScaleForFlipping
+    private let maxZoomScaleForCentering = NotebookConstants.maxZoomScaleForCentering
 
     // MARK: - 生命周期
     init(notebookSpreadViewController: NotebookSpreadViewController) {
@@ -96,15 +99,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let insetX = (scrollSize.width - contentSize.width) / 2
         let insetY = (scrollSize.height - contentSize.height) / 2
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
-        // scrollView.contentOffset = CGPoint(x: -insetX - xOffset, y: -insetY)
     }
     
     
     // MARK: - 调整内容缩放
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        let targetScale: CGFloat = scrollView.zoomScale > 0.9 ? 0.8 : 1.0
-        scrollView.setZoomScale(targetScale, animated: true)
-        previousZoomScale = targetScale
+        scrollView.setZoomScale(defaultZoomScale, animated: true)
+        previousZoomScale = defaultZoomScale
         printLayoutInfo(context: "Double Tap")
     }
 
@@ -112,7 +113,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
-        guard previousZoomScale < 0.9 else { return }
+        guard previousZoomScale <= maxZoomScaleForCentering else {
+            // stop centering
+            return
+        }
         if notebookSpreadViewController.currentIndex == 0 {
             centerContent(xOffset: -spreadContainer.frame.size.width / 4)
         } else if notebookSpreadViewController.currentIndex == notebookSpreadViewController.pageCount - 2 {
@@ -121,12 +125,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             centerContent()
         }
         printLayoutInfo(context: "Scroll View Did Zoom")
-    }
-
-    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
-        previousZoomScale = scrollView.zoomScale
-        guard previousZoomScale >= 0.9 else { return }
-        printLayoutInfo(context: "Scroll View Did End Zoom")
     }
 
     // MARK: - 生命周期测试函数
