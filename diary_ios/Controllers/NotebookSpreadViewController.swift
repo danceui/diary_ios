@@ -229,7 +229,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
 
     func redo() {
         let index = computeLastEditedIndex()
-        pages[index].undo()
+        pages[index].redo()
         print("↪️ Redo on page #\(index).", terminator:" ")
     }
     
@@ -241,17 +241,13 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         let rTime = right.lastEditedTimestamp
 
         if let l = lTime, let r = rTime {
-            (l > r ? left : right).undo()
             lastEditedIndex = l > r ? 0 : 1
         } else if lTime != nil {
             lastEditedIndex = 0
-            left.undo()
         } else if rTime != nil {
             lastEditedIndex = 1
-            right.undo()
         } else {
             lastEditedIndex = 0
-            left.undo()
         }
         return currentLeftIndex + lastEditedIndex
     }
