@@ -91,13 +91,12 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 居中函数
     private func centerContent(xOffset: CGFloat = 0) {
-        guard previousZoomScale < 0.9 else { return }
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
         let insetX = (scrollSize.width - contentSize.width) / 2
         let insetY = (scrollSize.height - contentSize.height) / 2
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
-        scrollView.contentOffset = CGPoint(x: -insetX - xOffset, y: -insetY)
+        // scrollView.contentOffset = CGPoint(x: -insetX - xOffset, y: -insetY)
     }
     
     
@@ -111,10 +110,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { return spreadContainer }
 
-    // func scrollViewDidZoom(_ scrollView: UIScrollView) {
-
-    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
         previousZoomScale = scrollView.zoomScale
+        guard previousZoomScale < 0.9 else { return }
         if notebookSpreadViewController.currentIndex == 0 {
             centerContent(xOffset: -spreadContainer.frame.size.width / 4)
         } else if notebookSpreadViewController.currentIndex == notebookSpreadViewController.pageCount - 2 {
@@ -122,6 +120,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         } else {
             centerContent()
         }
+        printLayoutInfo(context: "Scroll View Did Zoom")
+    }
+
+    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+        previousZoomScale = scrollView.zoomScale
+        guard previousZoomScale >= 0.9 else { return }
+        printLayoutInfo(context: "Scroll View Did End Zoom")
     }
 
     // MARK: - 生命周期测试函数
