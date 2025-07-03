@@ -20,13 +20,11 @@ class AddStrokeCommand: CanvasCommand {
             return 
         }
         handwritingLayer.drawing.strokes.append(stroke)
-        printDrawingInfo(drawing: handwritingLayer.drawing)
     }
 
     func undo(on handwritingLayer: HandwritingLayer) {
         if !handwritingLayer.drawing.strokes.isEmpty {
             handwritingLayer.drawing.strokes.removeLast()
-            printDrawingInfo(drawing: handwritingLayer.drawing)
         }
     }
 }

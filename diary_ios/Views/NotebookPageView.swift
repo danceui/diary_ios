@@ -62,7 +62,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
             if handwritingLayer.tool is PKInkingTool {
                 // 笔迹添加
-                print("✏️")
                 if let newStroke = handwritingLayer.drawing.strokes.last {
                     let addStrokeCommand = AddStrokeCommand(stroke: newStroke, hasAppearedOnce: false)
                     executeAndSave(command: addStrokeCommand)
@@ -73,15 +72,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
                 let erasedStrokes = previousStrokes.filter { oldStroke in 
                     !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
                 }
-                print("🗑️ #ErasedStroke: \(erasedStrokes.count)")
                 if !erasedStrokes.isEmpty {
                     let eraseCommand = EraseStrokesCommand(erasedStrokes: erasedStrokes)
                     executeAndSave(command: eraseCommand)
                 }
             }
         }
-        previousStrokes = handwritingLayer.drawing.strokes
-        print("❓ #PreviousStrokes: \(previousStrokes.count)")
     }
 
     // MARK: - Undo/Redo Manager
@@ -89,31 +85,39 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         command.execute(on: handwritingLayer)
         undoStack.append(command)
         redoStack.removeAll()
+        updateTimestamp()
+
         print("🕹️ Added new command.", terminator:" ")
-        lastEditedTimestamp = Date()
-        printUndoStackInfo(undoStack: undoStack)
-        printDrawingInfo(drawing: handwritingLayer.drawing)
+        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        updatePreviousStrokes()
     }
 
     func undo() {
         guard let command = undoStack.popLast() else { return }
-        print("🕹️ UndoStack pops command.", terminator:" ")
         command.undo(on: handwritingLayer)
         redoStack.append(command)
-        printUndoStackInfo(undoStack: undoStack)
+
+        print("🕹️ UndoStack pops command.", terminator:" ")
+        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        updatePreviousStrokes()
     }
 
     func redo() {
         guard let command = redoStack.popLast() else { return }
-        print("🕹️ RedoStack pops command.", terminator:" ")
         command.execute(on: handwritingLayer)
         undoStack.append(command)
-        printUndoStackInfo(undoStack: undoStack)
+
+        print("🕹️ RedoStack pops command.", terminator:" ")
+        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        updatePreviousStrokes()
     }
 
-    func reset() {
-        undoStack.removeAll()
-        redoStack.removeAll()
-        print("🕹️ Cleared command history.")
+    private func updatePreviousStrokes() {
+        previousStrokes = handwritingLayer.drawing.strokes
+        print("   ✏️ Updated drawing has \(previousStrokes.count) strokes.")
+    }
+
+    private func updateTimestamp() {
+        lastEditedTimestamp = Date()
     }
 }

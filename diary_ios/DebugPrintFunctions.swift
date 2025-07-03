@@ -11,8 +11,8 @@ func printLifeCycleInfo(context: String, for view: UIView){
     // print("   📌 view.frame.size: \(formatSize(view.frame.size))")
 }
 
-func printUndoStackInfo(undoStack: [CanvasCommand]) {
-    print("📈 UndoStack has \(undoStack.count) commands.")
+func printStackInfo(undoStack: [CanvasCommand], redoStack: [CanvasCommand]) {
+    print("📦 UndoStack has \(undoStack.count) commands, RedoStack has \(redoStack.count) commands.")
     // for (index, command) in undoStack.enumerated() {
     //     let typeName = String(describing: type(of: command))
     //     print("  [\(index)] \(typeName)")
