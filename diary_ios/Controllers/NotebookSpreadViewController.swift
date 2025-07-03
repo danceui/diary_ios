@@ -66,6 +66,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     private func setupGestureRecognizers() {
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         panGesture.delegate = self
+        panGesture.maximumNumberOfTouches = 1
         view.addGestureRecognizer(panGesture)
     }
 
