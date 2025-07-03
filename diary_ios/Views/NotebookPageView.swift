@@ -68,18 +68,20 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
                     executeAndSave(command: addStrokeCommand)
                 }
             } else if handwritingLayer.tool is PKEraserTool {
-                // 橡皮擦出
-                print("🗑️")
+                // 橡皮擦除
                 let currentStrokes = handwritingLayer.drawing.strokes
                 let erasedStrokes = previousStrokes.filter { oldStroke in 
                     !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
                 }
+                print("🗑️ #ErasedStroke: \(erasedStrokes.count)")
                 if !erasedStrokes.isEmpty {
                     let eraseCommand = EraseStrokesCommand(erasedStrokes: erasedStrokes)
                     executeAndSave(command: eraseCommand)
                 }
             }
         }
+        previousStrokes = handwritingLayer.drawing.strokes
+        print("❓ #PreviousStrokes: \(previousStrokes.count)")
     }
 
     // MARK: - Undo/Redo Manager
