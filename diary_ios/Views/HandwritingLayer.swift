@@ -26,23 +26,19 @@ class HandwritingLayer: PKCanvasView, ToolObserver {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
         strokeFinished = true
+        refreshDrawingIfEraser()
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
         strokeFinished = true
+        refreshDrawingIfEraser()
     }
 
-    // MARK: - API for commands
-    func add(stroke: PKStroke) {
-        self.drawing.strokes.append(stroke)
-        printDrawingInfo(drawing: self.drawing)
-    }
-
-    func remove() {
-        if !self.drawing.strokes.isEmpty {
-            self.drawing.strokes.removeLast()
-            printDrawingInfo(drawing: self.drawing)
+    private func refreshDrawingIfEraser() {
+        if self.tool is PKEraserTool {
+            let current = self.drawing
+            self.drawing = current
         }
     }
 
