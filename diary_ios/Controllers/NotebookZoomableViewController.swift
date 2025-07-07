@@ -59,7 +59,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.decelerationRate = .fast
-        // scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -96,8 +95,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private func centerContent(xOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
-        let insetX = (scrollSize.width - contentSize.width) / 2
-        let insetY = (scrollSize.height - contentSize.height) / 2
+        let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
+        let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
         scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
     }
     
@@ -169,8 +168,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         // print("   📌 scrollView.frame: \(formatRect(scrollView.frame))")
         print("   📌 scrollView.bounds: \(formatRect(scrollView.bounds))")
         print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
-        print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
-        print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        print("   📌 scrollView.contentInset: top \(format(scrollView.contentInset.top)), left \(format(scrollView.contentInset.left)), bottom \(format(scrollView.contentInset.bottom)), right \(format(scrollView.contentInset.right))")
+        // print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
+        // print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
         // print("   📌 notebookView.frame: \(formatRect(notebookSpreadViewController.view.frame))")
         // print("   📌 notebookView.bounds: \(formatRect(notebookSpreadViewController.view.bounds))")
     }
