@@ -10,7 +10,10 @@ extension NotebookZoomableViewController: NotebookZoomStateDelegate {
 
 class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var scrollView = UIScrollView()
-    private var spreadContainer = UIView(frame: CGRect(origin: .zero, size: PageConstants.pageSize.doubleSize))
+    private var spreadContainer = UIView(frame: CGRect(origin: .zero, 
+                                    size: CGSize(
+                                        width: PageConstants.pageSize.size.width * 2 + ZoomConstants.padding * 2, 
+                                        height: PageConstants.pageSize.size.height + ZoomConstants.padding * 2)))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var lastZoomScale = NotebookConstants.defaultZoomScale
 
@@ -18,6 +21,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private let defaultZoomScale = NotebookConstants.defaultZoomScale
     private let maxZoomScaleForFlipping = NotebookConstants.maxZoomScaleForFlipping
     private let maxZoomScaleForCentering = NotebookConstants.maxZoomScaleForCentering
+    private let padding = ZoomConstants.padding
 
     // MARK: - 生命周期
     init(notebookSpreadViewController: NotebookSpreadViewController) {
@@ -76,10 +80,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
         notebookSpreadViewController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor),
-            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor),
-            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor),
-            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor)
+            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor, constant: padding),
+            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor, constant: -padding),
+            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor, constant: padding),
+            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor, constant: -padding)
         ])
         // 强制立即布局，确保约束生效，spreadContainer frame 正确
         spreadContainer.layoutIfNeeded()
@@ -116,23 +120,19 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             printLayoutInfo(context: "Need Centering")
         } else {
             // stop centering
+            centerContent()
             scrollView.panGestureRecognizer.minimumNumberOfTouches = 1
-            printLayoutInfo(context: "Stop Centering")
+            printLayoutInfo(context: "Still Centering")
         }
     }
 
     // MARK: - 调整内容位置
     private func centerContent(xOffset: CGFloat = 0) {
-        // let scrollSize = scrollView.bounds.size
-        // let contentSize = scrollView.contentSize
-        // let insetX = max((scrollSize.width - contentSize.width) / 2, 0)
-        // let insetY = max((scrollSize.height - contentSize.height) / 2, 0)
-        // scrollView.contentInset = UIEdgeInsets(top: insetY, left: insetX + xOffset, bottom: insetY, right: insetX - xOffset)
-
-        spreadContainer.center = CGPoint(
-            x: scrollView.bounds.width * 0.5 + xOffset,
-            y: scrollView.bounds.height * 0.5
-        )
+        let scrollSize = scrollView.bounds.size
+        let contentSize = scrollView.contentSize
+        let centerX = max((scrollSize.width - contentSize.width) / 2, 0) + contentSize.width / 2
+        let centerY = max((scrollSize.height - contentSize.height) / 2, 0) + contentSize.height / 2
+        spreadContainer.center = CGPoint(x: centerX + xOffset, y: centerY)
     }
 
     // MARK: - 生命周期测试函数
@@ -172,10 +172,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("   📌 scrollView.zoomScale: \(format(scrollView.zoomScale))")
         // print("   📌 scrollView.frame: \(formatRect(scrollView.frame))")
         print("   📌 scrollView.bounds: \(formatRect(scrollView.bounds))")
-        print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
-        print("   📌 scrollView.contentInset: (t \(format(scrollView.contentInset.top)), l \(format(scrollView.contentInset.left)), b \(format(scrollView.contentInset.bottom)), r \(format(scrollView.contentInset.right)))")
-        // print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
-        // print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        // print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
+        print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
+        print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
+        print("   📌 spreadContainer.center: \(formatPoint(spreadContainer.center))")
         // print("   📌 notebookView.frame: \(formatRect(notebookSpreadViewController.view.frame))")
         // print("   📌 notebookView.bounds: \(formatRect(notebookSpreadViewController.view.bounds))")
     }

@@ -20,7 +20,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
         self.pageRole = role
         self.isLeft = isLeft
-        super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.singleSize))
+        super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
         if role == .normal {
             handwritingLayer.delegate = self 
