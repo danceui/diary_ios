@@ -36,7 +36,7 @@ struct PageConstants {
 }
 
 struct NotebookConstants {
-    static let defaultZoomScale: CGFloat = 0.8
+    static let defaultZoomScale: CGFloat = 0.7
     static let maxZoomScaleForFlipping: CGFloat = 0.9
     static let maxZoomScaleForCentering: CGFloat = 0.8
     static let maxZoomScale: CGFloat = 3.0

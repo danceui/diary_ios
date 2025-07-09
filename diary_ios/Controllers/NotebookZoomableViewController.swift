@@ -120,7 +120,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
             }
             printLayoutInfo(context: "Need Centering")
         } else {
-            // stop centering
+            // still centering
             centerContent()
             scrollView.panGestureRecognizer.minimumNumberOfTouches = 1
             printLayoutInfo(context: "Still Centering")
@@ -173,7 +173,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         print("   📌 scrollView.zoomScale: \(format(scrollView.zoomScale))")
         // print("   📌 scrollView.frame: \(formatRect(scrollView.frame))")
         print("   📌 scrollView.bounds: \(formatRect(scrollView.bounds))")
-        // print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
+        print("   📌 scrollView.contentSize: \(formatSize(scrollView.contentSize))")
         print("   📌 spreadContainer.frame: \(formatRect(spreadContainer.frame))")
         print("   📌 spreadContainer.bounds: \(formatRect(spreadContainer.bounds))")
         print("   📌 spreadContainer.center: \(formatPoint(spreadContainer.center))")
