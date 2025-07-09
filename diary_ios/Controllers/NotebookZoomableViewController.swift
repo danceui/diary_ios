@@ -108,22 +108,13 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         lastZoomScale = scrollView.zoomScale
-        if lastZoomScale <= maxZoomScaleForCentering{
-            // need centering
-            scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
-            if notebookSpreadViewController.currentLeftIndex == 0 {
-                centerContent(xOffset: -spreadContainer.frame.size.width / 4)
-            } else if notebookSpreadViewController.currentLeftIndex == notebookSpreadViewController.pageCount - 2 {
-                centerContent(xOffset: spreadContainer.frame.size.width / 4)
-            } else {
-                centerContent()
-            }
-            printLayoutInfo(context: "Need Centering")
+        scrollView.panGestureRecognizer.minimumNumberOfTouches = lastZoomScale <= maxZoomScaleForCentering ? 2 : 1
+        if notebookSpreadViewController.currentLeftIndex == 0 {
+            centerContent(xOffset: -spreadContainer.frame.size.width / 4)
+        } else if notebookSpreadViewController.currentLeftIndex == notebookSpreadViewController.pageCount - 2 {
+            centerContent(xOffset: spreadContainer.frame.size.width / 4)
         } else {
-            // still centering
             centerContent()
-            scrollView.panGestureRecognizer.minimumNumberOfTouches = 1
-            printLayoutInfo(context: "Still Centering")
         }
     }
 
