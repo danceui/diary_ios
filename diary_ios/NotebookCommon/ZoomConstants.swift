@@ -1,5 +1,6 @@
 import UIKit
 
 struct ZoomConstants {
-    static let padding: CGFloat = 50.0
+    static let horizontalPadding: CGFloat = 70.0
+    static let verticalPadding: CGFloat = 100.0
 }

@@ -12,8 +12,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var scrollView = UIScrollView()
     private var spreadContainer = UIView(frame: CGRect(origin: .zero, 
                                     size: CGSize(
-                                        width: PageConstants.pageSize.size.width * 2 + ZoomConstants.padding * 2, 
-                                        height: PageConstants.pageSize.size.height + ZoomConstants.padding * 2)))
+                                        width: PageConstants.pageSize.size.width * 2 + ZoomConstants.horizontalPadding * 2, 
+                                        height: PageConstants.pageSize.size.height + ZoomConstants.verticalPadding * 2)))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var lastZoomScale = NotebookConstants.defaultZoomScale
 
@@ -21,7 +21,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private let defaultZoomScale = NotebookConstants.defaultZoomScale
     private let maxZoomScaleForFlipping = NotebookConstants.maxZoomScaleForFlipping
     private let maxZoomScaleForCentering = NotebookConstants.maxZoomScaleForCentering
-    private let padding = ZoomConstants.padding
+    private let horizontalPadding = ZoomConstants.horizontalPadding
+    private let verticalPadding = ZoomConstants.verticalPadding
 
     // MARK: - 生命周期
     init(notebookSpreadViewController: NotebookSpreadViewController) {
@@ -40,7 +41,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         setupScrollView()
         setupSpreadViewController()
         setupGestures()
-        // setupTestFunctions()
+        setupTestFunctions()
     }
 
     override func viewDidLayoutSubviews() {
@@ -80,10 +81,10 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
         notebookSpreadViewController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor, constant: padding),
-            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor, constant: -padding),
-            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor, constant: padding),
-            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor, constant: -padding)
+            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor, constant: verticalPadding),
+            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor, constant: -verticalPadding),
+            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor, constant: horizontalPadding),
+            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor, constant: -horizontalPadding)
         ])
         // 强制立即布局，确保约束生效，spreadContainer frame 正确
         spreadContainer.layoutIfNeeded()
