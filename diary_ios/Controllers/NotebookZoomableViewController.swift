@@ -5,7 +5,6 @@ extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
 }
 
 extension NotebookZoomableViewController: NotebookZoomStateDelegate {
-    // func isNotebookZoomedIn() -> Bool { return scrollView.zoomScale > maxZoomScaleForFlipping}
     func isNotebookZoomedIn() -> Bool { return isZoomedIn}
 }
 
@@ -127,17 +126,21 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         let centerX = max((scrollSize.width - contentSize.width) / 2, 0) + contentSize.width / 2
         let centerY = max((scrollSize.height - contentSize.height) / 2, 0) + contentSize.height / 2
         spreadContainer.center = CGPoint(x: centerX + xOffset, y: centerY)
-        updateIsZoomedIn()
     }
 
     // MARK: - 更新位置关系
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        printLayoutInfo(context: "View Did Scroll")
+        updateIsZoomedIn()
+    }
+
     func updateIsZoomedIn() {
         let visibleRect = scrollView.convert(scrollView.bounds, to: notebookSpreadViewController.view)
         let spreadViewBounds = notebookSpreadViewController.view.bounds
         print("🔍 Updating isZoomedIn()")
         print("   📐 notebookSpreadView.bounds: \(formatRect(spreadViewBounds))")
         print("   📐 visibleRect in notebookView: \(formatRect(visibleRect))")
-        isZoomedIn = visibleRect.size.width < spreadViewBounds.width || visibleRect.size.height + verticalTolerance < spreadViewBounds.height
+        isZoomedIn = !visibleRect.contains(spreadViewBounds)
         print("   👀 isFullyVisible: \(!isZoomedIn)")
     }
 
