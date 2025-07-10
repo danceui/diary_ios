@@ -22,7 +22,7 @@ class StickerLayer: UIView {
     }
 
     // MARK: - 点击添加贴纸的功能
-    private var onStickerAdded: ((Sticker) -> Void)?
+    var onStickerAdded: ((Sticker) -> Void)?
     private var readyToAddSticker = true
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -30,7 +30,7 @@ class StickerLayer: UIView {
         guard let touch = touches.first else { return }
 
         let location = touch.location(in: self)
-        let sticker = Sticker(id: UUID(), center: location)
+        let sticker = Sticker(id: UUID(), center: location, name: "star")
         // let view = StickerView(model: sticker)
         // stickers.append(view)
         // addSubview(view)

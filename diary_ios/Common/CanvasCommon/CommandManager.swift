@@ -75,6 +75,7 @@ class AddStickerCommand: CanvasCommand {
     func undo() {
         if !stickerLayer.stickers.isEmpty {
             stickerLayer.stickers.removeLast()
+            stickerLayer.updateStickersView()
         }
     }
 }

@@ -83,6 +83,8 @@ class HandwritingLayer: PKCanvasView {
             self.tool = PKInkingTool(.marker, color: color, width: width)
         case .eraser:
             self.tool = PKEraserTool(.vector) // 或 .bitmap 根据需要切换
+        default:
+            break
         }
     }
 }

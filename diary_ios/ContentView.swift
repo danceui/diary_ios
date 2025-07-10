@@ -23,6 +23,7 @@ struct ContentView: View {
                     Text("Pen").tag(Tool.pen)
                     Text("Eraser").tag(Tool.eraser)
                     Text("Highlighter").tag(Tool.highlighter)
+                    Text("Sticker").tag(Tool.sticker)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .onChange(of: selectedTool) { newTool in
@@ -36,6 +37,8 @@ struct ContentView: View {
                         ToolManager.shared.strokeWidth = 10.0
                     case .eraser:
                         break // 颜色／粗细在 HandwritingLayer 忽略
+                    case .sticker:
+                        break // 颜色／粗细忽略
                     }
                 }
 

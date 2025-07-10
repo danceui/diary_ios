@@ -5,10 +5,10 @@ import PencilKit
 class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let pageRole: PageRole
     private let isLeft: Bool
-    private var lastEditedTimestamp: Date?
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
+    private(set) var lastEditedTimestamp: Date?
 
     private var handwritingLayer = HandwritingLayer()
     private var stickerLayer = StickerLayer()
@@ -30,10 +30,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             addSubview(handwritingLayer)
             addSubview(stickerLayer)
 
-            stickerLayer.setOnStickerAdded { [weak self] sticker in
+            stickerLayer.onStickerAdded = { [weak self] sticker in
                 guard let self = self else { return }
-                let cmd = AddStickerCommand(sticker: sticker, layer: stickerLayer)
-                self.executeAndSaveSticker(command: cmd)
+                let cmd = AddStickerCommand(sticker: sticker, layer: self.stickerLayer)
+                self.executeAndSave(command: cmd)
             }
         }
     }
@@ -55,6 +55,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         case .pen, .highlighter, .eraser:
             handwritingLayer.toolDidChange(tool: tool, color: color, width: width)
         case .sticker:
+            break
         default:
             break
         }
@@ -110,7 +111,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - Undo/Redo Manager
     func executeAndSave(command: CanvasCommand) {
-        command.execute(on: handwritingLayer)
+        command.execute()
         undoStack.append(command)
         redoStack.removeAll()
         updateTimestamp()
@@ -122,7 +123,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     func undo() {
         guard let command = undoStack.popLast() else { return }
-        command.undo(on: handwritingLayer)
+        command.undo()
         redoStack.append(command)
 
         print("🕹️ UndoStack pops command.", terminator:" ")
@@ -132,7 +133,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     func redo() {
         guard let command = redoStack.popLast() else { return }
-        command.execute(on: handwritingLayer)
+        command.execute()
         undoStack.append(command)
 
         print("🕹️ RedoStack pops command.", terminator:" ")
