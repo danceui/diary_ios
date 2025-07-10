@@ -1,6 +1,6 @@
 import UIKit
 
-class StickerLayer: UIView, CanvasLayer {
+class StickerLayer: UIView {
     var stickers: [Sticker] = []
 
     func addSticker(_ sticker: Sticker) {

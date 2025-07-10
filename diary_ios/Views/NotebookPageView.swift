@@ -29,11 +29,11 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             handwritingLayer.delegate = self 
             addSubview(handwritingLayer)
             addSubview(stickerLayer)
-            
+
             stickerLayer.setOnStickerAdded { [weak self] sticker in
                 guard let self = self else { return }
-                let command = AddStickerCommand(sticker: sticker)
-                self.executeAndSaveSticker(command: command)
+                let cmd = AddStickerCommand(sticker: sticker, layer: stickerLayer)
+                self.executeAndSaveSticker(command: cmd)
             }
         }
     }
@@ -91,8 +91,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             if handwritingLayer.tool is PKInkingTool {
                 // 笔迹添加
                 if let newStroke = handwritingLayer.drawing.strokes.last {
-                    let addStrokeCommand = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false)
-                    executeAndSave(command: addStrokeCommand)
+                    let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
+                    executeAndSave(command: cmd)
                 }
             } else if handwritingLayer.tool is PKEraserTool {
                 // 橡皮擦除
@@ -101,8 +101,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
                     !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
                 }
                 if !erasedStrokes.isEmpty {
-                    let eraseCommand = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false)
-                    executeAndSave(command: eraseCommand)
+                    let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
+                    executeAndSave(command: cmd)
                 }
             }
         }

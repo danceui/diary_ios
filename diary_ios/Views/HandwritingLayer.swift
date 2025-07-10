@@ -1,7 +1,7 @@
 import PencilKit
 import UIKit
 
-class HandwritingLayer: PKCanvasView, CanvasLayer {
+class HandwritingLayer: PKCanvasView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupCanvas()
