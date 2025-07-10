@@ -29,6 +29,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             handwritingLayer.delegate = self 
             addSubview(handwritingLayer)
             addSubview(stickerLayer)
+            
+            stickerLayer.setOnStickerAdded { [weak self] sticker in
+                guard let self = self else { return }
+                let command = AddStickerCommand(sticker: sticker)
+                self.executeAndSaveSticker(command: command)
+            }
         }
     }
 

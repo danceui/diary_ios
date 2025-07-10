@@ -71,11 +71,13 @@ class AddStickerCommand: CanvasCommand {
 
     func execute(on layer: CanvasLayer) {
         guard let stickerLayer = layer as? StickerLayer else { return }
-        stickerLayer.stickers.append(sticker)
+        stickerLayer.addSticker(sticker)
     }
 
     func undo(on layer: CanvasLayer) {
         guard let stickerLayer = layer as? StickerLayer else { return }
-        stickerLayer.stickers.remove?
+        if !stickerLayer.stickers.isEmpty {
+            stickerLayer.stickers.removeLast()
+        }
     }
 }
