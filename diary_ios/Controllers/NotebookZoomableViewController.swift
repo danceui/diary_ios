@@ -42,7 +42,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         setupScrollView()
         setupSpreadViewController()
         setupGestures()
-        setupTestFunctions()
+        // setupTestFunctions()
     }
 
     override func viewDidLayoutSubviews() {
