@@ -1,17 +1,15 @@
 import PencilKit
 import UIKit
 
-class HandwritingLayer: PKCanvasView, ToolObserver {
+class HandwritingLayer: PKCanvasView, CanvasLayer {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupCanvas()
-        ToolManager.shared.addObserver(self)
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupCanvas()
-        ToolManager.shared.addObserver(self)
     }
 
     private func setupCanvas() {
@@ -77,6 +75,7 @@ class HandwritingLayer: PKCanvasView, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+        guard tool.isHandwriting else { return }
         switch tool {
         case .pen:
             self.tool = PKInkingTool(.pen, color: color, width: width)

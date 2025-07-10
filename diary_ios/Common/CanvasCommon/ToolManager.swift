@@ -1,6 +1,20 @@
 import UIKit
 enum Tool {
     case pen, eraser, highlighter
+    case sticker
+
+    var isHandwriting: Bool {
+        switch self {
+        case .pen, .eraser, .highlighter: return true
+        default: return false
+        }
+    }
+
+    var isSticker: Bool {
+        if case .sticker = self { return true }
+        return false
+    }
+    
 }
 
 protocol ToolObserver: AnyObject {
@@ -9,8 +23,8 @@ protocol ToolObserver: AnyObject {
 
 class ToolManager {
     static let shared = ToolManager()
-    
     private init() {}
+    
     var currentTool: Tool = .pen { didSet { notifyToolChange() } }
     var strokeColor: UIColor = .black { didSet { notifyToolChange() } }
     var strokeWidth: CGFloat = 5.0 { didSet { notifyToolChange() } }

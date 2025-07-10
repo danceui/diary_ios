@@ -1,8 +1,10 @@
 import PencilKit
 
+protocol CanvasLayer {}
+
 protocol CanvasCommand {
-    func execute(on handwritingLayer: HandwritingLayer)
-    func undo(on handwritingLayer: HandwritingLayer)
+    func execute(on layer: CanvasLayer)
+    func undo(on layer: CanvasLayer)
 }
 
 class AddStrokeCommand: CanvasCommand {
@@ -14,7 +16,8 @@ class AddStrokeCommand: CanvasCommand {
         self.strokesAppearedOnce = strokesAppearedOnce
     }
 
-    func execute(on handwritingLayer: HandwritingLayer) {
+    func execute(on layer: CanvasLayer) {
+        guard let handwritingLayer = layer as? HandwritingLayer else { return }
         guard strokesAppearedOnce else {
             strokesAppearedOnce = true
             return 
@@ -22,7 +25,8 @@ class AddStrokeCommand: CanvasCommand {
         handwritingLayer.drawing.strokes.append(stroke)
     }
 
-    func undo(on handwritingLayer: HandwritingLayer) {
+    func undo(on layer: CanvasLayer) {
+        guard let handwritingLayer = layer as? HandwritingLayer else { return }
         if !handwritingLayer.drawing.strokes.isEmpty {
             handwritingLayer.drawing.strokes.removeLast()
         }
@@ -38,7 +42,8 @@ class EraseStrokesCommand: CanvasCommand {
         self.strokesErasedOnce = strokesErasedOnce
     }
 
-    func execute(on handwritingLayer: HandwritingLayer) {
+    func execute(on layer: CanvasLayer) {
+        guard let handwritingLayer = layer as? HandwritingLayer else { return }
         guard strokesErasedOnce else {
             strokesErasedOnce = true
             return 
@@ -51,7 +56,26 @@ class EraseStrokesCommand: CanvasCommand {
         handwritingLayer.drawing = PKDrawing(strokes: remainingStrokes)
     }
 
-    func undo(on handwritingLayer: HandwritingLayer) {
+    func undo(on layer: CanvasLayer) {
+        guard let handwritingLayer = layer as? HandwritingLayer else { return }
         handwritingLayer.drawing.strokes.append(contentsOf: erasedStrokes)
+    }
+}
+
+class AddStickerCommand: CanvasCommand {
+    private let sticker: Sticker
+
+    init(sticker: Sticker) {
+        self.sticker = sticker
+    }
+
+    func execute(on layer: CanvasLayer) {
+        guard let stickerLayer = layer as? StickerLayer else { return }
+        stickerLayer.stickers.append(sticker)
+    }
+
+    func undo(on layer: CanvasLayer) {
+        guard let stickerLayer = layer as? StickerLayer else { return }
+        stickerLayer.stickers.remove?
     }
 }

@@ -2,17 +2,18 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookPageView: UIView, PKCanvasViewDelegate {
+class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let pageRole: PageRole
     private let isLeft: Bool
-    private(set) var lastEditedTimestamp: Date?
+    private var lastEditedTimestamp: Date?
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
 
     private var handwritingLayer = HandwritingLayer()
-    private var previousStrokes: [PKStroke] = []
+    private var stickerLayer = StickerLayer()
 
+    private var previousStrokes: [PKStroke] = []
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
 
@@ -22,9 +23,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         self.isLeft = isLeft
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
+        ToolManager.shared.addObserver(self)
+
         if role == .normal {
             handwritingLayer.delegate = self 
-            addSubview(handwritingLayer) 
+            addSubview(handwritingLayer)
+            addSubview(stickerLayer)
         }
     }
 
@@ -35,6 +39,24 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     override func layoutSubviews() {
         super.layoutSubviews()
         handwritingLayer.frame = bounds
+        stickerLayer.frame = bounds
+    }
+
+    // MARK: - ToolObserver
+    func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+        updateLayerInteractivity(for: tool)
+        switch tool {
+        case .pen, .highlighter, .eraser:
+            handwritingLayer.toolDidChange(tool: tool, color: color, width: width)
+        case .sticker:
+        default:
+            break
+        }
+    }
+    
+    private func updateLayerInteractivity(for tool: Tool) {
+        handwritingLayer.isUserInteractionEnabled = tool.isHandwriting
+        stickerLayer.isUserInteractionEnabled = tool.isSticker
     }
 
     // MARK: - Setup
