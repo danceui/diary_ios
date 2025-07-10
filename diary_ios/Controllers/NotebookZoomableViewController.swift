@@ -95,7 +95,9 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private func setupGestures() {
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
+        doubleTap.allowedTouchTypes = [UITouch.TouchType.direct.rawValue as NSNumber] 
         scrollView.addGestureRecognizer(doubleTap)
+        scrollView.panGestureRecognizer.allowedTouchTypes = [UITouch.TouchType.direct.rawValue as NSNumber]
     }
 
     // MARK: - 调整内容缩放
