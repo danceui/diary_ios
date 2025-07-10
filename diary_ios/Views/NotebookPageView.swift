@@ -143,7 +143,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     private func updatePreviousStrokes() {
         previousStrokes = handwritingLayer.drawing.strokes
-        print("   ✏️ Updated drawing has \(previousStrokes.count) strokes.")
     }
 
     private func updateTimestamp() {
