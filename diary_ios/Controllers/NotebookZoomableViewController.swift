@@ -99,14 +99,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - 调整内容缩放
-    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        scrollView.setZoomScale(defaultZoomScale, animated: true)
-        lastZoomScale = defaultZoomScale
-        printLayoutInfo(context: "Double Tap")
-    }
-
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? { return spreadContainer }
-
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         lastZoomScale = scrollView.zoomScale
         scrollView.panGestureRecognizer.minimumNumberOfTouches = lastZoomScale <= maxZoomScaleForCentering ? 2 : 1
@@ -119,7 +111,12 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
-    // MARK: - 调整内容位置
+    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        scrollView.setZoomScale(defaultZoomScale, animated: true)
+        lastZoomScale = defaultZoomScale
+        printLayoutInfo(context: "Double Tap")
+    }
+
     private func centerContent(xOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
@@ -130,18 +127,21 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 更新位置关系
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        printLayoutInfo(context: "View Did Scroll")
         updateIsZoomedIn()
     }
 
     func updateIsZoomedIn() {
         let visibleRect = scrollView.convert(scrollView.bounds, to: notebookSpreadViewController.view)
         let spreadViewBounds = notebookSpreadViewController.view.bounds
-        print("🔍 Updating isZoomedIn()")
-        print("   📐 notebookSpreadView.bounds: \(formatRect(spreadViewBounds))")
-        print("   📐 visibleRect in notebookView: \(formatRect(visibleRect))")
         isZoomedIn = !visibleRect.contains(spreadViewBounds)
-        print("   👀 isFullyVisible: \(!isZoomedIn)")
+        // print("🔍 Updating isZoomedIn()")
+        // print("   📐 notebookSpreadView.bounds: \(formatRect(spreadViewBounds))")
+        // print("   📐 visibleRect in notebookView: \(formatRect(visibleRect))")
+        // print("   👀 isFullyVisible: \(!isZoomedIn)")
+    }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return spreadContainer
     }
 
     // MARK: - 生命周期测试函数
