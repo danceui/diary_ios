@@ -7,16 +7,16 @@ protocol CanvasCommand {
 
 class AddStrokeCommand: CanvasCommand {
     private let stroke: PKStroke
-    private var hasAppearedOnce: Bool
+    private var strokesAppearedOnce: Bool
     
-    init(stroke: PKStroke, hasAppearedOnce: Bool) {
+    init(stroke: PKStroke, strokesAppearedOnce: Bool) {
         self.stroke = stroke
-        self.hasAppearedOnce = hasAppearedOnce
+        self.strokesAppearedOnce = strokesAppearedOnce
     }
 
     func execute(on handwritingLayer: HandwritingLayer) {
-        guard hasAppearedOnce else {
-            hasAppearedOnce = true
+        guard strokesAppearedOnce else {
+            strokesAppearedOnce = true
             return 
         }
         handwritingLayer.drawing.strokes.append(stroke)
@@ -31,13 +31,24 @@ class AddStrokeCommand: CanvasCommand {
 
 class EraseStrokesCommand: CanvasCommand {
     private let erasedStrokes: [PKStroke]
+    private var strokesErasedOnce: Bool
 
-    init(erasedStrokes: [PKStroke]) {
+    init(erasedStrokes: [PKStroke], strokesErasedOnce: Bool) {
         self.erasedStrokes = erasedStrokes
+        self.strokesErasedOnce = strokesErasedOnce
     }
 
     func execute(on handwritingLayer: HandwritingLayer) {
-        // 通常执行已在用户交互中完成，这里什么都不做
+        guard strokesErasedOnce else {
+            strokesErasedOnce = true
+            return 
+        }
+
+        let currentStrokes = handwritingLayer.drawing.strokes
+        let remainingStrokes = currentStrokes.filter { stroke in
+            !erasedStrokes.contains(where: { isStrokeEqual($0, stroke) })
+        }
+        handwritingLayer.drawing = PKDrawing(strokes: remainingStrokes)
     }
 
     func undo(on handwritingLayer: HandwritingLayer) {

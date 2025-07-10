@@ -63,7 +63,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             if handwritingLayer.tool is PKInkingTool {
                 // 笔迹添加
                 if let newStroke = handwritingLayer.drawing.strokes.last {
-                    let addStrokeCommand = AddStrokeCommand(stroke: newStroke, hasAppearedOnce: false)
+                    let addStrokeCommand = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false)
                     executeAndSave(command: addStrokeCommand)
                 }
             } else if handwritingLayer.tool is PKEraserTool {
@@ -73,7 +73,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
                     !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
                 }
                 if !erasedStrokes.isEmpty {
-                    let eraseCommand = EraseStrokesCommand(erasedStrokes: erasedStrokes)
+                    let eraseCommand = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false)
                     executeAndSave(command: eraseCommand)
                 }
             }
