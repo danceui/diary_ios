@@ -26,6 +26,7 @@ class AddStrokeCommand: CanvasCommand {
 
     func undo() {
         if !canvasLayer.drawing.strokes.isEmpty {
+            print("Removing Stroke")
             canvasLayer.drawing.strokes.removeLast()
         }
     }
@@ -69,6 +70,7 @@ class AddStickerCommand: CanvasCommand {
     }
 
     func execute() {
+        print("Adding Sticker")
         let view = StickerView(model: sticker)
         canvasLayer.stickers.append(sticker)
         canvasLayer.stickerViews.append(view)
@@ -77,6 +79,7 @@ class AddStickerCommand: CanvasCommand {
 
     func undo() {
         if !canvasLayer.stickers.isEmpty {
+            print("Removing Sticker")
             canvasLayer.stickers.removeLast()
             let view = canvasLayer.stickerViews.removeLast()
             view.removeFromSuperview()
