@@ -8,12 +8,12 @@ protocol CanvasCommand {
 class AddStrokeCommand: CanvasCommand {
     private let stroke: PKStroke
     private var strokesAppearedOnce: Bool
-    private unowned let handwritingLayer: HandwritingLayer
+    private var canvasLayer: CanvasLayer
     
-    init(stroke: PKStroke, strokesAppearedOnce: Bool, layer: HandwritingLayer) {
+    init(stroke: PKStroke, strokesAppearedOnce: Bool, canvasLayer: CanvasLayer) {
         self.stroke = stroke
         self.strokesAppearedOnce = strokesAppearedOnce
-        self.handwritingLayer = layer
+        self.canvasLayer = canvasLayer
     }
 
     func execute() {
@@ -21,12 +21,12 @@ class AddStrokeCommand: CanvasCommand {
             strokesAppearedOnce = true
             return 
         }
-        handwritingLayer.drawing.strokes.append(stroke)
+        canvasLayer.drawing.strokes.append(stroke)
     }
 
     func undo() {
-        if !handwritingLayer.drawing.strokes.isEmpty {
-            handwritingLayer.drawing.strokes.removeLast()
+        if !canvasLayer.drawing.strokes.isEmpty {
+            canvasLayer.drawing.strokes.removeLast()
         }
     }
 }
@@ -34,12 +34,12 @@ class AddStrokeCommand: CanvasCommand {
 class EraseStrokesCommand: CanvasCommand {
     private let erasedStrokes: [PKStroke]
     private var strokesErasedOnce: Bool
-    private unowned let handwritingLayer: HandwritingLayer
+    private var canvasLayer: CanvasLayer
 
-    init(erasedStrokes: [PKStroke], strokesErasedOnce: Bool, layer: HandwritingLayer) {
+    init(erasedStrokes: [PKStroke], strokesErasedOnce: Bool, canvasLayer: CanvasLayer) {
         self.erasedStrokes = erasedStrokes
         self.strokesErasedOnce = strokesErasedOnce
-        self.handwritingLayer = layer
+        self.canvasLayer = canvasLayer
     }
 
     func execute() {
@@ -47,35 +47,36 @@ class EraseStrokesCommand: CanvasCommand {
             strokesErasedOnce = true
             return 
         }
-        let currentStrokes = handwritingLayer.drawing.strokes
+        let currentStrokes = canvasLayer.drawing.strokes
         let remainingStrokes = currentStrokes.filter { stroke in
             !erasedStrokes.contains(where: { isStrokeEqual($0, stroke) })
         }
-        handwritingLayer.drawing = PKDrawing(strokes: remainingStrokes)
+        canvasLayer.drawing = PKDrawing(strokes: remainingStrokes)
     }
 
     func undo() {
-        handwritingLayer.drawing.strokes.append(contentsOf: erasedStrokes)
+        canvasLayer.drawing.strokes.append(contentsOf: erasedStrokes)
     }
 }
 
 class AddStickerCommand: CanvasCommand {
     private let sticker: Sticker
-    private unowned let stickerLayer: StickerLayer
+    private var canvasLayer: CanvasLayer
 
-    init(sticker: Sticker, layer: StickerLayer) {
+    init(sticker: Sticker, canvasLayer: CanvasLayer) {
         self.sticker = sticker
-        self.stickerLayer = layer
+        self.canvasLayer = canvasLayer
     }
 
     func execute() {
-        stickerLayer.addSticker(sticker)
+        canvasLayer.stickers.append(sticker)
+        canvasLayer.updateStickersView()
     }
 
     func undo() {
-        if !stickerLayer.stickers.isEmpty {
-            stickerLayer.stickers.removeLast()
-            stickerLayer.updateStickersView()
+        if !canvasLayer.stickers.isEmpty {
+            canvasLayer.stickers.removeLast()
+            canvasLayer.updateStickersView()
         }
     }
 }
