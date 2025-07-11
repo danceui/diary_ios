@@ -3,11 +3,18 @@ enum Tool {
     case pen, eraser, highlighter
     case sticker
 
-    var isHandwriting: Bool {
+    var isDrawing: Bool {
         switch self {
-        case .pen, .eraser, .highlighter: return true
-        default: return false
+        case .eraser, .highlighter:
+            return true
+        default:
+            return false
         }
+    }
+
+    var isEraser: Bool {
+        if case .eraser = self { return true }
+        return false
     }
 
     var isSticker: Bool {

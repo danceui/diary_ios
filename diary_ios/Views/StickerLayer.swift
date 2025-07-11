@@ -1,48 +1,53 @@
 import UIKit
 
-class StickerLayer: UIView {
-    var stickers: [Sticker] = []
+class StickerLayer: UIView, ToolObserver {
+    var currentTool: Tool = .sticker
+    var readyToAddSticker = true
+    var onStickerAdded: ((Sticker) -> Void)?
 
-    func addSticker(_ sticker: Sticker) {
-        stickers.append(sticker)
-        updateStickersView()
+    var stickers: [Sticker] = []
+    var stickerViews: [StickerView] = []
+
+    // MARK: - 初始化
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        ToolManager.shared.addObserver(self)
     }
 
-    // func removeSticker(withId id: UUID) {
-    //     stickers.removeAll { $0.id == id }
-    //     updateStickersView()
-    // }
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        ToolManager.shared.addObserver(self)
+    }
 
-    func updateStickersView() {
-        self.subviews.forEach { $0.removeFromSuperview() }
-        for sticker in stickers {
-            let view = StickerView(model: sticker)
-            self.addSubview(view)
+    // MARK: - 监听触摸
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        guard let touch = touches.first else { return }
+
+        if currentTool.isSticker {
+            guard readyToAddSticker else { return }
+            let location = touch.location(in: self)
+            let sticker = Sticker(id: UUID(), center: location, name: "star")
+            onStickerAdded?(sticker)
+            readyToAddSticker = false
         }
     }
 
-    // MARK: - 点击添加贴纸的功能
-    var onStickerAdded: ((Sticker) -> Void)?
-    private var readyToAddSticker = true
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard readyToAddSticker else { return }
-        guard let touch = touches.first else { return }
-
-        let location = touch.location(in: self)
-        let sticker = Sticker(id: UUID(), center: location, name: "star")
-        // let view = StickerView(model: sticker)
-        // stickers.append(view)
-        // addSubview(view)
-        onStickerAdded?(sticker)
-        readyToAddSticker = false
-    }
-
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        readyToAddSticker = true
+        handleTouchFinished()
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        handleTouchFinished()
+    }
+
+    private func handleTouchFinished() {
         readyToAddSticker = true
+    }
+
+    // MARK: - 切换工具
+    func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+        guard tool.isSticker else { return }
+        currentTool = tool
     }
 }

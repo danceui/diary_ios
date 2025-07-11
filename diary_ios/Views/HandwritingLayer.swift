@@ -1,49 +1,10 @@
 import PencilKit
 import UIKit
 
-class HandwritingLayer: PKCanvasView {
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupCanvas()
-    }
+class HandwritingLayer: PKCanvasView, ToolObserver {
+    var currentTool: Tool = .pen
+    var touchFinished = false
 
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupCanvas()
-    }
-
-    private func setupCanvas() {
-        backgroundColor = .clear
-        addSubview(eraserPreviewView)
-        isOpaque = false
-        drawingPolicy = .pencilOnly
-    }
-
-    // MARK: - 监听触摸
-    var strokeFinished = false
-
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesEnded(touches, with: event)
-        strokeFinished = true
-        eraserPreviewView.isHidden = true
-        refreshDrawingIfEraser()
-    }
-
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesCancelled(touches, with: event)
-        strokeFinished = true
-        eraserPreviewView.isHidden = true
-        refreshDrawingIfEraser()
-    }
-
-    private func refreshDrawingIfEraser() {
-        if self.tool is PKEraserTool {
-            let current = self.drawing
-            self.drawing = current
-        }
-    }
-
-    // MARK: - 橡皮预览
     private let eraserPreviewView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor.clear
@@ -54,17 +15,38 @@ class HandwritingLayer: PKCanvasView {
         return view
     }()
 
+    // MARK: - 初始化
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupCanvas()
+        ToolManager.shared.addObserver(self)
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupCanvas()
+        ToolManager.shared.addObserver(self)
+    }
+
+    private func setupCanvas() {
+        backgroundColor = .clear
+        isOpaque = false
+        drawingPolicy = .pencilOnly
+        
+        addSubview(eraserPreviewView)
+        eraserPreviewView.isHidden = true
+    }
+
+    // MARK: - 监听触摸
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
+        guard let touch = touches.first else { return }
 
-        guard let touch = touches.first, self.tool is PKEraserTool else { return }
-        let point = touch.location(in: self)
-
-        // 根据橡皮大小设置预览圈
-        if let eraser = self.tool as? PKEraserTool {
+        if currentTool.isEraser {
+            let location = touch.location(in: self)
             let eraserSize: CGFloat = 20 // 可根据实际需要动态设置
-            let frame = CGRect(x: point.x - eraserSize / 2,
-                            y: point.y - eraserSize / 2,
+            let frame = CGRect(x: location.x - eraserSize / 2,
+                            y: location.y - eraserSize / 2,
                             width: eraserSize,
                             height: eraserSize)
             eraserPreviewView.frame = frame
@@ -73,9 +55,29 @@ class HandwritingLayer: PKCanvasView {
         }
     }
 
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        handleTouchFinished()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        handleTouchFinished()
+    }
+
+    private func handleTouchFinished() {
+        if currentTool.isDrawing {
+            touchFinished = true
+        } else if currentTool.isEraser {
+            eraserPreviewView.isHidden = true
+            self.drawing = self.drawing
+        }
+    }
+    
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        guard tool.isHandwriting else { return }
+        guard tool.isEraser || tool.isDrawing else { return }
+        currentTool = tool
         switch tool {
         case .pen:
             self.tool = PKInkingTool(.pen, color: color, width: width)

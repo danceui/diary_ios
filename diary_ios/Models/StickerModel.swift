@@ -8,13 +8,13 @@ struct Sticker {
 
 // 贴纸视图（仅显示，不支持交互）
 class StickerView: UIImageView {
-    var model: Sticker
+    var sticker: Sticker
 
-    init(model: Sticker) {
-        self.model = model
+    init(sticker: Sticker) {
+        self.sticker = sticker
         let size = CGSize(width: 80, height: 80) // 默认大小
-        let origin = CGPoint(x: model.center.x - size.width / 2,
-                             y: model.center.y - size.height / 2)
+        let origin = CGPoint(x: sticker.center.x - size.width / 2,
+                             y: sticker.center.y - size.height / 2)
         super.init(frame: CGRect(origin: origin, size: size))
 
         self.image = UIImage(named: "star")

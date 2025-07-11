@@ -2,7 +2,7 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
+class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageRole: PageRole
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
@@ -17,24 +17,19 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
 
-    // MARK: - 生命周期
+    // MARK: - 初始化
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
         self.pageRole = role
         self.isLeft = isLeft
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
-        ToolManager.shared.addObserver(self)
 
         if role == .normal {
             handwritingLayer.delegate = self 
             addSubview(handwritingLayer)
             addSubview(stickerLayer)
 
-            stickerLayer.onStickerAdded = { [weak self] sticker in
-                guard let self = self else { return }
-                let cmd = AddStickerCommand(sticker: sticker, layer: self.stickerLayer)
-                self.executeAndSave(command: cmd)
-            }
+            stickerLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }
     }
 
@@ -47,26 +42,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         handwritingLayer.frame = bounds
         stickerLayer.frame = bounds
     }
-
-    // MARK: - ToolObserver
-    func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        updateLayerInteractivity(for: tool)
-        switch tool {
-        case .pen, .highlighter, .eraser:
-            handwritingLayer.toolDidChange(tool: tool, color: color, width: width)
-        case .sticker:
-            break
-        default:
-            break
-        }
-    }
     
-    private func updateLayerInteractivity(for tool: Tool) {
-        handwritingLayer.isUserInteractionEnabled = tool.isHandwriting
-        stickerLayer.isUserInteractionEnabled = tool.isSticker
-    }
-
-    // MARK: - Setup
     private func setupView() {
         backgroundColor = backgroundColorForRole(pageRole) // 浅绿色背景
         layer.cornerRadius = pageCornerRadius
@@ -85,18 +61,15 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         }
     }
 
+    // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        if handwritingLayer.strokeFinished {
-            handwritingLayer.strokeFinished = false
-
-            if handwritingLayer.tool is PKInkingTool {
-                // 笔迹添加
+        if handwritingLayer.touchFinished {
+            if handwritingLayer.currentTool.isDrawing{
                 if let newStroke = handwritingLayer.drawing.strokes.last {
                     let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
                     executeAndSave(command: cmd)
                 }
-            } else if handwritingLayer.tool is PKEraserTool {
-                // 橡皮擦除
+            } else if handwritingLayer.currentTool.isEraser {
                 let currentStrokes = handwritingLayer.drawing.strokes
                 let erasedStrokes = previousStrokes.filter { oldStroke in 
                     !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
@@ -106,46 +79,45 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
                     executeAndSave(command: cmd)
                 }
             }
+            handwritingLayer.touchFinished = false
         }
     }
 
-    // MARK: - Undo/Redo Manager
+    // MARK: - 处理贴纸
+    private func handleStickerAdded(_ sticker: Sticker) {
+        let cmd = AddStickerCommand(sticker: sticker, layer: stickerLayer)
+        executeAndSave(command: cmd)
+    }
+
+    // MARK: - Undo/Redo
     func executeAndSave(command: CanvasCommand) {
         command.execute()
         undoStack.append(command)
         redoStack.removeAll()
-        updateTimestamp()
+        previousStrokes = handwritingLayer.drawing.strokes
+        lastEditedTimestamp = Date()
 
         print("🕹️ Added new command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
-        updatePreviousStrokes()
     }
 
     func undo() {
         guard let command = undoStack.popLast() else { return }
         command.undo()
         redoStack.append(command)
+        previousStrokes = handwritingLayer.drawing.strokes
 
         print("🕹️ UndoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
-        updatePreviousStrokes()
     }
 
     func redo() {
         guard let command = redoStack.popLast() else { return }
         command.execute()
         undoStack.append(command)
+        previousStrokes = handwritingLayer.drawing.strokes
 
         print("🕹️ RedoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
-        updatePreviousStrokes()
-    }
-
-    private func updatePreviousStrokes() {
-        previousStrokes = handwritingLayer.drawing.strokes
-    }
-
-    private func updateTimestamp() {
-        lastEditedTimestamp = Date()
     }
 }
