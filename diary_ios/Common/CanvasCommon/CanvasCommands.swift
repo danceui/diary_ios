@@ -69,14 +69,17 @@ class AddStickerCommand: CanvasCommand {
     }
 
     func execute() {
+        let view = StickerView(model: sticker)
         canvasLayer.stickers.append(sticker)
-        canvasLayer.updateStickersView()
+        canvasLayer.stickerViews.append(view)
+        canvasLayer.addSubview(view)
     }
 
     func undo() {
         if !canvasLayer.stickers.isEmpty {
             canvasLayer.stickers.removeLast()
-            canvasLayer.updateStickersView()
+            let view = canvasLayer.stickerViews.removeLast()
+            view.removeFromSuperview()
         }
     }
 }

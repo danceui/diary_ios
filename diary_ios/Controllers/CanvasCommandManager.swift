@@ -16,6 +16,7 @@ class CanvasCommandManager {
         redoStack.removeAll()
         onCommandExecuted?()
         print("🕹️ Executed command.")
+        printStackInfo(undoStack: undoStack, redoStack: redoStack)
     }
 
     func undo() {
@@ -24,6 +25,7 @@ class CanvasCommandManager {
         redoStack.append(command)
         onCommandExecuted?()
         print("🕹️ Undo command.")
+        printStackInfo(undoStack: undoStack, redoStack: redoStack) 
     }
 
     func redo() {
@@ -32,5 +34,6 @@ class CanvasCommandManager {
         undoStack.append(command)
         onCommandExecuted?()
         print("🕹️ Redo command.")
+        printStackInfo(undoStack: undoStack, redoStack: redoStack) 
     }
 }

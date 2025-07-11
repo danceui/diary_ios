@@ -6,6 +6,7 @@ class CanvasLayer: PKCanvasView, ToolObserver {
 
     var currentTool: Tool = .pen
     var stickers: [Sticker] = []
+    var stickerViews: [StickerView] = []
     var strokeFinished = false
     var onEraserFinished: (() -> Void)?
     var onStickerAdded: ((Sticker) -> Void)?
@@ -109,7 +110,6 @@ class CanvasLayer: PKCanvasView, ToolObserver {
     }
 
     private func handleTouchFinished() {
-        print("Touch Finished")
         switch currentTool {
         case .pen, .highlighter:
             strokeFinished = true
@@ -121,14 +121,19 @@ class CanvasLayer: PKCanvasView, ToolObserver {
         default:
             break
         }
-        
     }
+    
+    // func restoreStickers(from models: [Sticker]) {
+    //     // 清空旧的
+    //     stickerViews.forEach { $0.removeFromSuperview() }
+    //     stickerViews.removeAll()
+    //     stickers = models
 
-    func updateStickersView() {
-        self.subviews.forEach { $0.removeFromSuperview() }
-        for sticker in stickers {
-            let view = StickerView(model: sticker)
-            self.addSubview(view)
-        }
-    }
+    //     // 重新生成视图
+    //     for model in models {
+    //         let view = StickerView(model: model)
+    //         addSubview(view)
+    //         stickerViews.append(view)
+    //     }
+    // }
 }

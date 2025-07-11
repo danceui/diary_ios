@@ -60,7 +60,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     }
 
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        print("handleStrokeFinished")
         if canvasLayer.strokeFinished {
             canvasLayer.strokeFinished = false
             if let stroke = canvasLayer.drawing.strokes.last {
@@ -71,7 +70,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     }
 
     private func handleEraserFinished() {
-        print("handleEraserFinished")
         let currentStrokes = canvasLayer.drawing.strokes
         let erasedStrokes = previousStrokes.filter { old in
             !currentStrokes.contains(where: { isStrokeEqual($0, old) })
