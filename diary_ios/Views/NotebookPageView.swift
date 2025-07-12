@@ -2,7 +2,7 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookPageView: UIView, PKCanvasViewDelegate {
+class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let pageRole: PageRole
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
@@ -10,6 +10,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
     private(set) var lastEditedTimestamp: Date?
 
+    private var currentTool: Tool = .pen
+    private let contentLayer = UIView()
     private var handwritingLayer = HandwritingLayer()
     private var stickerLayer = StickerLayer()
 
@@ -25,10 +27,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         setupView()
 
         if role == .normal {
-            handwritingLayer.delegate = self 
-            addSubview(handwritingLayer)
-            addSubview(stickerLayer)
+            ToolManager.shared.addObserver(self)
+            addSubview(contentLayer)
+            contentLayer.addSubview(handwritingLayer)
+            contentLayer.addSubview(stickerLayer)
 
+            handwritingLayer.delegate = self 
             stickerLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }
     }
@@ -39,6 +43,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        contentLayer.frame = bounds
         handwritingLayer.frame = bounds
         stickerLayer.frame = bounds
     }
@@ -61,14 +66,35 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         }
     }
 
+    // MARK: - 工具切换
+    func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+        currentTool = tool
+        if currentTool.isSticker { flattenCurrentHandwritingLayer() }
+    }
+
+    private func flattenCurrentHandwritingLayer() {
+        guard !handwritingLayer.drawing.strokes.isEmpty else { return }
+
+        handwritingLayer.delegate = nil
+        handwritingLayer.isUserInteractionEnabled = false
+
+        let frozen = handwritingLayer
+        let cmd = FreezeCanvasCommand(canvas: frozen)
+        executeAndSave(command: cmd)
+
+        let newLayer = HandwritingLayer()
+        newLayer.delegate = self
+        newLayer.frame = bounds
+        handwritingLayer = newLayer
+        contentLayer.insertSubview(handwritingLayer, aboveSubview: stickerLayer)
+    }
+
     // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         if handwritingLayer.touchFinished {
-            if handwritingLayer.currentTool.isDrawing{
-                if let newStroke = handwritingLayer.drawing.strokes.last {
+            if handwritingLayer.currentTool.isDrawing, let newStroke = handwritingLayer.drawing.strokes.last {
                     let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
                     executeAndSave(command: cmd)
-                }
             } else if handwritingLayer.currentTool.isEraser {
                 let currentStrokes = handwritingLayer.drawing.strokes
                 let erasedStrokes = previousStrokes.filter { oldStroke in 
@@ -79,13 +105,15 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
                     executeAndSave(command: cmd)
                 }
             }
+            previousStrokes = handwritingLayer.drawing.strokes
             handwritingLayer.touchFinished = false
         }
     }
 
     // MARK: - 处理贴纸
     private func handleStickerAdded(_ sticker: Sticker) {
-        let cmd = AddStickerCommand(sticker: sticker, layer: stickerLayer)
+        let stickerView = StickerView(sticker: sticker)
+        let cmd = AddStickerCommand(stickerView: stickerView, container: contentLayer)
         executeAndSave(command: cmd)
     }
 

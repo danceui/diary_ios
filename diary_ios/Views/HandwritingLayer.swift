@@ -76,7 +76,6 @@ class HandwritingLayer: PKCanvasView, ToolObserver {
     
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        guard tool.isEraser || tool.isDrawing else { return }
         currentTool = tool
         switch tool {
         case .pen:

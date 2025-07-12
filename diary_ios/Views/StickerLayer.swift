@@ -4,9 +4,7 @@ class StickerLayer: UIView, ToolObserver {
     var currentTool: Tool = .sticker
     var readyToAddSticker = true
     var onStickerAdded: ((Sticker) -> Void)?
-
-    var stickers: [Sticker] = []
-    var stickerViews: [StickerView] = []
+    // var stickers: [Sticker] = []
 
     // MARK: - 初始化
     override init(frame: CGRect) {
@@ -47,7 +45,6 @@ class StickerLayer: UIView, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        guard tool.isSticker else { return }
         currentTool = tool
     }
 }
