@@ -10,8 +10,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
     private(set) var lastEditedTimestamp: Date?
 
+    private var containerView = UIView()
     private var handwritingLayer = HandwritingLayer()
-    private var stickerLayer = StickerLayer()
+    private var stickerInputLayer = StickerInputLayer()
 
     private var previousStrokes: [PKStroke] = []
     private var undoStack: [CanvasCommand] = []
@@ -25,11 +26,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         setupView()
 
         if role == .normal {
-            handwritingLayer.delegate = self 
+            handwritingLayer.delegate = self
+            addSubview(containerView)
             addSubview(handwritingLayer)
-            // addSubview(stickerLayer)
+            addSubview(stickerInputLayer)
 
-            stickerLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
+            stickerInputLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }
     }
 
@@ -39,8 +41,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        containerView.frame = bounds
         handwritingLayer.frame = bounds
-        stickerLayer.frame = bounds
+        stickerInputLayer.frame = bounds
     }
     
     private func setupView() {
@@ -85,7 +88,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - 处理贴纸
     private func handleStickerAdded(_ sticker: Sticker) {
-        let cmd = AddStickerCommand(sticker: sticker, layer: stickerLayer)
+        let view = StickerView(sticker: sticker)
+        let cmd = AddStickerCommand(stickerView: view, container: containerView)
         executeAndSave(command: cmd)
     }
 

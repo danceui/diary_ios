@@ -1,12 +1,12 @@
 import UIKit
 
-class StickerLayer: UIView, ToolObserver {
+class StickerInputLayer: UIView, ToolObserver {
     var currentTool: Tool = .sticker
     var readyToAddSticker = true
     var onStickerAdded: ((Sticker) -> Void)?
 
-    var stickers: [Sticker] = []
-    var stickerViews: [StickerView] = []
+    // var stickers: [Sticker] = []
+    // var stickerViews: [StickerView] = []
 
     // MARK: - 初始化
     override init(frame: CGRect) {
@@ -26,8 +26,7 @@ class StickerLayer: UIView, ToolObserver {
 
         if currentTool.isSticker {
             guard readyToAddSticker else { return }
-            let location = touch.location(in: self)
-            let sticker = Sticker(id: UUID(), center: location, name: "star")
+            let sticker = Sticker(id: UUID(), center: touch.location(in: self), name: "star")
             onStickerAdded?(sticker)
             readyToAddSticker = false
         }
@@ -47,7 +46,6 @@ class StickerLayer: UIView, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        guard tool.isSticker else { return }
         currentTool = tool
     }
 }
