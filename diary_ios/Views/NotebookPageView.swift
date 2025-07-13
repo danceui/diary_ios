@@ -2,7 +2,7 @@ import UIKit
 import PencilKit
 
 @available(iOS 16.0, *)
-class NotebookPageView: UIView, PKCanvasViewDelegate {
+class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let pageRole: PageRole
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
@@ -19,6 +19,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
 
+    private var currentTool: Tool = .pen
+
     // MARK: - 初始化
     init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
         self.pageRole = role
@@ -26,11 +28,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
 
+        ToolManager.shared.addObserver(self)
         if role == .normal {
             handwritingInputLayer.delegate = self
             addSubview(containerView)
-            addSubview(handwritingInputLayer)
-            addSubview(stickerInputLayer)
+            containerView.addSubview(handwritingInputLayer)
+            containerView.addSubview(stickerInputLayer)
 
             stickerInputLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }
@@ -66,8 +69,21 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     }
 
     // MARK: - 切换工具
+    func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+        if currentTool.isDrawing && !tool.isDrawing {
+            finalizeCurrentStrokeBatch()
+        }
+        if tool.isDrawing || tool.isEraser {
+            containerView.bringSubviewToFront(handwritingInputLayer)
+        } else if tool.isSticker {
+            containerView.bringSubviewToFront(stickerInputLayer)
+        }
+        currentTool = tool
+    }
+
     private func finalizeCurrentStrokeBatch() {
         guard !currentStrokeBatch.isEmpty else { return }
+        print("🪵 This Batch has \(currentStrokeBatch.count) strokes.")
         let batchView = StrokeBatchView(strokes: currentStrokeBatch, frame: bounds)
         containerView.addSubview(batchView) //?
         currentStrokeBatch.removeAll()
