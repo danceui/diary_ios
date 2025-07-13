@@ -66,24 +66,22 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        if handwritingLayer.touchFinished {
-            if handwritingLayer.currentTool.isDrawing{
-                if let newStroke = handwritingLayer.drawing.strokes.last {
-                    let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
-                    executeAndSave(command: cmd)
-                }
-            } else if handwritingLayer.currentTool.isEraser {
-                let currentStrokes = handwritingLayer.drawing.strokes
-                let erasedStrokes = previousStrokes.filter { oldStroke in 
-                    !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
-                }
-                if !erasedStrokes.isEmpty {
-                    let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
-                    executeAndSave(command: cmd)
-                }
+        guard handwritingLayer.touchFinished else { return }
+        if handwritingLayer.currentTool.isDrawing, let newStroke = handwritingLayer.drawing.strokes.last {
+                let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
+                executeAndSave(command: cmd)
             }
-            handwritingLayer.touchFinished = false
+        } else if handwritingLayer.currentTool.isEraser {
+            let currentStrokes = handwritingLayer.drawing.strokes
+            let erasedStrokes = previousStrokes.filter { oldStroke in 
+                !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
+            }
+            if !erasedStrokes.isEmpty {
+                let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
+                executeAndSave(command: cmd)
+            }
         }
+        handwritingLayer.touchFinished = false
     }
 
     // MARK: - 处理贴纸
