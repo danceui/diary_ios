@@ -11,11 +11,11 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private(set) var lastEditedTimestamp: Date?
 
     private var containerView = UIView()
-    private var handwritingInputLayer = HandwritingInputLayer()
+    private var handwritingLayer = HandwritingLayer()
     private var stickerInputLayer = StickerInputLayer()
 
     private var previousStrokes: [PKStroke] = []
-    private var currentStrokeBatch: [PKStroke] = []
+    // private var currentStrokeBatch: [PKStroke] = []
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
 
@@ -30,10 +30,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
         ToolManager.shared.addObserver(self)
         if role == .normal {
-            handwritingInputLayer.delegate = self
+            handwritingLayer.delegate = self
             addSubview(containerView)
             containerView.addSubview(stickerInputLayer)
-            containerView.addSubview(handwritingInputLayer)
+            containerView.addSubview(handwritingLayer)
 
             stickerInputLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }
@@ -46,7 +46,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     override func layoutSubviews() {
         super.layoutSubviews()
         containerView.frame = bounds
-        handwritingInputLayer.frame = bounds
+        handwritingLayer.frame = bounds
         stickerInputLayer.frame = bounds
     }
     
@@ -70,42 +70,31 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        if currentTool.isDrawing && !tool.isDrawing {
-            finalizeCurrentStrokeBatch()
-        }
         if tool.isDrawing || tool.isEraser {
-            containerView.bringSubviewToFront(handwritingInputLayer)
+            containerView.bringSubviewToFront(handwritingLayer)
         } else if tool.isSticker {
             containerView.bringSubviewToFront(stickerInputLayer)
         }
         currentTool = tool
     }
 
-    private func finalizeCurrentStrokeBatch() {
-        guard !currentStrokeBatch.isEmpty else { return }
-        print("🪵 This Batch has \(currentStrokeBatch.count) strokes.")
-        let batchView = StrokeBatchView(strokes: currentStrokeBatch, frame: bounds)
-        containerView.addSubview(batchView) //?
-        currentStrokeBatch.removeAll()
-    }
-
     // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        guard handwritingInputLayer.touchFinished else { return }
-        if handwritingInputLayer.currentTool.isDrawing, let newStroke = handwritingInputLayer.drawing.strokes.last {
-            let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingInputLayer)
+        guard handwritingLayer.touchFinished else { return }
+        if handwritingLayer.currentTool.isDrawing, let newStroke = handwritingLayer.drawing.strokes.last {
+            let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
             executeAndSave(command: cmd)
-        } else if handwritingInputLayer.currentTool.isEraser {
-            let currentStrokes = handwritingInputLayer.drawing.strokes
+        } else if handwritingLayer.currentTool.isEraser {
+            let currentStrokes = handwritingLayer.drawing.strokes
             let erasedStrokes = previousStrokes.filter { oldStroke in 
                 !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
             }
             if !erasedStrokes.isEmpty {
-                let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingInputLayer)
+                let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
                 executeAndSave(command: cmd)
             }
         }
-        handwritingInputLayer.touchFinished = false
+        handwritingLayer.touchFinished = false
     }
 
     // MARK: - 处理贴纸
@@ -120,7 +109,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         command.execute()
         undoStack.append(command)
         redoStack.removeAll()
-        previousStrokes = handwritingInputLayer.drawing.strokes
+        previousStrokes = handwritingLayer.drawing.strokes
         lastEditedTimestamp = Date()
 
         print("🕹️ Added new command.", terminator:" ")
@@ -131,7 +120,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard let command = undoStack.popLast() else { return }
         command.undo()
         redoStack.append(command)
-        previousStrokes = handwritingInputLayer.drawing.strokes
+        previousStrokes = handwritingLayer.drawing.strokes
 
         print("🕹️ UndoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
@@ -141,7 +130,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard let command = redoStack.popLast() else { return }
         command.execute()
         undoStack.append(command)
-        previousStrokes = handwritingInputLayer.drawing.strokes
+        previousStrokes = handwritingLayer.drawing.strokes
 
         print("🕹️ RedoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
