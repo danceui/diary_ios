@@ -27,7 +27,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         if role == .normal {
             handwritingLayer.delegate = self 
             addSubview(handwritingLayer)
-            addSubview(stickerLayer)
+            // addSubview(stickerLayer)
 
             stickerLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }

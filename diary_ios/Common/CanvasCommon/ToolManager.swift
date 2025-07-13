@@ -5,7 +5,7 @@ enum Tool {
 
     var isDrawing: Bool {
         switch self {
-        case .eraser, .highlighter:
+        case .pen, .highlighter:
             return true
         default:
             return false
