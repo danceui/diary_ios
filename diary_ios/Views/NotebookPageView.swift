@@ -11,7 +11,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private(set) var lastEditedTimestamp: Date?
 
     private var containerView = UIView()
-    private var handwritingLayer = HandwritingLayer()
+    private var handwritingLayers: [HandwritingLayer] = []
+    private var currentHandwritingLayer: HandwritingLayer? // 当前活动的笔画层
     private var stickerInputLayer = StickerInputLayer()
 
     private var previousStrokes: [PKStroke] = []
@@ -30,12 +31,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
         ToolManager.shared.addObserver(self)
         if role == .normal {
-            handwritingLayer.delegate = self
             addSubview(containerView)
             containerView.addSubview(stickerInputLayer)
-            containerView.addSubview(handwritingLayer)
-
             stickerInputLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
+            createNewHandwritingLayer()
         }
     }
 
@@ -46,15 +45,27 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     override func layoutSubviews() {
         super.layoutSubviews()
         containerView.frame = bounds
-        handwritingLayer.frame = bounds
         stickerInputLayer.frame = bounds
+        for layer in handwritingLayers {
+            layer.frame = bounds
+        }
     }
     
     private func setupView() {
-        backgroundColor = backgroundColorForRole(pageRole) // 浅绿色背景
+        backgroundColor = backgroundColorForRole(pageRole)
         layer.cornerRadius = pageCornerRadius
         layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         layer.masksToBounds = true
+    }
+
+    private func createNewHandwritingLayer() {
+        print("🔄 Creating new handwriting layer. \(handwritingLayers.count) layers in total.")
+        let newLayer = HandwritingLayer()
+        newLayer.delegate = self
+        newLayer.frame = bounds
+        handwritingLayers.append(newLayer)
+        currentHandwritingLayer = newLayer
+        containerView.addSubview(newLayer)
     }
 
     private func backgroundColorForRole(_ role: PageRole) -> UIColor {
@@ -70,9 +81,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        if tool.isDrawing || tool.isEraser {
-            containerView.bringSubviewToFront(handwritingLayer)
+        if !(currentTool.isDrawing || currentTool.isEraser), (tool.isDrawing || tool.isEraser) {
+            if currentHandwritingLayer == nil {
+                createNewHandwritingLayer()
+            }
         } else if tool.isSticker {
+            currentHandwritingLayer = nil
             containerView.bringSubviewToFront(stickerInputLayer)
         }
         currentTool = tool
@@ -80,7 +94,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        guard handwritingLayer.touchFinished else { return }
+        guard let handwritingLayer = currentHandwritingLayer, handwritingLayer.touchFinished else { return }
         if handwritingLayer.currentTool.isDrawing, let newStroke = handwritingLayer.drawing.strokes.last {
             let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
             executeAndSave(command: cmd)
@@ -109,7 +123,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         command.execute()
         undoStack.append(command)
         redoStack.removeAll()
-        previousStrokes = handwritingLayer.drawing.strokes
+        // previousStrokes = currentHandwritingLayer.drawing.strokes
         lastEditedTimestamp = Date()
 
         print("🕹️ Added new command.", terminator:" ")
@@ -120,7 +134,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard let command = undoStack.popLast() else { return }
         command.undo()
         redoStack.append(command)
-        previousStrokes = handwritingLayer.drawing.strokes
+        // previousStrokes = currentHandwritingLayer.drawing.strokes
 
         print("🕹️ UndoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
@@ -130,7 +144,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard let command = redoStack.popLast() else { return }
         command.execute()
         undoStack.append(command)
-        previousStrokes = handwritingLayer.drawing.strokes
+        // previousStrokes = currentHandwritingLayer.drawing.strokes
 
         print("🕹️ RedoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
