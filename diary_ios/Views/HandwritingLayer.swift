@@ -1,7 +1,7 @@
 import PencilKit
 import UIKit
 
-class HandwritingLayer: PKCanvasView, ToolObserver {
+class HandwritingInputLayer: PKCanvasView, ToolObserver {
     var currentTool: Tool = .pen
     var touchFinished = false
 
