@@ -32,8 +32,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         if role == .normal {
             handwritingInputLayer.delegate = self
             addSubview(containerView)
-            containerView.addSubview(handwritingInputLayer)
             containerView.addSubview(stickerInputLayer)
+            containerView.addSubview(handwritingInputLayer)
 
             stickerInputLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }
