@@ -4,36 +4,36 @@ import PencilKit
 @available(iOS 16.0, *)
 class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let pageRole: PageRole
+    var pageIndex: Int
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
     private(set) var lastEditedTimestamp: Date?
 
-    private var currentTool: Tool = .pen
-    private let contentLayer = UIView()
-    private var handwritingLayer = HandwritingLayer()
-    private var stickerLayer = StickerLayer()
+    private var containerView = UIView()
+    private var handwritingLayers: [HandwritingLayer] = []
+    private var currentHandwritingLayer: HandwritingLayer?
+    private var stickerLayers: [StickerLayer] = []
+    private var currentStickerLayer: StickerLayer?
 
     private var previousStrokes: [PKStroke] = []
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
 
+    private var currentTool: Tool = .pen
+
     // MARK: - 初始化
-    init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
+    init(role: PageRole = .normal, isLeft: Bool = true, leftPageIndex: Int = 0, initialData: Data? = nil) {
         self.pageRole = role
         self.isLeft = isLeft
+        self.pageIndex = isLeft ? leftPageIndex : leftPageIndex + 1
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
 
         if role == .normal {
             ToolManager.shared.addObserver(self)
-            addSubview(contentLayer)
-            contentLayer.addSubview(handwritingLayer)
-            contentLayer.addSubview(stickerLayer)
-
-            handwritingLayer.delegate = self 
-            stickerLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
+            addSubview(containerView)
         }
     }
 
@@ -43,13 +43,17 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        contentLayer.frame = bounds
-        handwritingLayer.frame = bounds
-        stickerLayer.frame = bounds
+        containerView.frame = bounds
+        for layer in handwritingLayers {
+            layer.frame = bounds
+        }
+        for layer in stickerLayers {
+            layer.frame = bounds
+        }
     }
     
     private func setupView() {
-        backgroundColor = backgroundColorForRole(pageRole) // 浅绿色背景
+        backgroundColor = backgroundColorForRole(pageRole)
         layer.cornerRadius = pageCornerRadius
         layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         layer.masksToBounds = true
@@ -66,86 +70,114 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         }
     }
 
-    // MARK: - 工具切换
+    // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+        if tool.isDrawing || tool.isEraser {
+            if currentHandwritingLayer == nil {
+                createNewHandwritingLayer()
+            }
+            currentHandwritingLayer!.toolDidChange(tool: tool)
+            currentStickerLayer = nil
+        } else if tool.isSticker {
+            if currentStickerLayer == nil {
+                createNewStickerLayer()
+            }
+            currentStickerLayer!.toolDidChange(tool: tool)
+            currentHandwritingLayer = nil
+        }
         currentTool = tool
-        if currentTool.isSticker { flattenCurrentHandwritingLayer() }
     }
 
-    private func flattenCurrentHandwritingLayer() {
-        guard !handwritingLayer.drawing.strokes.isEmpty else { return }
-
-        handwritingLayer.delegate = nil
-        handwritingLayer.isUserInteractionEnabled = false
-
-        let frozen = handwritingLayer
-        let cmd = FreezeCanvasCommand(canvas: frozen)
-        executeAndSave(command: cmd)
-
+    private func createNewHandwritingLayer() {
         let newLayer = HandwritingLayer()
-        newLayer.delegate = self
         newLayer.frame = bounds
-        handwritingLayer = newLayer
-        contentLayer.insertSubview(handwritingLayer, aboveSubview: stickerLayer)
+        newLayer.delegate = self
+        handwritingLayers.append(newLayer)
+        currentHandwritingLayer = newLayer
+        containerView.addSubview(newLayer)
+        print("[P\(pageIndex)] Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
+    }
+
+    private func createNewStickerLayer() {
+        let newLayer = StickerLayer()
+        newLayer.frame = bounds
+        newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
+        stickerLayers.append(newLayer)
+        currentStickerLayer = newLayer
+        containerView.addSubview(newLayer)
+        print("[P\(pageIndex)] Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
     }
 
     // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        if handwritingLayer.touchFinished {
-            if handwritingLayer.currentTool.isDrawing, let newStroke = handwritingLayer.drawing.strokes.last {
-                    let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
-                    executeAndSave(command: cmd)
-            } else if handwritingLayer.currentTool.isEraser {
-                let currentStrokes = handwritingLayer.drawing.strokes
-                let erasedStrokes = previousStrokes.filter { oldStroke in 
-                    !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
-                }
-                if !erasedStrokes.isEmpty {
-                    let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
-                    executeAndSave(command: cmd)
-                }
+        guard let handwritingLayer = currentHandwritingLayer, handwritingLayer.touchFinished else { return }
+        if handwritingLayer.currentTool.isDrawing, let newStroke = handwritingLayer.drawing.strokes.last {
+            let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
+            executeAndSave(command: cmd)
+        } else if handwritingLayer.currentTool.isEraser {
+            let currentStrokes = handwritingLayer.drawing.strokes
+            let erasedStrokes = previousStrokes.filter { oldStroke in 
+                !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
             }
-            previousStrokes = handwritingLayer.drawing.strokes
-            handwritingLayer.touchFinished = false
+            if !erasedStrokes.isEmpty {
+                let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
+                executeAndSave(command: cmd)
+            }
         }
+        handwritingLayer.touchFinished = false
     }
 
     // MARK: - 处理贴纸
     private func handleStickerAdded(_ sticker: Sticker) {
-        let stickerView = StickerView(sticker: sticker)
-        let cmd = AddStickerCommand(stickerView: stickerView, container: contentLayer)
+        guard let stickerLayer = currentStickerLayer else { return }
+        let cmd = AddStickerCommand(sticker: sticker, stickerLayer: stickerLayer)
         executeAndSave(command: cmd)
     }
 
+    // MARK: - 清理视图
+    func clearEmptyLayers(in container: UIView) {
+        let cleared: Bool = false
+        for subview in container.subviews {
+            if let stickerLayer = subview as? StickerLayer, stickerLayer.isEmpty {
+                stickerLayer.removeFromSuperview()
+                cleared = true
+            }
+            if let handwritingLayer = subview as? HandwritingLayer,
+            handwritingLayer.paths.isEmpty {
+                handwritingLayer.removeFromSuperview()
+                cleared = true
+            }
+        }
+        if cleared { print("🗑️ Cleared empty layers.") }
+    }
+    
     // MARK: - Undo/Redo
     func executeAndSave(command: CanvasCommand) {
         command.execute()
         undoStack.append(command)
         redoStack.removeAll()
-        previousStrokes = handwritingLayer.drawing.strokes
+        // previousStrokes = currentHandwritingLayer.drawing.strokes
         lastEditedTimestamp = Date()
 
-        print("🕹️ Added new command.", terminator:" ")
-        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        print("[P\(pageIndex)] Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func undo() {
         guard let command = undoStack.popLast() else { return }
         command.undo()
         redoStack.append(command)
-        previousStrokes = handwritingLayer.drawing.strokes
+        // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("🕹️ UndoStack pops command.", terminator:" ")
-        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        print("[P\(pageIndex)] UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func redo() {
         guard let command = redoStack.popLast() else { return }
         command.execute()
         undoStack.append(command)
-        previousStrokes = handwritingLayer.drawing.strokes
+        // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("🕹️ RedoStack pops command.", terminator:" ")
-        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        print("[P\(pageIndex)] RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
+
 }

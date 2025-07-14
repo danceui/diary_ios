@@ -1,5 +1,4 @@
 import PencilKit
-import UIKit
 
 protocol CanvasCommand {
     func execute()
@@ -61,51 +60,26 @@ class EraseStrokesCommand: CanvasCommand {
 }
 
 class AddStickerCommand: CanvasCommand {
-    private let stickerView: StickerView
-    private unowned let container: UIView
+    private let sticker: Sticker
+    private unowned let stickerLayer: StickerLayer
 
-    init(stickerView: StickerView, container: UIView) {
-        self.stickerView = stickerView
-        self.container = container
+    init(sticker: Sticker, stickerLayer: StickerLayer) {
+        self.sticker = sticker
+        self.stickerLayer = stickerLayer
     }
 
     func execute() {
-        container.addSubview(stickerView)
+        let view = StickerView(sticker: sticker)
+        stickerLayer.stickers.append(sticker)
+        stickerLayer.stickerViews.append(view)
+        stickerLayer.addSubview(view)
     }
 
     func undo() {
-        stickerView.removeFromSuperview()
-    }
-}
-
-class FreezeCanvasCommand: CanvasCommand {
-    private var frozenCanvas: HandwritingLayer
-    private weak var pageView: NotebookPageView?
-
-    private var previousDelegate: PKCanvasViewDelegate?
-    // private var wasUserInteractionEnabled: Bool = true
-
-    init(canvas: HandwritingLayer, pageView: NotebookPageView) {
-        self.frozenCanvas = canvas
-        self.pageView = pageView
-    }
-
-    func execute() {
-        // 保存原状态并冻结该 canvas
-        previousDelegate = frozenCanvas.delegate
-        // wasUserInteractionEnabled = frozenCanvas.isUserInteractionEnabled
-        frozenCanvas.delegate = nil
-        frozenCanvas.isUserInteractionEnabled = false
-    }
-
-    func undo() {
-        guard let pageView = pageView else { return }
-
-        // 1. 恢复 canvas 的可编辑状态
-        frozenCanvas.delegate = pageView
-        frozenCanvas.isUserInteractionEnabled = true
-
-        // 2. 设置为当前 handwritingLayer
-        pageView.setHandwritingLayerRestored(from: frozenCanvas)
+        if !stickerLayer.stickers.isEmpty {
+            stickerLayer.stickers.removeLast()
+            let view = stickerLayer.stickerViews.removeLast()
+            view.removeFromSuperview()
+        }
     }
 }

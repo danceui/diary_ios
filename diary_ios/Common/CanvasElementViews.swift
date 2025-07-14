@@ -1,5 +1,7 @@
 import UIKit
+import PencilKit
 
+// MARK: - 贴纸
 struct Sticker {
     var id: UUID
     var center: CGPoint

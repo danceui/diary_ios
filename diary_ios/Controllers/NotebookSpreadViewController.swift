@@ -42,10 +42,10 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     private func setupInitialPages() {
         pages = [
             NotebookPageView(role: .empty),
-            NotebookPageView(role: .cover, isLeft: false),
-            NotebookPageView(role: .normal, isLeft: true),
-            NotebookPageView(role: .normal, isLeft: false),
-            NotebookPageView(role: .back, isLeft: true),
+            NotebookPageView(role: .cover, isLeft: false, leftPageIndex: 0),
+            NotebookPageView(role: .normal, isLeft: true, leftPageIndex: 2),
+            NotebookPageView(role: .normal, isLeft: false, leftPageIndex: 2),
+            NotebookPageView(role: .back, isLeft: true, leftPageIndex: 4),
             NotebookPageView(role: .empty)
         ]
     }
@@ -200,8 +200,8 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         }
 
         let insertIndex = currentLeftIndex + 2
-        let leftPage = NotebookPageView(isLeft: true, initialData: initialData)
-        let rightPage = NotebookPageView(isLeft: false, initialData: initialData)
+        let leftPage = NotebookPageView(isLeft: true, leftPageIndex:pages.count, initialData: initialData)
+        let rightPage = NotebookPageView(isLeft: false, leftPageIndex:pages.count, initialData: initialData)
         pages.insert(contentsOf: [leftPage, rightPage], at: insertIndex)
         print("📄 Add page pair \(insertIndex), \(insertIndex + 1).")
 
@@ -223,13 +223,11 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     // MARK: - undo redo
     func undo() {
         let index = computeLastEditedIndex()
-        print("↩️ Undo on page #\(index).")
         pages[index].undo()
     }
 
     func redo() {
         let index = computeLastEditedIndex()
-        print("↪️ Redo on page #\(index).")
         pages[index].redo()
     }
     
