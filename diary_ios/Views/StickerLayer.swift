@@ -1,22 +1,20 @@
 import UIKit
 
-class StickerInputLayer: UIView, ToolObserver {
+class StickerLayer: UIView {
     var currentTool: Tool = .sticker
     var readyToAddSticker = true
     var onStickerAdded: ((Sticker) -> Void)?
 
-    // var stickers: [Sticker] = []
-    // var stickerViews: [StickerView] = []
+    var stickers: [Sticker] = []
+    var stickerViews: [StickerView] = []
 
     // MARK: - 初始化
     override init(frame: CGRect) {
         super.init(frame: frame)
-        ToolManager.shared.addObserver(self)
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        ToolManager.shared.addObserver(self)
     }
 
     // MARK: - 监听触摸
@@ -45,7 +43,7 @@ class StickerInputLayer: UIView, ToolObserver {
     }
 
     // MARK: - 切换工具
-    func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+    func toolDidChange(tool: Tool) {
         currentTool = tool
     }
 }

@@ -13,8 +13,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     private var containerView = UIView()
     private var handwritingLayers: [HandwritingLayer] = []
-    private var currentHandwritingLayer: HandwritingLayer? // 当前活动的笔画层
-    private var stickerInputLayer = StickerInputLayer()
+    private var currentHandwritingLayer: HandwritingLayer?
+    private var stickerLayers: [StickerLayer] = []
+    private var currentStickerLayer: StickerLayer?
 
     private var previousStrokes: [PKStroke] = []
     private var undoStack: [CanvasCommand] = []
@@ -33,9 +34,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         if role == .normal {
             ToolManager.shared.addObserver(self)
             addSubview(containerView)
-            containerView.insertSubview(stickerInputLayer, at: 0) // 重要！因为这条语句是在 createNewHandwritingLayer 后调用的
-            print("🔄[P\(pageIndex)] Added StickerInputLayer.")
-            stickerInputLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         }
     }
 
@@ -46,8 +44,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     override func layoutSubviews() {
         super.layoutSubviews()
         containerView.frame = bounds
-        stickerInputLayer.frame = bounds
         for layer in handwritingLayers {
+            layer.frame = bounds
+        }
+        for layer in stickerLayers {
             layer.frame = bounds
         }
     }
@@ -57,15 +57,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         layer.cornerRadius = pageCornerRadius
         layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         layer.masksToBounds = true
-    }
-
-    private func createNewHandwritingLayer() {
-        let newLayer = HandwritingLayer()
-        newLayer.delegate = self
-        newLayer.frame = bounds
-        handwritingLayers.append(newLayer)
-        currentHandwritingLayer = newLayer
-        containerView.addSubview(newLayer)
     }
 
     private func backgroundColorForRole(_ role: PageRole) -> UIColor {
@@ -84,15 +75,37 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         if tool.isDrawing || tool.isEraser {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
-                print("🔄[P\(pageIndex)] Created new handwriting layer. \(handwritingLayers.count) layers in total.")
+                print("🖊️[P\(pageIndex)] Created handwriting layer. \(handwritingLayers.count) handwriting layers in total.")
             }
             currentHandwritingLayer!.toolDidChange(tool: tool)
+            currentStickerLayer = nil
         } else if tool.isSticker {
+            if currentStickerLayer == nil {
+                createNewStickerLayer()
+                print("⭐️[P\(pageIndex)] Created sticker layer. \(stickerLayers.count) sticker layers in total.")
+            }
+            currentStickerLayer!.toolDidChange(tool: tool)
             currentHandwritingLayer = nil
-            print("🔄[P\(pageIndex)] Cleared current handwriting layer. \(handwritingLayers.count) layers in total.")
-            containerView.bringSubviewToFront(stickerInputLayer)
         }
         currentTool = tool
+    }
+
+    private func createNewHandwritingLayer() {
+        let newLayer = HandwritingLayer()
+        newLayer.frame = bounds
+        newLayer.delegate = self
+        handwritingLayers.append(newLayer)
+        currentHandwritingLayer = newLayer
+        containerView.addSubview(newLayer)
+    }
+
+    private func createNewStickerLayer() {
+        let newLayer = StickerLayer()
+        newLayer.frame = bounds
+        newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
+        stickerLayers.append(newLayer)
+        currentStickerLayer = newLayer
+        containerView.addSubview(newLayer)
     }
 
     // MARK: - 处理笔画
@@ -116,8 +129,8 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 处理贴纸
     private func handleStickerAdded(_ sticker: Sticker) {
-        let view = StickerView(sticker: sticker)
-        let cmd = AddStickerCommand(stickerView: view, container: containerView)
+        guard let stickerLayer = currentStickerLayer else { return }
+        let cmd = AddStickerCommand(sticker: sticker, stickerLayer: stickerLayer)
         executeAndSave(command: cmd)
     }
 

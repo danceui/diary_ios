@@ -1,41 +1,6 @@
 import UIKit
 import PencilKit
 
-// MARK: - 笔画
-class StrokeBatchView: UIView {
-    let strokes: [PKStroke]
-    private let imageView = UIImageView()
-
-    init(strokes: [PKStroke], frame: CGRect) {
-        self.strokes = strokes
-        super.init(frame: frame)
-        setupView()
-        renderStrokesToImage()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func setupView() {
-        addSubview(imageView)
-        imageView.frame = bounds
-        imageView.contentMode = .scaleAspectFit
-        isUserInteractionEnabled = false // 后续可加上交互功能
-    }
-
-    private func renderStrokesToImage() {
-        // 1. 创建一个 PKDrawing 并附上这些 strokes
-        let drawing = PKDrawing(strokes: strokes)
-
-        // 2. 渲染为 UIImage
-        let scale = UIScreen.main.scale
-        let image = drawing.image(from: bounds, scale: scale)
-
-        imageView.image = image
-    }
-}
-
 // MARK: - 贴纸
 struct Sticker {
     var id: UUID

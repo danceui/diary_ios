@@ -60,20 +60,26 @@ class EraseStrokesCommand: CanvasCommand {
 }
 
 class AddStickerCommand: CanvasCommand {
-    private let stickerView: StickerView
-    weak var container: UIView?
+    private let sticker: Sticker
+    private unowned let stickerLayer: StickerLayer
 
-    init(stickerView: StickerView, container: UIView) {
-        self.stickerView = stickerView
-        self.container = container
+    init(sticker: Sticker, stickerLayer: StickerLayer) {
+        self.sticker = sticker
+        self.stickerLayer = stickerLayer
     }
 
     func execute() {
-        guard let container = container else { return }
-        container.addSubview(stickerView)
+        let view = StickerView(sticker: sticker)
+        stickerLayer.stickers.append(sticker)
+        stickerLayer.stickerViews.append(view)
+        stickerLayer.addSubview(view)
     }
 
     func undo() {
-        stickerView.removeFromSuperview()
+        if !stickerLayer.stickers.isEmpty {
+            stickerLayer.stickers.removeLast()
+            let view = stickerLayer.stickerViews.removeLast()
+            view.removeFromSuperview()
+        }
     }
 }
