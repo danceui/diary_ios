@@ -146,14 +146,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
             executeAndSave(command: cmd)
         } else if handwritingLayer.currentTool.isEraser {
-            // let currentStrokes = handwritingLayer.drawing.strokes
-            // let erasedStrokes = previousStrokes.filter { oldStroke in 
-            //     !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
-            // }
-            // if !erasedStrokes.isEmpty {
-            //     let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
-            //     executeAndSave(command: cmd)
-            // }
         }
         handwritingLayer.touchFinished = false
     }
@@ -193,5 +185,33 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
         print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
+}
 
+extension NotebookPageView: EraserLayerDelegate {
+    func applyEraser(eraserLocation point: CGPoint, eraserSize: CGFloat) {
+        let eraserRect = CGRect(
+            x: point.x - eraserSize / 2,
+            y: point.y - eraserSize / 2,
+            width: eraserSize,
+            height: eraserSize
+        )
+        
+        for layer in handwritingLayers {
+            let originalStrokes = layer.drawing.strokes
+            let erasedStrokes = originalStrokes.filter { stroke($0, intersects: eraserRect) }
+            if !erasedStrokes.isEmpty {
+                let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: layer)
+                executeAndSave(command: cmd)
+            }
+        }
+    }
+
+    private func stroke(_ stroke: PKStroke, intersects rect: CGRect) -> Bool {
+        for point in stroke.path {
+            if rect.contains(point.location) {
+                return true
+            }
+        }
+        return false
+    }
 }
