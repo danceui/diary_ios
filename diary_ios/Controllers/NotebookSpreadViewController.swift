@@ -146,12 +146,10 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             print("❌ Index out of bounds: \(index).")
             return
         }
-        updateToolListeners(newIndex: index)
-        // cleanCurrentPages()
-
         print("▶️ Go to page pair \(index), \(index + 1).")
         currentLeftIndex = index
         updatePageContainers()
+        updateToolListeners(newIndex: index)
     }
 
     private func updateToolListeners(newIndex: Int) {
@@ -167,11 +165,6 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             pages[newIndex + 1].activateToolListener()
         }
     }
-
-    // private func cleanCurrentPages() {
-    //     pages[currentLeftIndex].clearEmptyLayers()
-    //     pages[currentLeftIndex + 1].clearEmptyLayers()
-    // }
 
     // MARK: - undo redo
     func undo() {
