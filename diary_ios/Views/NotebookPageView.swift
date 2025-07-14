@@ -147,9 +147,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     // MARK: - 清理视图
-    func clearEmptyLayers(in container: UIView) {
+    func clearEmptyLayers() {
         var cleared: Bool = false
-        for subview in container.subviews {
+        for subview in containerView.subviews {
             if let stickerLayer = subview as? StickerLayer, stickerLayer.isEmpty {
                 stickerLayer.removeFromSuperview()
                 cleared = true

@@ -34,7 +34,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 4️⃣ viewWillAppear", for: view)
-        updatePageContainers()
+        goToPagePair(to: currentLeftIndex)
         setupSpineShadow()
     }
 
@@ -146,24 +146,32 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             print("❌ Index out of bounds: \(index).")
             return
         }
-        updateToolListeners()
-        clearEmptyLayers()
+        updateToolListeners(newIndex: index)
+        // cleanCurrentPages()
 
         print("▶️ Go to page pair \(index), \(index + 1).")
         currentLeftIndex = index
         updatePageContainers()
     }
 
-    private func updateToolListeners() {
-        for page in pages {
-            page.deactivateToolListener()
+    private func updateToolListeners(newIndex: Int) {
+        // 取消旧页监听
+        if currentLeftIndex >= 0, currentLeftIndex + 1 < pages.count {
+            pages[currentLeftIndex].deactivateToolListener()
+            pages[currentLeftIndex + 1].deactivateToolListener()
         }
 
-        if currentLeftIndex >= 0, currentLeftIndex + 1 < pages.count {
-            pages[currentLeftIndex].activateToolListener()
-            pages[currentLeftIndex + 1].activateToolListener()
+        // 激活新页监听
+        if newIndex >= 0, newIndex + 1 < pages.count {
+            pages[newIndex].activateToolListener()
+            pages[newIndex + 1].activateToolListener()
         }
     }
+
+    // private func cleanCurrentPages() {
+    //     pages[currentLeftIndex].clearEmptyLayers()
+    //     pages[currentLeftIndex + 1].clearEmptyLayers()
+    // }
 
     // MARK: - undo redo
     func undo() {
