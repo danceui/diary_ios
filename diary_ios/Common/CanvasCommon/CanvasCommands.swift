@@ -31,31 +31,61 @@ class AddStrokeCommand: CanvasCommand {
     }
 }
 
-class EraseStrokesCommand: CanvasCommand {
-    private let erasedStrokes: [PKStroke]
-    private var strokesErasedOnce: Bool
-    private unowned let handwritingLayer: HandwritingLayer
+// class EraseStrokesCommand: CanvasCommand {
+//     private let erasedStrokes: [PKStroke]
+//     private var strokesErasedOnce: Bool
+//     private unowned let handwritingLayer: HandwritingLayer
 
-    init(erasedStrokes: [PKStroke], strokesErasedOnce: Bool, layer: HandwritingLayer) {
-        self.erasedStrokes = erasedStrokes
+//     init(erasedStrokes: [PKStroke], strokesErasedOnce: Bool, layer: HandwritingLayer) {
+//         self.erasedStrokes = erasedStrokes
+//         self.strokesErasedOnce = strokesErasedOnce
+//         self.handwritingLayer = layer
+//     }
+
+//     func execute() {
+//         guard strokesErasedOnce else {
+//             strokesErasedOnce = true
+//             return 
+//         }
+//         let currentStrokes = handwritingLayer.drawing.strokes
+//         let remainingStrokes = currentStrokes.filter { stroke in
+//             !erasedStrokes.contains(where: { isStrokeEqual($0, stroke) })
+//         }
+//         handwritingLayer.drawing = PKDrawing(strokes: remainingStrokes)
+//     }
+
+//     func undo() {
+//         handwritingLayer.drawing.strokes.append(contentsOf: erasedStrokes)
+//     }
+// }
+
+class MultiEraseStrokesCommand: CanvasCommand {
+    private var layerToErasedStrokes: [(layer: HandwritingLayer, strokes: [PKStroke])]
+    private var strokesErasedOnce: Bool = false
+
+    init(layerToErasedStrokes: [(HandwritingLayer, [PKStroke])], strokesErasedOnce: Bool) {
+        self.layerToErasedStrokes = layerToErasedStrokes
         self.strokesErasedOnce = strokesErasedOnce
-        self.handwritingLayer = layer
     }
-
+    
     func execute() {
         guard strokesErasedOnce else {
             strokesErasedOnce = true
             return 
         }
-        let currentStrokes = handwritingLayer.drawing.strokes
-        let remainingStrokes = currentStrokes.filter { stroke in
-            !erasedStrokes.contains(where: { isStrokeEqual($0, stroke) })
+        for (layer, strokes) in layerToErasedStrokes {
+            let current = layer.drawing.strokes
+            let remaining = current.filter { stroke in
+                !strokes.contains(where: { isStrokeEqual($0, stroke) })
+            }
+            layer.drawing = PKDrawing(strokes: remaining)
         }
-        handwritingLayer.drawing = PKDrawing(strokes: remainingStrokes)
     }
 
     func undo() {
-        handwritingLayer.drawing.strokes.append(contentsOf: erasedStrokes)
+        for (layer, strokes) in layerToErasedStrokes {
+            layer.drawing.strokes.append(contentsOf: strokes)
+        }
     }
 }
 

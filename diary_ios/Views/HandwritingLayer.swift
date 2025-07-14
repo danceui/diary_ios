@@ -5,16 +5,6 @@ class HandwritingLayer: PKCanvasView {
     var currentTool: Tool = .pen
     var touchFinished = false
 
-    // private let eraserPreviewView: UIView = {
-    //     let view = UIView()
-    //     view.backgroundColor = UIColor.clear
-    //     view.layer.borderColor = UIColor.gray.cgColor
-    //     view.layer.borderWidth = 1
-    //     view.layer.cornerRadius = 1 // 先设为1，后面动态更新
-    //     view.isHidden = true
-    //     return view
-    // }()
-
     // MARK: - 初始化
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -35,21 +25,12 @@ class HandwritingLayer: PKCanvasView {
     // MARK: - 监听触摸
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
-        handleTouchFinished()
+        touchFinished = true
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
-        handleTouchFinished()
-    }
-
-    private func handleTouchFinished() {
-        if currentTool.isDrawing {
-            touchFinished = true
-        } else if currentTool.isEraser {
-            // eraserPreviewView.isHidden = true
-            // self.drawing = self.drawing
-        }
+        touchFinished = true
     }
     
     // MARK: - 切换工具

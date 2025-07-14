@@ -16,6 +16,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var currentHandwritingLayer: HandwritingLayer?
     private var stickerLayers: [StickerLayer] = []
     private var currentStickerLayer: StickerLayer?
+    private var eraserLayer: EraserLayer?
 
     private var previousStrokes: [PKStroke] = []
     private var undoStack: [CanvasCommand] = []
@@ -75,16 +76,22 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             }
             currentHandwritingLayer!.toolDidChange(tool: tool)
             currentStickerLayer = nil
+        } else if tool.isEraser {
+            if eraserLayer == nil {
+                createNewEraserLayer()
+            }
+            currentStickerLayer = nil
+            currentHandwritingLayer = nil
         } else if tool.isSticker {
             if currentStickerLayer == nil {
                 createNewStickerLayer()
             }
-            currentStickerLayer!.toolDidChange(tool: tool)
             currentHandwritingLayer = nil
         }
         currentTool = tool
     }
 
+    // MARK: - 创建视图层
     private func createNewHandwritingLayer() {
         clearEmptyHandwritingLayer()
         let newLayer = HandwritingLayer()
@@ -105,6 +112,18 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         currentStickerLayer = newLayer
         containerView.addSubview(newLayer)
         print("[P\(pageIndex)] ⭐️ Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
+    }
+
+    private func createNewEraserLayer() {
+        if let eraserLayer = eraserLayer {
+            eraserLayer.removeFromSuperview()
+        }
+        let newLayer = EraserLayer()
+        newLayer.frame = bounds
+        newLayer.eraseDelegate = self
+        containerView.addSubview(newLayer)
+        eraserLayer = newLayer
+        print("[P\(pageIndex)] 🫧 Created eraser layer")
     }
 
     // MARK: - 清理视图层
@@ -195,22 +214,26 @@ extension NotebookPageView: EraserLayerDelegate {
             width: eraserSize,
             height: eraserSize
         )
-        
+
+        var eraseInfo: [(HandwritingLayer, [PKStroke])] = []
         for layer in handwritingLayers {
             let originalStrokes = layer.drawing.strokes
             let erasedStrokes = originalStrokes.filter { stroke($0, intersects: eraserRect) }
             if !erasedStrokes.isEmpty {
-                let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: layer)
-                executeAndSave(command: cmd)
+                // let remainingStrokes = originalStrokes.filter { _ in !erasedStrokes.contains(where: { isStrokeEqual($0, $1) }) }
+                // layer.drawing = PKDrawing(strokes: remainingStrokes)
+                eraseInfo.append((layer, erasedStrokes))
             }
+        }
+        if !eraseInfo.isEmpty {
+            let cmd = MultiEraseStrokesCommand(layerToErasedStrokes: eraseInfo, strokesErasedOnce: false)
+            executeAndSave(command: cmd)
         }
     }
 
     private func stroke(_ stroke: PKStroke, intersects rect: CGRect) -> Bool {
         for point in stroke.path {
-            if rect.contains(point.location) {
-                return true
-            }
+            if rect.contains(point.location) { return true }
         }
         return false
     }

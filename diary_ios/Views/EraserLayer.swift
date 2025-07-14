@@ -2,12 +2,11 @@ import UIKit
 import PencilKit
 
 protocol EraserLayerDelegate: AnyObject {
-    func applyEraser(_ eraserLayer: EraserLayer, didMoveTo point: CGPoint, eraserSize: CGFloat)
+    func applyEraser(eraserLocation: CGPoint, eraserSize: CGFloat)
 }
 
 class EraserLayer: PKCanvasView {
     weak var eraseDelegate: EraserLayerDelegate?
-    var currentTool: Tool = .eraser
 
     private let eraserPreviewView: UIView = {
         let view = UIView()
@@ -34,9 +33,9 @@ class EraserLayer: PKCanvasView {
         backgroundColor = .clear
         isOpaque = false
         drawingPolicy = .pencilOnly
+        tool = PKEraserTool(.vector)
         addSubview(eraserPreviewView)
         eraserPreviewView.isHidden = true
-        tool = PKEraserTool(.vector)
     }
 
     // MARK: - 监听触摸
@@ -52,6 +51,6 @@ class EraserLayer: PKCanvasView {
         eraserPreviewView.frame = frame
         eraserPreviewView.layer.cornerRadius = eraserSize / 2
         eraserPreviewView.isHidden = false
-        eraseDelegate?.applyEraser(eraserLocation: location, eraserSize: currentTool.eraserSize)
+        eraseDelegate?.applyEraser(eraserLocation: location, eraserSize: 4)
     }
 }
