@@ -47,3 +47,9 @@ class StickerLayer: UIView {
         currentTool = tool
     }
 }
+
+extension StickerLayer {
+    var isEmpty: Bool {
+        return stickers.isEmpty && stickerViews.isEmpty
+    }
+}

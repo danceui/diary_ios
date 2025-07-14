@@ -75,14 +75,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         if tool.isDrawing || tool.isEraser {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
-                print("[P\(pageIndex)] Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
             }
             currentHandwritingLayer!.toolDidChange(tool: tool)
             currentStickerLayer = nil
         } else if tool.isSticker {
             if currentStickerLayer == nil {
                 createNewStickerLayer()
-                print("[P\(pageIndex)] Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
             }
             currentStickerLayer!.toolDidChange(tool: tool)
             currentHandwritingLayer = nil
@@ -97,6 +95,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         handwritingLayers.append(newLayer)
         currentHandwritingLayer = newLayer
         containerView.addSubview(newLayer)
+        print("[P\(pageIndex)] Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
     }
 
     private func createNewStickerLayer() {
@@ -106,6 +105,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         stickerLayers.append(newLayer)
         currentStickerLayer = newLayer
         containerView.addSubview(newLayer)
+        print("[P\(pageIndex)] Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
     }
 
     // MARK: - 处理笔画
@@ -161,5 +161,22 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         // previousStrokes = currentHandwritingLayer.drawing.strokes
 
         print("[P\(pageIndex)] RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+    }
+
+    // MARK: - 清理视图
+    func clearEmptyLayers(in container: UIView) {
+        let cleared: Bool = false
+        for subview in container.subviews {
+            if let stickerLayer = subview as? StickerLayer, stickerLayer.isEmpty {
+                stickerLayer.removeFromSuperview()
+                cleared = true
+            }
+            if let handwritingLayer = subview as? HandwritingLayer,
+            handwritingLayer.paths.isEmpty {
+                handwritingLayer.removeFromSuperview()
+                cleared = true
+            }
+        }
+        if cleared { print("🗑️ Cleared empty layers.") }
     }
 }

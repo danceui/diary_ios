@@ -87,3 +87,9 @@ class HandwritingLayer: PKCanvasView {
         }
     }
 }
+
+extension HandwritingLayer {
+    var isEmpty: Bool {
+        return drawing.strokes.isEmpty
+    }
+}
