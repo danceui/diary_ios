@@ -86,23 +86,42 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     private func createNewHandwritingLayer() {
+        clearEmptyHandwritingLayer()
         let newLayer = HandwritingLayer()
         newLayer.frame = bounds
         newLayer.delegate = self
         handwritingLayers.append(newLayer)
         currentHandwritingLayer = newLayer
         containerView.addSubview(newLayer)
-        print("[P\(pageIndex)] Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
+        print("[P\(pageIndex)] ✏️ Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
     }
 
     private func createNewStickerLayer() {
+        clearEmptyStickerLayer()
         let newLayer = StickerLayer()
         newLayer.frame = bounds
         newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
         stickerLayers.append(newLayer)
         currentStickerLayer = newLayer
         containerView.addSubview(newLayer)
-        print("[P\(pageIndex)] Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
+        print("[P\(pageIndex)] ⭐️ Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
+    }
+
+    // MARK: - 清理视图层
+    func clearEmptyHandwritingLayer() {
+        if let lastHandwriting = handwritingLayers.last, lastHandwriting.isEmpty {
+            lastHandwriting.removeFromSuperview()
+            handwritingLayers.removeLast()
+            print("[P\(pageIndex)] 🗑️ Cleared last empty handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
+        }
+    }
+
+    func clearEmptyStickerLayer() {
+        if let lastSticker = stickerLayers.last, lastSticker.isEmpty {
+            lastSticker.removeFromSuperview()
+            stickerLayers.removeLast()
+            print("[P\(pageIndex)] 🗑️ Cleared last empty sticker layer. stickerLayers.count = \(stickerLayers.count).")
+        }
     }
 
     // MARK: - 监听工具
@@ -110,7 +129,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard !isObservingTool else { return }
         ToolManager.shared.addObserver(self)
         isObservingTool = true
-        print("[P\(pageIndex)] ✅ Tool listener activated.")
+        print("[P\(pageIndex)] 👂 Tool listener activated.")
     }
 
     func deactivateToolListener() {
@@ -145,23 +164,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         let cmd = AddStickerCommand(sticker: sticker, stickerLayer: stickerLayer)
         executeAndSave(command: cmd)
     }
-
-    // MARK: - 清理视图
-    func clearEmptyLayers() {
-        var cleared: Bool = false
-        for subview in containerView.subviews {
-            if let stickerLayer = subview as? StickerLayer, stickerLayer.isEmpty {
-                stickerLayer.removeFromSuperview()
-                cleared = true
-            }
-            if let handwritingLayer = subview as? HandwritingLayer,
-            handwritingLayer.isEmpty {
-                handwritingLayer.removeFromSuperview()
-                cleared = true
-            }
-        }
-        if cleared { print("🗑️ Cleared empty layers.") }
-    }
     
     // MARK: - Undo/Redo
     func executeAndSave(command: CanvasCommand) {
@@ -171,7 +173,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         // previousStrokes = currentHandwritingLayer.drawing.strokes
         lastEditedTimestamp = Date()
 
-        print("[P\(pageIndex)] Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+        print("[P\(pageIndex)] 🕹️ Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func undo() {
@@ -180,7 +182,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         redoStack.append(command)
         // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("[P\(pageIndex)] UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+        print("[P\(pageIndex)] 🕹️ UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func redo() {
@@ -189,7 +191,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         undoStack.append(command)
         // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("[P\(pageIndex)] RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+        print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
 }
