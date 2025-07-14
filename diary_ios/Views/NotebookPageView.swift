@@ -4,6 +4,7 @@ import PencilKit
 @available(iOS 16.0, *)
 class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let pageRole: PageRole
+    var pageIndex: Int
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
@@ -16,25 +17,25 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var stickerInputLayer = StickerInputLayer()
 
     private var previousStrokes: [PKStroke] = []
-    // private var currentStrokeBatch: [PKStroke] = []
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
 
     private var currentTool: Tool = .pen
 
     // MARK: - 初始化
-    init(role: PageRole = .normal, isLeft: Bool = true, initialData: Data? = nil) {
+    init(role: PageRole = .normal, isLeft: Bool = true, leftPageIndex: Int = 0, initialData: Data? = nil) {
         self.pageRole = role
         self.isLeft = isLeft
+        self.pageIndex = isLeft ? leftPageIndex : leftPageIndex + 1
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
 
-        ToolManager.shared.addObserver(self)
         if role == .normal {
+            ToolManager.shared.addObserver(self)
             addSubview(containerView)
-            containerView.addSubview(stickerInputLayer)
+            containerView.insertSubview(stickerInputLayer, at: 0) // 重要！因为这条语句是在 createNewHandwritingLayer 后调用的
+            print("🔄[P\(pageIndex)] Added StickerInputLayer.")
             stickerInputLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
-            createNewHandwritingLayer()
         }
     }
 
@@ -59,7 +60,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     private func createNewHandwritingLayer() {
-        print("🔄 Creating new handwriting layer. \(handwritingLayers.count) layers in total.")
         let newLayer = HandwritingLayer()
         newLayer.delegate = self
         newLayer.frame = bounds
@@ -81,12 +81,15 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        if !(currentTool.isDrawing || currentTool.isEraser), (tool.isDrawing || tool.isEraser) {
+        if tool.isDrawing || tool.isEraser {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
+                print("🔄[P\(pageIndex)] Created new handwriting layer. \(handwritingLayers.count) layers in total.")
             }
+            currentHandwritingLayer!.toolDidChange(tool: tool)
         } else if tool.isSticker {
             currentHandwritingLayer = nil
+            print("🔄[P\(pageIndex)] Cleared current handwriting layer. \(handwritingLayers.count) layers in total.")
             containerView.bringSubviewToFront(stickerInputLayer)
         }
         currentTool = tool
@@ -126,7 +129,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         // previousStrokes = currentHandwritingLayer.drawing.strokes
         lastEditedTimestamp = Date()
 
-        print("🕹️ Added new command.", terminator:" ")
+        print("🕹️[P\(pageIndex)] Added new command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
     }
 
@@ -136,7 +139,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         redoStack.append(command)
         // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("🕹️ UndoStack pops command.", terminator:" ")
+        print("🕹️[P\(pageIndex)] UndoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
     }
 
@@ -146,7 +149,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         undoStack.append(command)
         // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("🕹️ RedoStack pops command.", terminator:" ")
+        print("🕹️[P\(pageIndex)] RedoStack pops command.", terminator:" ")
         printStackInfo(undoStack: undoStack, redoStack: redoStack)
     }
 }
