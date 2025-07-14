@@ -69,7 +69,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        if tool.isDrawing || tool.isEraser {
+        if tool.isDrawing {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
             }
@@ -146,14 +146,14 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
             executeAndSave(command: cmd)
         } else if handwritingLayer.currentTool.isEraser {
-            let currentStrokes = handwritingLayer.drawing.strokes
-            let erasedStrokes = previousStrokes.filter { oldStroke in 
-                !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
-            }
-            if !erasedStrokes.isEmpty {
-                let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
-                executeAndSave(command: cmd)
-            }
+            // let currentStrokes = handwritingLayer.drawing.strokes
+            // let erasedStrokes = previousStrokes.filter { oldStroke in 
+            //     !currentStrokes.contains(where: { isStrokeEqual($0, oldStroke) })
+            // }
+            // if !erasedStrokes.isEmpty {
+            //     let cmd = EraseStrokesCommand(erasedStrokes: erasedStrokes, strokesErasedOnce: false, layer: handwritingLayer)
+            //     executeAndSave(command: cmd)
+            // }
         }
         handwritingLayer.touchFinished = false
     }
