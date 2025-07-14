@@ -27,23 +27,3 @@ class StickerView: UIImageView {
         fatalError("init(coder:) has not been implemented")
     }
 }
-
-// class StickerRenderer {
-//     let model: StickerModel
-//     let size: CGSize = CGSize(width: 80, height: 80)
-
-//     init(model: StickerModel) {
-//         self.model = model
-//     }
-
-//     func draw(in context: CGContext) {
-//         guard let image = UIImage(named: model.name)?.cgImage else { return }
-
-//         let origin = CGPoint(
-//             x: model.center.x - size.width / 2,
-//             y: model.center.y - size.height / 2
-//         )
-//         let rect = CGRect(origin: origin, size: size)
-//         context.draw(image, in: rect)
-//     }
-// }

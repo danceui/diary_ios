@@ -134,6 +134,23 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         executeAndSave(command: cmd)
     }
 
+    // MARK: - 清理视图
+    func clearEmptyLayers(in container: UIView) {
+        let cleared: Bool = false
+        for subview in container.subviews {
+            if let stickerLayer = subview as? StickerLayer, stickerLayer.isEmpty {
+                stickerLayer.removeFromSuperview()
+                cleared = true
+            }
+            if let handwritingLayer = subview as? HandwritingLayer,
+            handwritingLayer.paths.isEmpty {
+                handwritingLayer.removeFromSuperview()
+                cleared = true
+            }
+        }
+        if cleared { print("🗑️ Cleared empty layers.") }
+    }
+    
     // MARK: - Undo/Redo
     func executeAndSave(command: CanvasCommand) {
         command.execute()
@@ -163,20 +180,4 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         print("[P\(pageIndex)] RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
-    // MARK: - 清理视图
-    func clearEmptyLayers(in container: UIView) {
-        let cleared: Bool = false
-        for subview in container.subviews {
-            if let stickerLayer = subview as? StickerLayer, stickerLayer.isEmpty {
-                stickerLayer.removeFromSuperview()
-                cleared = true
-            }
-            if let handwritingLayer = subview as? HandwritingLayer,
-            handwritingLayer.paths.isEmpty {
-                handwritingLayer.removeFromSuperview()
-                cleared = true
-            }
-        }
-        if cleared { print("🗑️ Cleared empty layers.") }
-    }
 }
