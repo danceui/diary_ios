@@ -75,14 +75,14 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         if tool.isDrawing || tool.isEraser {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
-                print("🖊️[P\(pageIndex)] Created handwriting layer. \(handwritingLayers.count) handwriting layers in total.")
+                print("[P\(pageIndex)] Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
             }
             currentHandwritingLayer!.toolDidChange(tool: tool)
             currentStickerLayer = nil
         } else if tool.isSticker {
             if currentStickerLayer == nil {
                 createNewStickerLayer()
-                print("⭐️[P\(pageIndex)] Created sticker layer. \(stickerLayers.count) sticker layers in total.")
+                print("[P\(pageIndex)] Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
             }
             currentStickerLayer!.toolDidChange(tool: tool)
             currentHandwritingLayer = nil
@@ -142,8 +142,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         // previousStrokes = currentHandwritingLayer.drawing.strokes
         lastEditedTimestamp = Date()
 
-        print("🕹️[P\(pageIndex)] Added new command.", terminator:" ")
-        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        print("[P\(pageIndex)] Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func undo() {
@@ -152,8 +151,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         redoStack.append(command)
         // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("🕹️[P\(pageIndex)] UndoStack pops command.", terminator:" ")
-        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        print("[P\(pageIndex)] UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func redo() {
@@ -162,7 +160,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         undoStack.append(command)
         // previousStrokes = currentHandwritingLayer.drawing.strokes
 
-        print("🕹️[P\(pageIndex)] RedoStack pops command.", terminator:" ")
-        printStackInfo(undoStack: undoStack, redoStack: redoStack)
+        print("[P\(pageIndex)] RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 }
