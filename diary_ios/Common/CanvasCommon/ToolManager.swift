@@ -44,6 +44,10 @@ class ToolManager {
         observer.toolDidChange(tool: currentTool, color: strokeColor, width: strokeWidth)
     }
 
+    func removeObserver(_ observer: ToolObserver) {
+        observers.remove(observer)
+    }
+    
     private func notifyToolChange() {
         for observer in observers.allObjects {
             if let observer = observer as? ToolObserver {

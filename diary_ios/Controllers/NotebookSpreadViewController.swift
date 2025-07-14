@@ -38,7 +38,7 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         setupSpineShadow()
     }
 
-    // MARK: - Setup
+    // MARK: - 初始化
     private func setupInitialPages() {
         pages = [
             NotebookPageView(role: .empty),
@@ -70,81 +70,12 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         view.addGestureRecognizer(panGesture)
     }
 
-    // MARK: - 手势相关函数
+    // MARK: - 手势处理
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         let isZoomed = zoomStateDelegate?.isNotebookZoomedIn() ?? false
         return !isZoomed && touch.type == .direct
     }
 
-    // MARK: - 更新 containers
-    private func updatePageContainers() {
-        // 清空 pageContainers
-        pageContainers.forEach { $0.removeFromSuperview() }
-        pageContainers.removeAll()
-
-        // 重新计算 pageContainers 数量
-        containerCount = (pageCount - 2) / 2
-        guard containerCount > 0 else {
-            print("❌ Container count = 0.")
-            return 
-        }
-
-        // 根据 currentLeftIndex 确定要展开的 pageContainer
-        let offsetIndex: Int = min(max(0, currentLeftIndex / 2 - 1), containerCount - 1)
-        let xOffsets = computeXOffsets(pageIndex: currentLeftIndex)
-        let yOffsets = computeYOffsets(pageIndex: currentLeftIndex)
-        let opacities = computeShadowOpacities(pageIndex: currentLeftIndex)
-        
-        print("📐 PageContainers offsets: [", terminator: " ")
-        for i in 0...containerCount - 1 {
-            // 确定这个容器的位置
-            let thisContainer = UIView()
-
-            var baseX: CGFloat = i <= offsetIndex ? 0 : view.bounds.width / 2
-            if i == 0, currentLeftIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
-            else if i == containerCount - 1, currentLeftIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
-
-            let originX = xOffsets[i] + baseX
-            let originY = yOffsets[i]
-            thisContainer.layer.shadowOpacity = opacities[i]
-
-            thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
-            thisContainer.layer.masksToBounds = false // 允许阴影
-            thisContainer.layer.shadowOffset = CGSize(width: 0, height: 0)
-            thisContainer.layer.shadowColor = UIColor.black.cgColor
-            thisContainer.layer.shadowRadius = pageShadowRadius
-
-            // 确定这个容器的内容
-            var pageIndex: Int = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
-            if i == 0, currentLeftIndex == 0 { pageIndex = 1 }
-            else if  i == containerCount - 1, currentLeftIndex == pageCount - 2 { pageIndex = pageCount - 2 }
-
-            let thisPage = pages[pageIndex]
-            thisContainer.addSubview(thisPage)
-            if i == offsetIndex { print("🔸(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
-            else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
-            pageContainers.append(thisContainer)
-        }
-        print("].")
-
-        // 按视图顺序添加视图
-        for i in 0...offsetIndex {
-            view.addSubview(pageContainers[i])
-        }
-        for i in stride(from: containerCount - 1, through: offsetIndex + 1, by: -1) where offsetIndex + 1 <= containerCount - 1 {
-            view.addSubview(pageContainers[i])
-        }
-
-        // 特殊处理封面和背页
-        if currentLeftIndex == 0 {
-            view.addSubview(pageContainers[0])
-        }
-        else if currentLeftIndex == pageCount - 2 {
-            view.addSubview(pageContainers.last!)
-        }
-    }
-
-    // MARK: - 手势处理
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let velocity = gesture.velocity(in: view)
@@ -215,9 +146,23 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             print("❌ Index out of bounds: \(index).")
             return
         }
+        updateToolListeners()
+        clearEmptyLayers()
+
         print("▶️ Go to page pair \(index), \(index + 1).")
         currentLeftIndex = index
         updatePageContainers()
+    }
+
+    private func updateToolListeners() {
+        for page in pages {
+            page.deactivateToolListener()
+        }
+
+        if currentLeftIndex >= 0, currentLeftIndex + 1 < pages.count {
+            pages[currentLeftIndex].activateToolListener()
+            pages[currentLeftIndex + 1].activateToolListener()
+        }
     }
 
     // MARK: - undo redo
@@ -249,6 +194,113 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
         }
         return currentLeftIndex + lastEditedIndex
     }
+
+    // MARK: - 翻页过程中更新的函数
+    func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
+        let contentSize = layoutDelegate?.currentSpreadContentSize() ?? .zero
+        let width = contentSize.width
+        var offset: CGFloat = 0
+        let easedProgress = easeInOutCubic(progress)
+
+        if currentLeftIndex == 2 && direction == .lastPage {
+            offset = -width / 4 * easedProgress
+        } else if currentLeftIndex + 4 == pages.count && direction == .nextPage {
+            offset = width / 4 * easedProgress
+        } else if currentLeftIndex == 0 && direction == .nextPage {
+            offset = -width / 4 * (1 - easedProgress)
+        } else if currentLeftIndex == pages.count - 2 && direction == .lastPage {
+            offset = width / 4 * (1 - easedProgress)
+        }
+        onProgressChanged?(offset)
+    }
+
+    func updateStackTransforms(progress: CGFloat) {
+        guard fromYOffsets.count == toYOffsets.count, fromXOffsets.count == toXOffsets.count else { return }
+        let easedProgress = easeInOutCubic(abs(progress))
+        for (i, container) in pageContainers.enumerated() {
+            let fromY = fromYOffsets[i]
+            let toY = toYOffsets[i]
+            let dy = (toY - fromY) * easedProgress
+            let fromX = fromXOffsets[i]
+            let toX = toXOffsets[i]
+            let dx = (toX - fromX) * easedProgress
+            container.transform = CGAffineTransform(translationX: dx, y: dy)
+            let fromOpacity = fromShadowOpacities[i]
+            let toOpacity = toShadowOpacities[i]
+            let opacity = fromOpacity + (toOpacity - fromOpacity) * Float(easedProgress)
+            container.layer.shadowOpacity = opacity
+        }
+        spineShadow.layer.shadowOpacity = computeSpineShadowOpacity(absProgress: abs(progress))
+    }
+
+    // MARK: - 翻页后更新 containers
+    private func updatePageContainers() {
+        // 清空 pageContainers
+        pageContainers.forEach { $0.removeFromSuperview() }
+        pageContainers.removeAll()
+
+        // 重新计算 pageContainers 数量
+        containerCount = (pageCount - 2) / 2
+        guard containerCount > 0 else {
+            print("❌ Container count = 0.")
+            return 
+        }
+
+        // 根据 currentLeftIndex 确定要展开的 pageContainer
+        let offsetIndex: Int = min(max(0, currentLeftIndex / 2 - 1), containerCount - 1)
+        let xOffsets = computeXOffsets(pageIndex: currentLeftIndex)
+        let yOffsets = computeYOffsets(pageIndex: currentLeftIndex)
+        let opacities = computeShadowOpacities(pageIndex: currentLeftIndex)
+        
+        print("📐 PageContainers offsets: [", terminator: " ")
+        for i in 0...containerCount - 1 {
+            // 确定这个容器的位置
+            let thisContainer = UIView()
+
+            var baseX: CGFloat = i <= offsetIndex ? 0 : view.bounds.width / 2
+            if i == 0, currentLeftIndex == 0 { baseX = view.bounds.width / 2 } // 封面容器在屏幕右侧
+            else if i == containerCount - 1, currentLeftIndex == pageCount - 2 { baseX = 0 } // 背页容器在屏幕左侧
+
+            let originX = xOffsets[i] + baseX
+            let originY = yOffsets[i]
+            thisContainer.layer.shadowOpacity = opacities[i]
+
+            thisContainer.frame = CGRect(x: originX, y: originY, width: view.bounds.width / 2, height: view.bounds.height)
+            thisContainer.layer.masksToBounds = false // 允许阴影
+            thisContainer.layer.shadowOffset = CGSize(width: 0, height: 0)
+            thisContainer.layer.shadowColor = UIColor.black.cgColor
+            thisContainer.layer.shadowRadius = pageShadowRadius
+
+            // 确定这个容器的内容
+            var pageIndex: Int = i <= offsetIndex ? (i + 1) * 2 : (i + 1) * 2 - 1
+            if i == 0, currentLeftIndex == 0 { pageIndex = 1 }
+            else if  i == containerCount - 1, currentLeftIndex == pageCount - 2 { pageIndex = pageCount - 2 }
+
+            let thisPage = pages[pageIndex]
+            thisContainer.addSubview(thisPage)
+            if i == offsetIndex { print("🔸(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
+            else { print("(\(format(xOffsets[i])), \(format(yOffsets[i])))", terminator: " ") }
+            pageContainers.append(thisContainer)
+        }
+        print("].")
+
+        // 按视图顺序添加视图
+        for i in 0...offsetIndex {
+            view.addSubview(pageContainers[i])
+        }
+        for i in stride(from: containerCount - 1, through: offsetIndex + 1, by: -1) where offsetIndex + 1 <= containerCount - 1 {
+            view.addSubview(pageContainers[i])
+        }
+
+        // 特殊处理封面和背页
+        if currentLeftIndex == 0 {
+            view.addSubview(pageContainers[0])
+        }
+        else if currentLeftIndex == pageCount - 2 {
+            view.addSubview(pageContainers.last!)
+        }
+    }
+
 
     // MARK: - containers 相关计算
     func computeYOffsets(pageIndex: Int) -> [CGFloat] {
@@ -290,44 +342,6 @@ class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegat
             opacities = Array(repeating: pageShadowOpacity, count: containerCount)
         }
         return opacities
-    }
-
-    // MARK: - 翻页时更新的函数
-    func updateProgressOffset(direction: PageTurnDirection, progress: CGFloat) {
-        let contentSize = layoutDelegate?.currentSpreadContentSize() ?? .zero
-        let width = contentSize.width
-        var offset: CGFloat = 0
-        let easedProgress = easeInOutCubic(progress)
-
-        if currentLeftIndex == 2 && direction == .lastPage {
-            offset = -width / 4 * easedProgress
-        } else if currentLeftIndex + 4 == pages.count && direction == .nextPage {
-            offset = width / 4 * easedProgress
-        } else if currentLeftIndex == 0 && direction == .nextPage {
-            offset = -width / 4 * (1 - easedProgress)
-        } else if currentLeftIndex == pages.count - 2 && direction == .lastPage {
-            offset = width / 4 * (1 - easedProgress)
-        }
-        onProgressChanged?(offset)
-    }
-
-    func updateStackTransforms(progress: CGFloat) {
-        guard fromYOffsets.count == toYOffsets.count, fromXOffsets.count == toXOffsets.count else { return }
-        let easedProgress = easeInOutCubic(abs(progress))
-        for (i, container) in pageContainers.enumerated() {
-            let fromY = fromYOffsets[i]
-            let toY = toYOffsets[i]
-            let dy = (toY - fromY) * easedProgress
-            let fromX = fromXOffsets[i]
-            let toX = toXOffsets[i]
-            let dx = (toX - fromX) * easedProgress
-            container.transform = CGAffineTransform(translationX: dx, y: dy)
-            let fromOpacity = fromShadowOpacities[i]
-            let toOpacity = toShadowOpacities[i]
-            let opacity = fromOpacity + (toOpacity - fromOpacity) * Float(easedProgress)
-            container.layer.shadowOpacity = opacity
-        }
-        spineShadow.layer.shadowOpacity = computeSpineShadowOpacity(absProgress: abs(progress))
     }
 
     // MARK: - 生命周期测试函数

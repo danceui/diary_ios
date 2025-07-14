@@ -22,6 +22,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var redoStack: [CanvasCommand] = []
 
     private var currentTool: Tool = .pen
+    private var isObservingTool: Bool = false
 
     // MARK: - 初始化
     init(role: PageRole = .normal, isLeft: Bool = true, leftPageIndex: Int = 0, initialData: Data? = nil) {
@@ -30,11 +31,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         self.pageIndex = isLeft ? leftPageIndex : leftPageIndex + 1
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
-
-        if role == .normal {
-            ToolManager.shared.addObserver(self)
-            addSubview(containerView)
-        }
     }
 
     required init?(coder: NSCoder) { 
@@ -57,6 +53,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         layer.cornerRadius = pageCornerRadius
         layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         layer.masksToBounds = true
+        if pageRole == .normal { addSubview(containerView) }
     }
 
     private func backgroundColorForRole(_ role: PageRole) -> UIColor {
@@ -108,6 +105,21 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         print("[P\(pageIndex)] Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
     }
 
+    // MARK: - 监听工具
+    func activateToolListener() {
+        guard !isObservingTool else { return }
+        ToolManager.shared.addObserver(self)
+        isObservingTool = true
+        print("[P\(pageIndex)] ✅ Tool listener activated.")
+    }
+
+    func deactivateToolListener() {
+        guard isObservingTool else { return }
+        ToolManager.shared.removeObserver(self)
+        isObservingTool = false
+        // print("[P\(pageIndex)] ❌ Tool listener deactivated.")
+    }
+
     // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         guard let handwritingLayer = currentHandwritingLayer, handwritingLayer.touchFinished else { return }
@@ -136,14 +148,14 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 清理视图
     func clearEmptyLayers(in container: UIView) {
-        let cleared: Bool = false
+        var cleared: Bool = false
         for subview in container.subviews {
             if let stickerLayer = subview as? StickerLayer, stickerLayer.isEmpty {
                 stickerLayer.removeFromSuperview()
                 cleared = true
             }
             if let handwritingLayer = subview as? HandwritingLayer,
-            handwritingLayer.paths.isEmpty {
+            handwritingLayer.isEmpty {
                 handwritingLayer.removeFromSuperview()
                 cleared = true
             }
