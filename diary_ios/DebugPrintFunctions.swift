@@ -48,6 +48,6 @@ func printEraseInfo(eraseInfo: [(HandwritingLayer, [IndexedStroke])], context: S
 func printIndexedStrokesInfo(indexedStrokes: [IndexedStroke], context: String) {
     print("      🔹 \(context):")
     for (i, s) in indexedStrokes.enumerated() {
-        print("         • Stroke \(s.index): points = \(s.stroke.path.count)")
+        print("         • Stroke \(s.index) has \(s.stroke.path.count) points")
     }
 }
