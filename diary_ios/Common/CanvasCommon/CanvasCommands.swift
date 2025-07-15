@@ -65,6 +65,7 @@ class MultiEraseCommand: CanvasCommand {
 
     init(eraseInfo: [(HandwritingLayer, [IndexedStroke])], strokesErasedOnce: Bool) {
         self.eraseInfo = eraseInfo
+        printEraseInfo(eraseInfo: eraseInfo, context: "Creating Command")
         self.strokesErasedOnce = strokesErasedOnce
     }
     
@@ -74,6 +75,8 @@ class MultiEraseCommand: CanvasCommand {
             return 
         }
         for (layer, indexedStrokes) in eraseInfo {
+            print("Before executing...")
+            printDrawingInfo(drawing: layer.drawing)
             let current = layer.drawing.strokes
             let remaining = current.enumerated().filter { (i, s) in
                 !indexedStrokes.contains { indexed in 
@@ -81,70 +84,31 @@ class MultiEraseCommand: CanvasCommand {
                 }
             }.map { $0.element }
             layer.drawing = PKDrawing(strokes: remaining)
+            print("After executing...")
+            printDrawingInfo(drawing: layer.drawing)
         }
     }
 
     func undo() {
         for (layer, indexedStrokes) in eraseInfo {
+            print("Before undo...")
+            printDrawingInfo(drawing: layer.drawing)
+
             var current = layer.drawing.strokes
-            // for (index, stroke) in indexedStrokes.sorted(by: { $0.index < $1.index }) {
-            //     let safeIndex = min(index, current.count)
-            //     current.insert(stroke, at: safeIndex)
-            // }
-            // layer.drawing = PKDrawing(strokes: current)
-            for (index, stroke) in indexedStrokes {
-                layer.drawing.strokes.append(stroke)
+            for (i, s) in indexedStrokes.sorted(by: { $0.index < $1.index }) {
+                print("Insering stroke (index: \(i), points: \(s.path.count))...")
+                current.insert(s, at: min(i, current.count))
+                printDrawingInfo(drawing: layer.drawing)
             }
+            layer.drawing = PKDrawing(strokes: current)
+            // for (index, stroke) in indexedStrokes {
+            //     layer.drawing.strokes.append(stroke)
+            // }
+            print("After executing...")
+            printDrawingInfo(drawing: layer.drawing)
         }
     }
 }
-
-// class MultiEraseCommand: CanvasCommand {
-//     private var layerToErasedStrokes: [(layer: HandwritingLayer, strokes: [IndexedStroke])]
-//     private var strokesErasedOnce: Bool = false
-
-//     init(eraseInfo: [(HandwritingLayer, [PKStroke])], strokesErasedOnce: Bool) {
-//         // 把 eraseInfo 换成带下标的笔画
-//         self.layerToErasedStrokes = eraseInfo.map { (layer, strokes) in
-//             let current = layer.drawing.strokes
-//             var indexedStrokes: [IndexedStroke] = []
-//             for (i, s) in current.enumerated() {
-//                 if strokes.contains(where: { isStrokeEqual($0, s)}) { 
-//                     indexedStrokes.append((i, s))
-//                 }
-//             }
-//             return (layer, indexedStrokes)
-//         }
-//         self.strokesErasedOnce = strokesErasedOnce
-//     }
-    
-//     func execute() {
-//         guard strokesErasedOnce else {
-//             strokesErasedOnce = true
-//             return 
-//         }
-//         for (layer, indexedStrokes) in layerToErasedStrokes {
-//             let current = layer.drawing.strokes
-//             let remaining = current.enumerated().filter { (i, s) in 
-//                 !indexedStrokes.contains(where: { $0.index == i && isStrokeEqual($0.stroke, s) })
-//             }.map { $0.element }
-//             layer.drawing = PKDrawing(strokes: remaining)
-//         }
-//     }
-
-//     func undo() {
-//         for (layer, indexedStrokes) in layerToErasedStrokes {
-//             // var current = layer.drawing.strokes
-//             // for indexedStroke in indexedStrokes.sorted(by: { $0.index < $1.index }) {
-//             //     current.insert(indexedStroke.stroke, at: min(indexedStroke.index, current.count))
-//             // }
-//             // layer.drawing = PKDrawing(strokes: current)
-//             for (index, stroke) in indexedStrokes {
-//                 layer.drawing.strokes.append(stroke)
-//             }
-//         }
-//     }
-// }
 
 class AddStickerCommand: CanvasCommand {
     private let sticker: Sticker

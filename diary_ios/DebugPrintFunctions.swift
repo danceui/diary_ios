@@ -21,7 +21,8 @@ func printStackInfo(undoStack: [CanvasCommand], redoStack: [CanvasCommand]) {
 
 func printDrawingInfo(drawing: PKDrawing) {
     print("🖊️ Drawing has \(drawing.strokes.count) strokes.")
-    // for (index, stroke) in drawing.strokes.enumerated() {
+    for (index, stroke) in drawing.strokes.enumerated() {
+        print("   Stroke \(index): \(stroke.path.count) points.")
     //     let pointCount = stroke.path.count
     //     let toolType = stroke.ink.inkType.rawValue
     //     let color = stroke.ink.color
@@ -34,5 +35,21 @@ func printDrawingInfo(drawing: PKDrawing) {
     //     │  • Width: \(width)
     //     └──────────────────────
     //     """)
-    // }
+    }
+}
+
+func printEraseInfo(eraseInfo: [(HandwritingLayer, [IndexedStroke])], context: String) {
+    print("📄 \(context) - Erase Info ")
+    for (layerIndex, (layer, indexedStrokes)) in eraseInfo.enumerated() {
+        printIndexedStrokesInfo(indexedStrokes: indexedStrokes, context: "Layer \(layerIndex)")
+    }
+}
+
+func printIndexedStrokesInfo(indexedStrokes: [IndexedStroke], context: String) {
+    print("🔹 \(context)")
+    for (i, s) in indexedStrokes.enumerated() {
+        let index = s.index
+        let stroke = s.stroke
+        print("   • Stroke \(i): index = \(index), points = \(stroke.path.count)")
+    }
 }

@@ -25,10 +25,12 @@ func strokeIntersectsRect(stroke: PKStroke, eraserRect: CGRect) -> Bool {
 
 func mergeUniqueStrokes(existing: [IndexedStroke], new: [IndexedStroke]) -> [IndexedStroke] {
     var result = existing
-
+    print("🌊 Merging \(new.count) new to \(existing.count) existing.")
+    printIndexedStrokesInfo(indexedStrokes: existing, context: "existing")
+    printIndexedStrokesInfo(indexedStrokes: new, context: "new")
     for n in new {
         let duplicated = result.contains { r in
-            r.index == n.index || isStrokeEqual(r.stroke, n.stroke)
+            r.index == n.index && isStrokeEqual(r.stroke, n.stroke)
         }
         if !duplicated { result.append(n) }
     }

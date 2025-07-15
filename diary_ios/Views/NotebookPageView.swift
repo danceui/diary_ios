@@ -219,16 +219,20 @@ extension NotebookPageView: EraserLayerDelegate {
             guard !indexedErased.isEmpty else { continue }
 
             // 实时擦除
-            let remainingStrokes = originalStrokes.enumerated()
-                .filter { (i, s) in !indexedErased.contains(where: { $0.index == i }) }
-                .map { $0.element }
+            let remainingStrokes = originalStrokes.enumerated().filter { (i, s) in 
+                !indexedErased.contains { indexed in 
+                    indexed.index == i 
+                }
+            }.map { $0.element }
             layer.drawing = PKDrawing(strokes: remainingStrokes)
 
             // 合并记录, 防止重复
             if let index = pendingEraseInfo.firstIndex(where: { $0.0 === layer }) {
                 pendingEraseInfo[index].1 = mergeUniqueStrokes(existing: pendingEraseInfo[index].1, new: indexedErased)
+                printEraseInfo(eraseInfo: pendingEraseInfo, context: "Applying Eraser (Existing Layer)")
             } else {
                 pendingEraseInfo.append((layer, indexedErased))
+                printEraseInfo(eraseInfo: pendingEraseInfo, context: "Applying Eraser (New Layer)")
             }
         }
     }
