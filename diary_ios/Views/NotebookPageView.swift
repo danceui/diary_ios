@@ -69,23 +69,17 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        if tool.isDrawing {
-            if currentHandwritingLayer == nil {
-                createNewHandwritingLayer()
-            }
+        if tool.isDrawing, currentHandwritingLayer == nil {
+            createNewHandwritingLayer()
             currentHandwritingLayer!.setTool(tool: tool)
             currentStickerLayer = nil
             eraserLayer == nil
-        } else if tool.isEraser {
-            if eraserLayer == nil {
-                createNewEraserLayer()
-            }
+        } else if tool.isEraser, eraserLayer == nil {
+            createNewEraserLayer()
             currentStickerLayer = nil
             currentHandwritingLayer = nil
-        } else if tool.isSticker {
-            if currentStickerLayer == nil {
-                createNewStickerLayer()
-            }
+        } else if tool.isSticker, currentStickerLayer == nil {
+            createNewStickerLayer()
             currentHandwritingLayer = nil
             eraserLayer == nil
         }
@@ -155,7 +149,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard isObservingTool else { return }
         ToolManager.shared.removeObserver(self)
         isObservingTool = false
-        // print("[P\(pageIndex)] ❌ Tool listener deactivated.")
+        print("[P\(pageIndex)] ❌ Tool listener deactivated.")
     }
 
     // MARK: - 处理笔画
