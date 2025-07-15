@@ -4,6 +4,9 @@ import UIKit
 class HandwritingLayer: PKCanvasView {
     var currentTool: Tool = .pen
     var touchFinished = false
+    var isEmpty: Bool {
+        return drawing.strokes.isEmpty
+    }
 
     // MARK: - 初始化
     override init(frame: CGRect) {
@@ -46,11 +49,5 @@ class HandwritingLayer: PKCanvasView {
         default:
             break
         }
-    }
-}
-
-extension HandwritingLayer {
-    var isEmpty: Bool {
-        return drawing.strokes.isEmpty
     }
 }

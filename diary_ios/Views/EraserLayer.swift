@@ -3,11 +3,12 @@ import PencilKit
 
 protocol EraserLayerDelegate: AnyObject {
     func applyEraser(eraserLocation: CGPoint, eraserSize: CGFloat)
+    func commitEraseCommand()
 }
 
 class EraserLayer: PKCanvasView {
     weak var eraseDelegate: EraserLayerDelegate?
-    
+
     private let eraserPreviewView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor.clear
@@ -57,10 +58,12 @@ class EraserLayer: PKCanvasView {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
         eraserPreviewView.isHidden = true
+        eraseDelegate?.commitEraseCommand()
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
         eraserPreviewView.isHidden = true
+        eraseDelegate?.commitEraseCommand()
     }
 }

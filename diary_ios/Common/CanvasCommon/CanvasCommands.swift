@@ -59,7 +59,7 @@ class AddStrokeCommand: CanvasCommand {
 //     }
 // }
 
-class MultiEraseStrokesCommand: CanvasCommand {
+class MultiEraseCommand: CanvasCommand {
     private var layerToErasedStrokes: [(layer: HandwritingLayer, strokes: [PKStroke])]
     private var strokesErasedOnce: Bool = false
 

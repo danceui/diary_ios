@@ -18,3 +18,14 @@ func isStrokeEqual(_ lhs: PKStroke, _ rhs: PKStroke) -> Bool {
     }
     return true
 }
+
+func mergeUniqueStrokes(existing: [PKStroke], new: [PKStroke]) -> [PKStroke] {
+    var result = existing
+
+    for newStroke in new {
+        let alreadyExists = result.contains(where: { isStrokeEqual($0, newStroke) })
+        if !alreadyExists { result.append(newStroke) }
+    }
+
+    return result
+}
