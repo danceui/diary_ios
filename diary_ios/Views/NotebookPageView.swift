@@ -209,17 +209,19 @@ extension NotebookPageView: EraserLayerDelegate {
         for layer in handwritingLayers {
             let originalStrokes = layer.drawing.strokes
             var indexedErased: [IndexedStroke] = []
-            // let erasedStrokes = originalStrokes.filter { stroke($0, intersects: eraserRect) }
-
-            for (i, stroke) in originalStrokes.enumerated() {
-                if strokeIntersectsRect(stroke: stroke, eraserRect: eraserRect) {
-                    indexedErased.append((i, stroke))
+            
+            // 记录即将被擦除的笔画及其下标
+            for (i, s) in originalStrokes.enumerated() {
+                if strokeIntersectsRect(stroke: s, eraserRect: eraserRect) {
+                    indexedErased.append((i, s))
                 }
             }
             guard !indexedErased.isEmpty else { continue }
 
             // 实时擦除
-            let remainingStrokes = originalStrokes.enumerated().filter { (i, _) in !indexedErased.contains(where: { $0.index == i }) }.map { $0.element }
+            let remainingStrokes = originalStrokes.enumerated()
+                .filter { (i, s) in !indexedErased.contains(where: { $0.index == i }) }
+                .map { $0.element }
             layer.drawing = PKDrawing(strokes: remainingStrokes)
 
             // 合并记录, 防止重复

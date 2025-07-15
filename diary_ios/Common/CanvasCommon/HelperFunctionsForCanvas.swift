@@ -27,10 +27,10 @@ func mergeUniqueStrokes(existing: [IndexedStroke], new: [IndexedStroke]) -> [Ind
     var result = existing
 
     for n in new {
-        let alreadyExists = result.contains { a in
-            a.index == n.index || isStrokeEqual(a.stroke, n.stroke)
+        let duplicated = result.contains { r in
+            r.index == n.index || isStrokeEqual(r.stroke, n.stroke)
         }
-        if !alreadyExists { result.append(n) }
+        if !duplicated { result.append(n) }
     }
 
     return result

@@ -60,7 +60,7 @@ class AddStrokeCommand: CanvasCommand {
 // }
 
 class MultiEraseCommand: CanvasCommand {
-    private var eraseInfo: [(layer: HandwritingLayer, strokes: [IndexedStroke])]
+    private var eraseInfo: [(HandwritingLayer, [IndexedStroke])]
     private var strokesErasedOnce: Bool = false
 
     init(eraseInfo: [(HandwritingLayer, [IndexedStroke])], strokesErasedOnce: Bool) {
@@ -75,8 +75,10 @@ class MultiEraseCommand: CanvasCommand {
         }
         for (layer, indexedStrokes) in eraseInfo {
             let current = layer.drawing.strokes
-            let remaining = current.enumerated().filter { (i, stroke) in
-                !indexedStrokes.contains(where: { $0.index == i && isStrokeEqual($0.stroke, stroke) })
+            let remaining = current.enumerated().filter { (i, s) in
+                !indexedStrokes.contains { indexed in 
+                    indexed.index == i && isStrokeEqual(indexed.stroke, s) 
+                }
             }.map { $0.element }
             layer.drawing = PKDrawing(strokes: remaining)
         }
