@@ -1,7 +1,8 @@
 import UIKit
 
 enum Tool {
-    case pen, eraser, highlighter
+    case pen, highlighter
+    case eraser
     case sticker
 
     var isDrawing: Bool {
@@ -47,7 +48,7 @@ class ToolManager {
     func removeObserver(_ observer: ToolObserver) {
         observers.remove(observer)
     }
-    
+
     private func notifyToolChange() {
         for observer in observers.allObjects {
             if let observer = observer as? ToolObserver {

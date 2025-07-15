@@ -69,19 +69,27 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
-        if tool.isDrawing, currentHandwritingLayer == nil {
-            createNewHandwritingLayer()
+        if tool.isDrawing {
+            currentStickerLayer = nil
+            eraserLayer = nil
+            if currentHandwritingLayer == nil {
+                createNewHandwritingLayer()
+            }
             currentHandwritingLayer!.setTool(tool: tool)
-            currentStickerLayer = nil
-            eraserLayer == nil
-        } else if tool.isEraser, eraserLayer == nil {
-            createNewEraserLayer()
+        } else if tool.isEraser {
             currentStickerLayer = nil
             currentHandwritingLayer = nil
-        } else if tool.isSticker, currentStickerLayer == nil {
-            createNewStickerLayer()
+            if eraserLayer == nil {
+                createNewEraserLayer()
+            }
+            // eraserLayer!.setTool(tool: tool)
+        } else if tool.isSticker {
             currentHandwritingLayer = nil
-            eraserLayer == nil
+            eraserLayer = nil
+            if currentStickerLayer == nil {
+                createNewStickerLayer()
+            }
+            // currentStickerLayer!.setTool(tool: tool)
         }
     }
 
@@ -109,9 +117,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     private func createNewEraserLayer() {
-        if let eraserLayer = eraserLayer {
-            eraserLayer.removeFromSuperview()
-        }
         let newLayer = EraserLayer()
         newLayer.frame = bounds
         newLayer.eraseDelegate = self
@@ -149,7 +154,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard isObservingTool else { return }
         ToolManager.shared.removeObserver(self)
         isObservingTool = false
-        print("[P\(pageIndex)] ❌ Tool listener deactivated.")
+        // print("[P\(pageIndex)] ❌ Tool listener deactivated.")
     }
 
     // MARK: - 处理笔画
