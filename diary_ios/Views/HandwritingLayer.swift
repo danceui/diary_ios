@@ -2,7 +2,6 @@ import PencilKit
 import UIKit
 
 class HandwritingLayer: PKCanvasView {
-    var currentTool: Tool = .pen
     var touchFinished = false
     var isEmpty: Bool {
         return drawing.strokes.isEmpty
@@ -37,15 +36,12 @@ class HandwritingLayer: PKCanvasView {
     }
     
     // MARK: - 切换工具
-    func toolDidChange(tool: Tool, color: UIColor = .black, width: CGFloat = 2.0) {
-        currentTool = tool
+    func setTool(tool: Tool, color: UIColor = .black, width: CGFloat = 2.0) {
         switch tool {
         case .pen:
             self.tool = PKInkingTool(.pen, color: color, width: width)
         case .highlighter:
             self.tool = PKInkingTool(.marker, color: color, width: width)
-        // case .eraser:
-        //     self.tool = PKEraserTool(.vector) // 或 .bitmap 根据需要切换
         default:
             break
         }

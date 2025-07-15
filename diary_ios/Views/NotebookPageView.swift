@@ -22,7 +22,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var redoStack: [CanvasCommand] = []
     private var pendingEraseInfo: [(HandwritingLayer, [PKStroke])] = []
 
-    private var currentTool: Tool = .pen
     private var isObservingTool: Bool = false
 
     // MARK: - 初始化
@@ -74,7 +73,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
             }
-            currentHandwritingLayer!.toolDidChange(tool: tool)
+            currentHandwritingLayer!.setTool(tool: tool)
             currentStickerLayer = nil
             eraserLayer == nil
         } else if tool.isEraser {
@@ -90,7 +89,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             currentHandwritingLayer = nil
             eraserLayer == nil
         }
-        currentTool = tool
     }
 
     // MARK: - 创建视图层
@@ -163,10 +161,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     // MARK: - 处理笔画
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         guard let handwritingLayer = currentHandwritingLayer, handwritingLayer.touchFinished else { return }
-        if handwritingLayer.currentTool.isDrawing, let newStroke = handwritingLayer.drawing.strokes.last {
+        if let newStroke = handwritingLayer.drawing.strokes.last {
             let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
             executeAndSave(command: cmd)
-        } else if handwritingLayer.currentTool.isEraser {
         }
         handwritingLayer.touchFinished = false
     }
