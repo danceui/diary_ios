@@ -225,7 +225,7 @@ extension NotebookPageView: EraserLayerDelegate {
 
     func commitEraseCommand() {
         guard !pendingEraseInfo.isEmpty else { return }
-        let cmd = MultiEraseCommand(layerToErasedStrokes: pendingEraseInfo, strokesErasedOnce: false)
+        let cmd = MultiEraseCommand(eraseInfo: pendingEraseInfo, strokesErasedOnce: false)
         executeAndSave(command: cmd)
         pendingEraseInfo.removeAll()
     }

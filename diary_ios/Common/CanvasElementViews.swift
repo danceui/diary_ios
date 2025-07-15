@@ -1,6 +1,9 @@
 import UIKit
 import PencilKit
 
+// MARK: - 笔画
+typealias IndexedStroke = (index: Int, stroke: PKStroke)
+
 // MARK: - 贴纸
 struct Sticker {
     var id: UUID

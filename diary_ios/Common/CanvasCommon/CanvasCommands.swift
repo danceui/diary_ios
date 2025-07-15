@@ -60,11 +60,11 @@ class AddStrokeCommand: CanvasCommand {
 // }
 
 class MultiEraseCommand: CanvasCommand {
-    private var layerToErasedStrokes: [(layer: HandwritingLayer, strokes: [PKStroke])]
+    private var eraseInfo: [(layer: HandwritingLayer, strokes: [PKStroke])]
     private var strokesErasedOnce: Bool = false
 
-    init(layerToErasedStrokes: [(HandwritingLayer, [PKStroke])], strokesErasedOnce: Bool) {
-        self.layerToErasedStrokes = layerToErasedStrokes
+    init(eraseInfo: [(HandwritingLayer, [PKStroke])], strokesErasedOnce: Bool) {
+        self.eraseInfo = eraseInfo
         self.strokesErasedOnce = strokesErasedOnce
     }
     
@@ -73,7 +73,7 @@ class MultiEraseCommand: CanvasCommand {
             strokesErasedOnce = true
             return 
         }
-        for (layer, strokes) in layerToErasedStrokes {
+        for (layer, strokes) in eraseInfo {
             let current = layer.drawing.strokes
             let remaining = current.filter { stroke in
                 !strokes.contains(where: { isStrokeEqual($0, stroke) })
@@ -83,11 +83,58 @@ class MultiEraseCommand: CanvasCommand {
     }
 
     func undo() {
-        for (layer, strokes) in layerToErasedStrokes {
+        for (layer, strokes) in eraseInfo {
             layer.drawing.strokes.append(contentsOf: strokes)
         }
     }
 }
+
+// class MultiEraseCommand: CanvasCommand {
+//     private var layerToErasedStrokes: [(layer: HandwritingLayer, strokes: [IndexedStroke])]
+//     private var strokesErasedOnce: Bool = false
+
+//     init(eraseInfo: [(HandwritingLayer, [PKStroke])], strokesErasedOnce: Bool) {
+//         // 把 eraseInfo 换成带下标的笔画
+//         self.layerToErasedStrokes = eraseInfo.map { (layer, strokes) in
+//             let current = layer.drawing.strokes
+//             var indexedStrokes: [IndexedStroke] = []
+//             for (i, s) in current.enumerated() {
+//                 if strokes.contains(where: { isStrokeEqual($0, s)}) { 
+//                     indexedStrokes.append((i, s))
+//                 }
+//             }
+//             return (layer, indexedStrokes)
+//         }
+//         self.strokesErasedOnce = strokesErasedOnce
+//     }
+    
+//     func execute() {
+//         guard strokesErasedOnce else {
+//             strokesErasedOnce = true
+//             return 
+//         }
+//         for (layer, indexedStrokes) in layerToErasedStrokes {
+//             let current = layer.drawing.strokes
+//             let remaining = current.enumerated().filter { (i, s) in 
+//                 !indexedStrokes.contains(where: { $0.index == i && isStrokeEqual($0.stroke, s) })
+//             }.map { $0.element }
+//             layer.drawing = PKDrawing(strokes: remaining)
+//         }
+//     }
+
+//     func undo() {
+//         for (layer, indexedStrokes) in layerToErasedStrokes {
+//             // var current = layer.drawing.strokes
+//             // for indexedStroke in indexedStrokes.sorted(by: { $0.index < $1.index }) {
+//             //     current.insert(indexedStroke.stroke, at: min(indexedStroke.index, current.count))
+//             // }
+//             // layer.drawing = PKDrawing(strokes: current)
+//             for (index, stroke) in indexedStrokes {
+//                 layer.drawing.strokes.append(stroke)
+//             }
+//         }
+//     }
+// }
 
 class AddStickerCommand: CanvasCommand {
     private let sticker: Sticker
