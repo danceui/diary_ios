@@ -31,41 +31,12 @@ class AddStrokeCommand: CanvasCommand {
     }
 }
 
-// class EraseStrokesCommand: CanvasCommand {
-//     private let erasedStrokes: [PKStroke]
-//     private var strokesErasedOnce: Bool
-//     private unowned let handwritingLayer: HandwritingLayer
-
-//     init(erasedStrokes: [PKStroke], strokesErasedOnce: Bool, layer: HandwritingLayer) {
-//         self.erasedStrokes = erasedStrokes
-//         self.strokesErasedOnce = strokesErasedOnce
-//         self.handwritingLayer = layer
-//     }
-
-//     func execute() {
-//         guard strokesErasedOnce else {
-//             strokesErasedOnce = true
-//             return 
-//         }
-//         let currentStrokes = handwritingLayer.drawing.strokes
-//         let remainingStrokes = currentStrokes.filter { stroke in
-//             !erasedStrokes.contains(where: { isStrokeEqual($0, stroke) })
-//         }
-//         handwritingLayer.drawing = PKDrawing(strokes: remainingStrokes)
-//     }
-
-//     func undo() {
-//         handwritingLayer.drawing.strokes.append(contentsOf: erasedStrokes)
-//     }
-// }
-
 class MultiEraseCommand: CanvasCommand {
     private var eraseInfo: [(HandwritingLayer, [IndexedStroke])]
     private var strokesErasedOnce: Bool = false
 
     init(eraseInfo: [(HandwritingLayer, [IndexedStroke])], strokesErasedOnce: Bool) {
         self.eraseInfo = eraseInfo
-        printEraseInfo(eraseInfo: eraseInfo, context: "Creating Command")
         self.strokesErasedOnce = strokesErasedOnce
     }
     
@@ -75,8 +46,6 @@ class MultiEraseCommand: CanvasCommand {
             return 
         }
         for (layer, indexedStrokes) in eraseInfo {
-            print("Before executing...")
-            printDrawingInfo(drawing: layer.drawing)
             let current = layer.drawing.strokes
             let remaining = current.enumerated().filter { (i, s) in
                 !indexedStrokes.contains { indexed in 
@@ -84,28 +53,16 @@ class MultiEraseCommand: CanvasCommand {
                 }
             }.map { $0.element }
             layer.drawing = PKDrawing(strokes: remaining)
-            print("After executing...")
-            printDrawingInfo(drawing: layer.drawing)
         }
     }
 
     func undo() {
         for (layer, indexedStrokes) in eraseInfo {
-            print("Before undo...")
-            printDrawingInfo(drawing: layer.drawing)
-
             var current = layer.drawing.strokes
             for (i, s) in indexedStrokes.sorted(by: { $0.index < $1.index }) {
-                print("Insering stroke (index: \(i), points: \(s.path.count))...")
                 current.insert(s, at: min(i, current.count))
-                printDrawingInfo(drawing: layer.drawing)
             }
             layer.drawing = PKDrawing(strokes: current)
-            // for (index, stroke) in indexedStrokes {
-            //     layer.drawing.strokes.append(stroke)
-            // }
-            print("After executing...")
-            printDrawingInfo(drawing: layer.drawing)
         }
     }
 }
@@ -134,3 +91,31 @@ class AddStickerCommand: CanvasCommand {
         }
     }
 }
+
+// class EraseStrokesCommand: CanvasCommand {
+//     private let erasedStrokes: [PKStroke]
+//     private var strokesErasedOnce: Bool
+//     private unowned let handwritingLayer: HandwritingLayer
+
+//     init(erasedStrokes: [PKStroke], strokesErasedOnce: Bool, layer: HandwritingLayer) {
+//         self.erasedStrokes = erasedStrokes
+//         self.strokesErasedOnce = strokesErasedOnce
+//         self.handwritingLayer = layer
+//     }
+
+//     func execute() {
+//         guard strokesErasedOnce else {
+//             strokesErasedOnce = true
+//             return 
+//         }
+//         let currentStrokes = handwritingLayer.drawing.strokes
+//         let remainingStrokes = currentStrokes.filter { stroke in
+//             !erasedStrokes.contains(where: { isStrokeEqual($0, stroke) })
+//         }
+//         handwritingLayer.drawing = PKDrawing(strokes: remainingStrokes)
+//     }
+
+//     func undo() {
+//         handwritingLayer.drawing.strokes.append(contentsOf: erasedStrokes)
+//     }
+// }

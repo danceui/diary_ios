@@ -39,17 +39,17 @@ func printDrawingInfo(drawing: PKDrawing) {
 }
 
 func printEraseInfo(eraseInfo: [(HandwritingLayer, [IndexedStroke])], context: String) {
-    print("📄 \(context) - Erase Info ")
+    print("\(context)")
     for (layerIndex, (layer, indexedStrokes)) in eraseInfo.enumerated() {
-        printIndexedStrokesInfo(indexedStrokes: indexedStrokes, context: "Layer \(layerIndex)")
+        printIndexedStrokesInfo(indexedStrokes: indexedStrokes, context: "HandwritingLayer \(layerIndex)")
     }
 }
 
 func printIndexedStrokesInfo(indexedStrokes: [IndexedStroke], context: String) {
-    print("🔹 \(context)")
+    print("      🔹 \(context):")
     for (i, s) in indexedStrokes.enumerated() {
         let index = s.index
         let stroke = s.stroke
-        print("   • Stroke \(i): index = \(index), points = \(stroke.path.count)")
+        print("         • Stroke \(i): index = \(index), points = \(stroke.path.count)")
     }
 }

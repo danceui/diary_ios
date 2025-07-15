@@ -21,6 +21,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
     private var pendingEraseInfo: [(HandwritingLayer, [IndexedStroke])] = []
+    private var layerIndexedStrokeInfo: [(HandwritingLayer, [IndexedStroke])] = []
 
     private var isObservingTool: Bool = false
 
@@ -180,7 +181,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         undoStack.append(command)
         redoStack.removeAll()
         lastEditedTimestamp = Date()
-
+        updateLayerIndexedStrokeInfo()
         print("[P\(pageIndex)] 🕹️ Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
@@ -188,7 +189,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard let command = undoStack.popLast() else { return }
         command.undo()
         redoStack.append(command)
-
+        updateLayerIndexedStrokeInfo()
         print("[P\(pageIndex)] 🕹️ UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
@@ -196,7 +197,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard let command = redoStack.popLast() else { return }
         command.execute()
         undoStack.append(command)
-
+        updateLayerIndexedStrokeInfo()
         print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 }
@@ -207,33 +208,34 @@ extension NotebookPageView: EraserLayerDelegate {
         let eraserRect = CGRect(x: eraserLocation.x - eraserSize / 2, y: eraserLocation.y - eraserSize / 2, width: eraserSize, height: eraserSize )
 
         for layer in handwritingLayers {
-            let originalStrokes = layer.drawing.strokes
+            guard let cachedInfo = layerIndexedStrokeInfo.first(where: { $0.0 === layer }) else { continue }
+            let currentStrokes = layer.drawing.strokes
             var indexedErased: [IndexedStroke] = []
             
-            // 记录即将被擦除的笔画及其下标
-            for (i, s) in originalStrokes.enumerated() {
-                if strokeIntersectsRect(stroke: s, eraserRect: eraserRect) {
-                    indexedErased.append((i, s))
+            // 在当前 strokes 中找被擦中的 stroke，并从 cached 中查原始 index
+            for stroke in currentStrokes {
+                if strokeIntersectsRect(stroke: stroke, eraserRect: eraserRect), 
+                    let index = cachedInfo.1.first(where: { isStrokeEqual($0.stroke, stroke) })?.index {
+                    indexedErased.append((index, stroke))
                 }
             }
             guard !indexedErased.isEmpty else { continue }
 
             // 实时擦除
-            let remainingStrokes = originalStrokes.enumerated().filter { (i, s) in 
+            let remainingStrokes = currentStrokes.filter { stroke in 
                 !indexedErased.contains { indexed in 
-                    indexed.index == i 
+                    isStrokeEqual(indexed.stroke, stroke)
                 }
-            }.map { $0.element }
+            }
             layer.drawing = PKDrawing(strokes: remainingStrokes)
 
             // 合并记录, 防止重复
             if let index = pendingEraseInfo.firstIndex(where: { $0.0 === layer }) {
                 pendingEraseInfo[index].1 = mergeUniqueStrokes(existing: pendingEraseInfo[index].1, new: indexedErased)
-                printEraseInfo(eraseInfo: pendingEraseInfo, context: "Applying Eraser (Existing Layer)")
             } else {
                 pendingEraseInfo.append((layer, indexedErased))
-                printEraseInfo(eraseInfo: pendingEraseInfo, context: "Applying Eraser (New Layer)")
             }
+            printEraseInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 📄 Erasing Strokes")
         }
     }
 
@@ -242,5 +244,14 @@ extension NotebookPageView: EraserLayerDelegate {
         let cmd = MultiEraseCommand(eraseInfo: pendingEraseInfo, strokesErasedOnce: false)
         executeAndSave(command: cmd)
         pendingEraseInfo.removeAll()
+    }
+    
+    func updateLayerIndexedStrokeInfo() {
+        layerIndexedStrokeInfo.removeAll()
+        for layer in handwritingLayers {
+            let strokes = layer.drawing.strokes
+            let indexedStrokes = strokes.enumerated().map { (i, s) in (i, s) }
+            layerIndexedStrokeInfo.append((layer: layer, indexedStrokes: indexedStrokes))
+        }
     }
 }
