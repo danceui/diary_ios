@@ -60,10 +60,10 @@ class AddStrokeCommand: CanvasCommand {
 // }
 
 class MultiEraseCommand: CanvasCommand {
-    private var eraseInfo: [(layer: HandwritingLayer, strokes: [PKStroke])]
+    private var eraseInfo: [(layer: HandwritingLayer, strokes: [IndexedStroke])]
     private var strokesErasedOnce: Bool = false
 
-    init(eraseInfo: [(HandwritingLayer, [PKStroke])], strokesErasedOnce: Bool) {
+    init(eraseInfo: [(HandwritingLayer, [IndexedStroke])], strokesErasedOnce: Bool) {
         self.eraseInfo = eraseInfo
         self.strokesErasedOnce = strokesErasedOnce
     }
@@ -73,18 +73,26 @@ class MultiEraseCommand: CanvasCommand {
             strokesErasedOnce = true
             return 
         }
-        for (layer, strokes) in eraseInfo {
+        for (layer, indexedStrokes) in eraseInfo {
             let current = layer.drawing.strokes
-            let remaining = current.filter { stroke in
-                !strokes.contains(where: { isStrokeEqual($0, stroke) })
-            }
+            let remaining = current.enumerated().filter { (i, stroke) in
+                !indexedStrokes.contains(where: { $0.index == i && isStrokeEqual($0.stroke, stroke) })
+            }.map { $0.element }
             layer.drawing = PKDrawing(strokes: remaining)
         }
     }
 
     func undo() {
-        for (layer, strokes) in eraseInfo {
-            layer.drawing.strokes.append(contentsOf: strokes)
+        for (layer, indexedStrokes) in eraseInfo {
+            var current = layer.drawing.strokes
+            // for (index, stroke) in indexedStrokes.sorted(by: { $0.index < $1.index }) {
+            //     let safeIndex = min(index, current.count)
+            //     current.insert(stroke, at: safeIndex)
+            // }
+            // layer.drawing = PKDrawing(strokes: current)
+            for (index, stroke) in indexedStrokes {
+                layer.drawing.strokes.append(stroke)
+            }
         }
     }
 }

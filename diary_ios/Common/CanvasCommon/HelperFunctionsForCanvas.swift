@@ -19,12 +19,18 @@ func isStrokeEqual(_ lhs: PKStroke, _ rhs: PKStroke) -> Bool {
     return true
 }
 
-func mergeUniqueStrokes(existing: [PKStroke], new: [PKStroke]) -> [PKStroke] {
+func strokeIntersectsRect(stroke: PKStroke, eraserRect: CGRect) -> Bool {
+    return stroke.renderBounds.intersects(eraserRect)
+}
+
+func mergeUniqueStrokes(existing: [IndexedStroke], new: [IndexedStroke]) -> [IndexedStroke] {
     var result = existing
 
-    for newStroke in new {
-        let alreadyExists = result.contains(where: { isStrokeEqual($0, newStroke) })
-        if !alreadyExists { result.append(newStroke) }
+    for n in new {
+        let alreadyExists = result.contains { a in
+            a.index == n.index || isStrokeEqual(a.stroke, n.stroke)
+        }
+        if !alreadyExists { result.append(n) }
     }
 
     return result

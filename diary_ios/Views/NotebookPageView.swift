@@ -20,7 +20,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
-    private var pendingEraseInfo: [(HandwritingLayer, [PKStroke])] = []
+    private var pendingEraseInfo: [(HandwritingLayer, [IndexedStroke])] = []
 
     private var isObservingTool: Bool = false
 
@@ -201,24 +201,32 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 }
 
+// MARK: - EraserLayer 代理
 extension NotebookPageView: EraserLayerDelegate {
     func applyEraser(eraserLocation: CGPoint, eraserSize: CGFloat) {
         let eraserRect = CGRect(x: eraserLocation.x - eraserSize / 2, y: eraserLocation.y - eraserSize / 2, width: eraserSize, height: eraserSize )
 
         for layer in handwritingLayers {
             let originalStrokes = layer.drawing.strokes
-            let erasedStrokes = originalStrokes.filter { stroke($0, intersects: eraserRect) }
-            guard !erasedStrokes.isEmpty else { continue }
+            var indexedErased: [IndexedStroke] = []
+            // let erasedStrokes = originalStrokes.filter { stroke($0, intersects: eraserRect) }
+
+            for (i, stroke) in originalStrokes.enumerated() {
+                if strokeIntersectsRect(stroke: stroke, eraserRect: eraserRect) {
+                    indexedErased.append((i, stroke))
+                }
+            }
+            guard !indexedErased.isEmpty else { continue }
 
             // 实时擦除
-            let remainingStrokes = originalStrokes.filter { stroke in !erasedStrokes.contains(where: { isStrokeEqual($0, stroke) }) }
+            let remainingStrokes = originalStrokes.enumerated().filter { (i, _) in !indexedErased.contains(where: { $0.index == i }) }.map { $0.element }
             layer.drawing = PKDrawing(strokes: remainingStrokes)
 
-            // 合并记录擦除信息
+            // 合并记录, 防止重复
             if let index = pendingEraseInfo.firstIndex(where: { $0.0 === layer }) {
-                pendingEraseInfo[index].1 = mergeUniqueStrokes(existing: pendingEraseInfo[index].1, new: erasedStrokes)
+                pendingEraseInfo[index].1 = mergeUniqueStrokes(existing: pendingEraseInfo[index].1, new: indexedErased)
             } else {
-                pendingEraseInfo.append((layer, erasedStrokes))
+                pendingEraseInfo.append((layer, indexedErased))
             }
         }
     }
@@ -228,12 +236,5 @@ extension NotebookPageView: EraserLayerDelegate {
         let cmd = MultiEraseCommand(eraseInfo: pendingEraseInfo, strokesErasedOnce: false)
         executeAndSave(command: cmd)
         pendingEraseInfo.removeAll()
-    }
-
-    private func stroke(_ stroke: PKStroke, intersects rect: CGRect) -> Bool {
-        for point in stroke.path {
-            if rect.contains(point.location) { return true }
-        }
-        return false
     }
 }
