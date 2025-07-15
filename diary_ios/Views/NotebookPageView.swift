@@ -154,7 +154,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         guard isObservingTool else { return }
         ToolManager.shared.removeObserver(self)
         isObservingTool = false
-        // print("[P\(pageIndex)] ❌ Tool listener deactivated.")
+        print("[P\(pageIndex)] ❌ Tool listener deactivated.")
     }
 
     // MARK: - 处理笔画
@@ -230,7 +230,7 @@ extension NotebookPageView: EraserLayerDelegate {
         pendingEraseInfo.removeAll()
     }
 
-    private func stroke(_ stroke: PKStroke, intersects rect: CGRect) -> Bool {
+    private func s troke(_ stroke: PKStroke, intersects rect: CGRect) -> Bool {
         for point in stroke.path {
             if rect.contains(point.location) { return true }
         }
