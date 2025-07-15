@@ -7,7 +7,7 @@ protocol EraserLayerDelegate: AnyObject {
 
 class EraserLayer: PKCanvasView {
     weak var eraseDelegate: EraserLayerDelegate?
-
+    
     private let eraserPreviewView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor.clear
@@ -52,5 +52,15 @@ class EraserLayer: PKCanvasView {
         eraserPreviewView.layer.cornerRadius = eraserSize / 2
         eraserPreviewView.isHidden = false
         eraseDelegate?.applyEraser(eraserLocation: location, eraserSize: 4)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        eraserPreviewView.isHidden = true
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        eraserPreviewView.isHidden = true
     }
 }

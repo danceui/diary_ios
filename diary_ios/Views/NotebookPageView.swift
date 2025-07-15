@@ -76,6 +76,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             }
             currentHandwritingLayer!.toolDidChange(tool: tool)
             currentStickerLayer = nil
+            eraserLayer == nil
         } else if tool.isEraser {
             if eraserLayer == nil {
                 createNewEraserLayer()
@@ -87,6 +88,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
                 createNewStickerLayer()
             }
             currentHandwritingLayer = nil
+            eraserLayer == nil
         }
         currentTool = tool
     }
@@ -207,13 +209,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 }
 
 extension NotebookPageView: EraserLayerDelegate {
-    func applyEraser(eraserLocation point: CGPoint, eraserSize: CGFloat) {
-        let eraserRect = CGRect(
-            x: point.x - eraserSize / 2,
-            y: point.y - eraserSize / 2,
-            width: eraserSize,
-            height: eraserSize
-        )
+    func applyEraser(eraserLocation: CGPoint, eraserSize: CGFloat) {
+        print("[P\(pageIndex)] Applying eraser.")
+        let eraserRect = CGRect(x: eraserLocation.x - eraserSize / 2, y: eraserLocation.y - eraserSize / 2, width: eraserSize, height: eraserSize )
 
         var eraseInfo: [(HandwritingLayer, [PKStroke])] = []
         for layer in handwritingLayers {
@@ -226,7 +224,7 @@ extension NotebookPageView: EraserLayerDelegate {
             }
         }
         if !eraseInfo.isEmpty {
-            let cmd = MultiEraseStrokesCommand(layerToErasedStrokes: eraseInfo, strokesErasedOnce: false)
+            let cmd = MultiEraseStrokesCommand(layerToErasedStrokes: eraseInfo, strokesErasedOnce: true)
             executeAndSave(command: cmd)
         }
     }
