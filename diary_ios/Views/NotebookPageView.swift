@@ -128,6 +128,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private func createNewLassoLayer() {
         let newLayer = LassoLayer()
         newLayer.frame = bounds
+        newLayer.onLassoFinished = { [weak self] path in self?.handleLassoFinished(path: path) }
         containerView.addSubview(newLayer)
         currentLassoLayer = newLayer
         print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
@@ -272,5 +273,41 @@ extension NotebookPageView: EraserLayerDelegate {
             let indexedStrokes = strokes.enumerated().map { (i, s) in (i, s) }
             layerIndexedStrokeInfo.append((layer: layer, indexedStrokes: indexedStrokes))
         }
+    }
+}
+
+// MARK: - LassoLayer 回调
+extension NotebookPageView {
+    func handleLassoFinished(path: UIBezierPath) {
+        for layer in handwritingLayers {
+            let currentStrokes = layer.drawing.strokes
+            var selectedStrokes: [PKStroke] = []
+
+            for stroke in currentStrokes {
+                // 先用边界框快速筛选
+                if path.bounds.intersects(stroke.renderBounds) {
+                    for i in 0..<stroke.path.count {
+                        let point = stroke.path[i]
+                        if path.contains(point.location) {
+                            selectedStrokes.append(stroke)
+                            break
+                        }
+                    }
+                }
+            }
+            print("📦 Selected \(selectedStrokes.count) strokes.")
+            highlightStrokes(selectedStrokes, in: layer)
+        }
+    }
+    
+    func highlightStrokes(_ strokes: [PKStroke], in layer: PKCanvasView) {
+        let highlightedStrokes = strokes.map { stroke in
+            var newStroke = stroke
+            newStroke.ink = PKInk(.pen, color: .systemRed) // 或其他高亮颜色
+            return newStroke
+        }
+
+        let newDrawing = PKDrawing(strokes: layer.drawing.strokes + highlightedStrokes)
+        layer.drawing = newDrawing
     }
 }

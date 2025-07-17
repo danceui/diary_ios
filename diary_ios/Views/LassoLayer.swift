@@ -2,6 +2,8 @@ import UIKit
 import PencilKit
 
 class LassoLayer: UIView {
+    var onLassoFinished: ((UIBezierPath) -> Void)?
+
     private var lassoPath = UIBezierPath()
     private var lastPoint: CGPoint?
     private var isDrawing = false
@@ -43,6 +45,6 @@ class LassoLayer: UIView {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         isDrawing = false
         lassoPath.close()
-        // delegate?.lassoSelectionFinished(with: performHitTesting())
+        onLassoFinished?(lassoPath)
     }
 }
