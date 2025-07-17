@@ -254,7 +254,7 @@ extension NotebookPageView: EraserLayerDelegate {
             } else {
                 pendingEraseInfo.append((layer, indexedErased))
             }
-            printEraseInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 📄 Erasing Strokes")
+            // printEraseInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 📄 Erasing Strokes")
         }
     }
 
