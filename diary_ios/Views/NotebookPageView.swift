@@ -12,11 +12,11 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private(set) var lastEditedTimestamp: Date?
 
     private var containerView = UIView()
-    private var handwritingLayers: [HandwritingLayer] = []
     private var currentHandwritingLayer: HandwritingLayer?
-    private var stickerLayers: [StickerLayer] = []
     private var currentStickerLayer: StickerLayer?
-    private var eraserLayer: EraserLayer?
+    private var currentEraserLayer: EraserLayer?
+    private var handwritingLayers: [HandwritingLayer] = []
+    private var stickerLayers: [StickerLayer] = []
 
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
@@ -72,7 +72,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
         if tool.isDrawing {
             currentStickerLayer = nil
-            eraserLayer = nil
+            currentEraserLayer = nil
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
             }
@@ -80,13 +80,13 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         } else if tool.isEraser {
             currentStickerLayer = nil
             currentHandwritingLayer = nil
-            if eraserLayer == nil {
+            if currentEraserLayer == nil {
                 createNewEraserLayer()
             }
-            // eraserLayer!.setTool(tool: tool)
+            // currentEraserLayer!.setTool(tool: tool)
         } else if tool.isSticker {
             currentHandwritingLayer = nil
-            eraserLayer = nil
+            currentEraserLayer = nil
             if currentStickerLayer == nil {
                 createNewStickerLayer()
             }
@@ -96,7 +96,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 创建视图层
     private func createNewHandwritingLayer() {
-        clearEmptyHandwritingLayer()
+        // clearEmptyHandwritingLayer()
         let newLayer = HandwritingLayer()
         newLayer.frame = bounds
         newLayer.delegate = self
@@ -107,7 +107,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     private func createNewStickerLayer() {
-        clearEmptyStickerLayer()
+        // clearEmptyStickerLayer()
         let newLayer = StickerLayer()
         newLayer.frame = bounds
         newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
@@ -122,7 +122,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         newLayer.frame = bounds
         newLayer.eraseDelegate = self
         containerView.addSubview(newLayer)
-        eraserLayer = newLayer
+        currentEraserLayer = newLayer
         print("[P\(pageIndex)] 🫧 Created eraser layer")
     }
 
