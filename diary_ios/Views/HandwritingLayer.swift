@@ -10,18 +10,13 @@ class HandwritingLayer: PKCanvasView {
     // MARK: - 初始化
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setup()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setup()
-    }
-
-    private func setup() {
         backgroundColor = .clear
         isOpaque = false
         drawingPolicy = .pencilOnly
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
     // MARK: - 监听触摸

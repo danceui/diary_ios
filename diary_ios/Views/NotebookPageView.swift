@@ -15,6 +15,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var currentHandwritingLayer: HandwritingLayer?
     private var currentStickerLayer: StickerLayer?
     private var currentEraserLayer: EraserLayer?
+    private var currentLassoLayer: LassoLayer?
     private var handwritingLayers: [HandwritingLayer] = []
     private var stickerLayers: [StickerLayer] = []
 
@@ -73,6 +74,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         if tool.isDrawing {
             currentStickerLayer = nil
             currentEraserLayer = nil
+            currentLassoLayer = nil
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
             }
@@ -80,6 +82,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         } else if tool.isEraser {
             currentStickerLayer = nil
             currentHandwritingLayer = nil
+            currentLassoLayer = nil
             if currentEraserLayer == nil {
                 createNewEraserLayer()
             }
@@ -87,16 +90,24 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         } else if tool.isSticker {
             currentHandwritingLayer = nil
             currentEraserLayer = nil
+            currentLassoLayer = nil
             if currentStickerLayer == nil {
                 createNewStickerLayer()
             }
             // currentStickerLayer!.setTool(tool: tool)
+        } else if tool.isLasso {
+            currentHandwritingLayer = nil
+            currentEraserLayer = nil
+            currentStickerLayer = nil
+            if currentLassoLayer == nil {
+                createNewLassoLayer()
+            }
+            // currentLassoLayer!.setTool(tool: tool)
         }
     }
 
     // MARK: - 创建视图层
     private func createNewHandwritingLayer() {
-        // clearEmptyHandwritingLayer()
         let newLayer = HandwritingLayer()
         newLayer.frame = bounds
         newLayer.delegate = self
@@ -107,7 +118,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     private func createNewStickerLayer() {
-        // clearEmptyStickerLayer()
         let newLayer = StickerLayer()
         newLayer.frame = bounds
         newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
@@ -124,6 +134,14 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         containerView.addSubview(newLayer)
         currentEraserLayer = newLayer
         print("[P\(pageIndex)] 🫧 Created eraser layer")
+    }
+
+    private func createNewLassoLayer() {
+        let newLayer = LassoLayer()
+        newLayer.frame = bounds
+        containerView.addSubview(newLayer)
+        currentLassoLayer = newLayer
+        print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
     }
 
     // MARK: - 清理视图层
