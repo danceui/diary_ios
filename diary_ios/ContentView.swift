@@ -24,22 +24,23 @@ struct ContentView: View {
                     Text("Eraser").tag(Tool.eraser)
                     Text("Highlighter").tag(Tool.highlighter)
                     Text("Sticker").tag(Tool.sticker)
+                    Text("Lasso").tag(Tool.lasso)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .onChange(of: selectedTool) { newTool in
                     ToolManager.shared.currentTool = newTool
-                    switch newTool {
-                    case .pen:
-                        ToolManager.shared.strokeColor = .black
-                        ToolManager.shared.strokeWidth = 5.0
-                    case .highlighter:
-                        ToolManager.shared.strokeColor = UIColor.yellow.withAlphaComponent(0.5)
-                        ToolManager.shared.strokeWidth = 10.0
-                    case .eraser:
-                        break // 颜色／粗细在 HandwritingLayer 忽略
-                    case .sticker:
-                        break // 颜色／粗细忽略
-                    }
+                    // switch newTool {
+                    // case .pen:
+                    //     ToolManager.shared.strokeColor = .black
+                    //     ToolManager.shared.strokeWidth = 5.0
+                    // case .highlighter:
+                    //     ToolManager.shared.strokeColor = UIColor.yellow.withAlphaComponent(0.5)
+                    //     ToolManager.shared.strokeWidth = 10.0
+                    // case .eraser:
+                    //     break // 颜色／粗细在 HandwritingLayer 忽略
+                    // case .sticker:
+                    //     break // 颜色／粗细忽略
+                    // }
                 }
 
                 Divider().frame(height: 20)

@@ -6,7 +6,7 @@ protocol EraserLayerDelegate: AnyObject {
     func commitEraseCommand()
 }
 
-class EraserLayer: PKCanvasView {
+class EraserLayer: UIView {
     weak var eraseDelegate: EraserLayerDelegate?
 
     private let eraserPreviewView: UIView = {
@@ -33,8 +33,7 @@ class EraserLayer: PKCanvasView {
     private func setup() {
         backgroundColor = .clear
         isOpaque = false
-        drawingPolicy = .pencilOnly
-        tool = PKEraserTool(.vector)
+        isUserInteractionEnabled = true
         addSubview(eraserPreviewView)
         eraserPreviewView.isHidden = true
     }

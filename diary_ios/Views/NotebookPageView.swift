@@ -69,7 +69,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     // MARK: - 切换工具
-    func toolDidChange(tool: Tool, color: UIColor, width: CGFloat) {
+    func toolDidChange(tool: Tool) {
         if tool.isDrawing {
             currentStickerLayer = nil
             currentEraserLayer = nil
