@@ -71,34 +71,23 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool) {
+        removeCurrentLayers()
         if tool.isDrawing {
-            currentStickerLayer = nil
-            currentEraserLayer = nil
-            currentLassoLayer = nil
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
             }
             currentHandwritingLayer!.setTool(tool: tool)
         } else if tool.isEraser {
-            currentStickerLayer = nil
-            currentHandwritingLayer = nil
-            currentLassoLayer = nil
             if currentEraserLayer == nil {
                 createNewEraserLayer()
             }
             // currentEraserLayer!.setTool(tool: tool)
         } else if tool.isSticker {
-            currentHandwritingLayer = nil
-            currentEraserLayer = nil
-            currentLassoLayer = nil
             if currentStickerLayer == nil {
                 createNewStickerLayer()
             }
             // currentStickerLayer!.setTool(tool: tool)
         } else if tool.isLasso {
-            currentHandwritingLayer = nil
-            currentEraserLayer = nil
-            currentStickerLayer = nil
             if currentLassoLayer == nil {
                 createNewLassoLayer()
             }
@@ -145,6 +134,18 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     // MARK: - 清理视图层
+    func removeCurrentLayers() {
+        // currentHandwritingLayer 和 currentStickerLayer 是实际显示层
+        currentHandwritingLayer = nil
+        currentStickerLayer = nil
+
+        // currentEraserLayer 和 currentLassoLayer 只是手势响应层
+        currentEraserLayer?.removeFromSuperview()
+        currentEraserLayer = nil
+
+        currentLassoLayer?.removeFromSuperview()
+        currentLassoLayer = nil
+    }
     func clearEmptyHandwritingLayer() {
         if let lastHandwriting = handwritingLayers.last, lastHandwriting.isEmpty {
             lastHandwriting.removeFromSuperview()
