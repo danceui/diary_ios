@@ -21,8 +21,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
+    private var layerStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = []
     private var pendingEraseInfo: [(HandwritingLayer, [IndexedStroke])] = []
-    private var layerIndexedStrokeInfo: [(HandwritingLayer, [IndexedStroke])] = []
+    private var lassoStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = []
 
     private var isObservingTool: Bool = false
 
@@ -228,11 +229,12 @@ extension NotebookPageView: EraserLayerDelegate {
         let eraserRect = CGRect(x: eraserLocation.x - eraserSize / 2, y: eraserLocation.y - eraserSize / 2, width: eraserSize, height: eraserSize )
 
         for layer in handwritingLayers {
-            guard let cachedInfo = layerIndexedStrokeInfo.first(where: { $0.0 === layer }) else { continue }
+            guard let cachedInfo = layerStrokesInfo.first(where: { $0.0 === layer }) else { continue }
             let currentStrokes = layer.drawing.strokes
             var indexedErased: [IndexedStroke] = []
             
-            // 在当前 strokes 中找被擦中的 stroke，并从 cached 中查原始 index
+            // 在当前 strokes 中找被擦中的 stroke
+            // 并从 cached 中查原始 index 存储
             for stroke in currentStrokes {
                 if strokeIntersectsRect(stroke: stroke, eraserRect: eraserRect), 
                     let index = cachedInfo.1.first(where: { isStrokeEqual($0.stroke, stroke) })?.index {
@@ -255,7 +257,7 @@ extension NotebookPageView: EraserLayerDelegate {
             } else {
                 pendingEraseInfo.append((layer, indexedErased))
             }
-            // printEraseInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 📄 Erasing Strokes")
+            // printLayerStrokesInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 📄 Erasing Strokes")
         }
     }
 
@@ -267,11 +269,11 @@ extension NotebookPageView: EraserLayerDelegate {
     }
     
     func updateLayerIndexedStrokeInfo() {
-        layerIndexedStrokeInfo.removeAll()
+        layerStrokesInfo.removeAll()
         for layer in handwritingLayers {
             let strokes = layer.drawing.strokes
             let indexedStrokes = strokes.enumerated().map { (i, s) in (i, s) }
-            layerIndexedStrokeInfo.append((layer: layer, indexedStrokes: indexedStrokes))
+            layerStrokesInfo.append((layer: layer, indexedStrokes: indexedStrokes))
         }
     }
 }
@@ -281,33 +283,32 @@ extension NotebookPageView {
     func handleLassoFinished(path: UIBezierPath) {
         for layer in handwritingLayers {
             let currentStrokes = layer.drawing.strokes
-            var selectedStrokes: [PKStroke] = []
+            var indexedSelected: [IndexedStroke] = []
 
-            for stroke in currentStrokes {
+            // 在当前 strokes 中找出被选中的 stroke
+            // 但不需要从 cached 中查原始 index, 只需要按顺序添加 stroke, 递增 index 即可
+            for i in 0..<currentStrokes.count {
                 // 先用边界框快速筛选
+                let stroke = currentStrokes[i]
                 if path.bounds.intersects(stroke.renderBounds) {
-                    for i in 0..<stroke.path.count {
-                        let point = stroke.path[i]
+                    for j in 0..<stroke.path.count {
+                        let point = stroke.path[j]
                         if path.contains(point.location) {
-                            selectedStrokes.append(stroke)
+                            indexedSelected.append((i, stroke))
+                            // highlightStrokes(stroke: stroke, in: layer)
                             break
                         }
                     }
                 }
             }
-            print("📦 Selected \(selectedStrokes.count) strokes.")
-            highlightStrokes(selectedStrokes, in: layer)
+            guard !indexedSelected.isEmpty else { continue }
+            lassoStrokesInfo.append((layer, indexedSelected))
         }
+        printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
+        lassoStrokesInfo.removeAll()
     }
     
-    func highlightStrokes(_ strokes: [PKStroke], in layer: PKCanvasView) {
-        let highlightedStrokes = strokes.map { stroke in
-            var newStroke = stroke
-            newStroke.ink = PKInk(.pen, color: .systemRed) // 或其他高亮颜色
-            return newStroke
-        }
-
-        let newDrawing = PKDrawing(strokes: layer.drawing.strokes + highlightedStrokes)
-        layer.drawing = newDrawing
+    func highlightStrokes(stroke: PKStroke, in layer: PKCanvasView) {
+        print("")
     }
 }

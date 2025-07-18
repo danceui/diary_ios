@@ -38,16 +38,16 @@ func printDrawingInfo(drawing: PKDrawing) {
     }
 }
 
-func printEraseInfo(eraseInfo: [(HandwritingLayer, [IndexedStroke])], context: String) {
+func printLayerStrokesInfo(info: [(HandwritingLayer, [IndexedStroke])], context: String) {
     print("\(context)")
-    for (layerIndex, (layer, indexedStrokes)) in eraseInfo.enumerated() {
-        printIndexedStrokesInfo(indexedStrokes: indexedStrokes, context: "HandwritingLayer \(layerIndex)")
+    for (layerIndex, (layer, indexedStrokes)) in info.enumerated() {
+        printIndexedStrokesInfo(indexedStrokes: indexedStrokes, index: layerIndex)
     }
 }
 
-func printIndexedStrokesInfo(indexedStrokes: [IndexedStroke], context: String) {
-    print("      🔹 \(context):")
-    for (i, s) in indexedStrokes.enumerated() {
-        print("         • Stroke \(s.index) has \(s.stroke.path.count) points")
-    }
+func printIndexedStrokesInfo(indexedStrokes: [IndexedStroke], index: Int) {
+    print("      🔹 Layer \(index) has \(indexedStrokes.count) strokes.")
+    // for (i, s) in indexedStrokes.enumerated() {
+    //     print("         • Stroke \(s.index) has \(s.stroke.path.count) points")
+    // }
 }
