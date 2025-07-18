@@ -139,31 +139,19 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     func removeCurrentLayers() {
         // currentHandwritingLayer 和 currentStickerLayer 是实际显示层
         currentHandwritingLayer = nil
+        print("[P\(pageIndex)] 🗑️ Cleared layer.")
         currentStickerLayer = nil
+        print("[P\(pageIndex)] 🗑️ Cleared sticker layer.")
 
         // currentEraserLayer 和 currentLassoLayer 只是手势响应层
         currentEraserLayer?.removeFromSuperview()
         currentEraserLayer = nil
+        print("[P\(pageIndex)] 🗑️ Cleared and removed eraser layer.")
 
         currentLassoLayer?.removeFromSuperview()
         currentLassoLayer = nil
+        print("[P\(pageIndex)] 🗑️ Cleared and removed lasso layer.")
     }
-    
-    // func clearEmptyHandwritingLayer() {
-    //     if let lastHandwriting = handwritingLayers.last, lastHandwriting.isEmpty {
-    //         lastHandwriting.removeFromSuperview()
-    //         handwritingLayers.removeLast()
-    //         print("[P\(pageIndex)] 🗑️ Cleared last empty handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
-    //     }
-    // }
-
-    // func clearEmptyStickerLayer() {
-    //     if let lastSticker = stickerLayers.last, lastSticker.isEmpty {
-    //         lastSticker.removeFromSuperview()
-    //         stickerLayers.removeLast()
-    //         print("[P\(pageIndex)] 🗑️ Cleared last empty sticker layer. stickerLayers.count = \(stickerLayers.count).")
-    //     }
-    // }
 
     // MARK: - 监听工具
     func activateToolListener() {
