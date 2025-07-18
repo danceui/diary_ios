@@ -33,3 +33,20 @@ func mergeUniqueStrokes(existing: [IndexedStroke], new: [IndexedStroke]) -> [Ind
     }
     return result
 }
+
+func transformStroke(stroke: PKStroke, by transform: CGAffineTransform) -> PKStroke {
+    let newPoints = stroke.path.map { point in
+        let newLocation = point.location.applying(transform)
+        return PKStrokePoint(
+            location: newLocation,
+            timeOffset: point.timeOffset,
+            size: point.size,
+            opacity: point.opacity,
+            force: point.force,
+            azimuth: point.azimuth,
+            altitude: point.altitude
+        )
+    }
+    let newPath = PKStrokePath(controlPoints: newPoints, creationDate: stroke.path.creationDate)
+    return PKStroke(ink: stroke.ink, path: newPath)
+}

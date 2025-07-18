@@ -5,6 +5,7 @@ protocol CanvasCommand {
     func undo()
 }
 
+// MARK: - AddStroke
 class AddStrokeCommand: CanvasCommand {
     private let stroke: PKStroke
     private var strokesAppearedOnce: Bool
@@ -31,6 +32,7 @@ class AddStrokeCommand: CanvasCommand {
     }
 }
 
+// MARK: - MultiErase
 class MultiEraseCommand: CanvasCommand {
     private var eraseInfo: [(HandwritingLayer, [IndexedStroke])]
     private var strokesErasedOnce: Bool = false
@@ -43,7 +45,7 @@ class MultiEraseCommand: CanvasCommand {
     func execute() {
         guard strokesErasedOnce else {
             strokesErasedOnce = true
-            return 
+            return
         }
         for (layer, indexedStrokes) in eraseInfo {
             let current = layer.drawing.strokes
@@ -67,6 +69,7 @@ class MultiEraseCommand: CanvasCommand {
     }
 }
 
+// MARK: - AddSticker
 class AddStickerCommand: CanvasCommand {
     private let sticker: Sticker
     private unowned let stickerLayer: StickerLayer
@@ -88,6 +91,45 @@ class AddStickerCommand: CanvasCommand {
             stickerLayer.stickers.removeLast()
             let view = stickerLayer.stickerViews.removeLast()
             view.removeFromSuperview()
+        }
+    }
+}
+
+// MARK: - MoveLasso
+class MoveLassoCommand: CanvasCommand {
+    var lassoStrokesInfo: [(layer: PKCanvasView, indexedStrokes: [(Int, PKStroke)])]
+    var transform: CGAffineTransform
+    private var strokesMovedOnce: Bool = false
+    private unowned let lassoLayer: LassoLayer
+
+    init(lassoStrokesInfo: [(PKCanvasView, [(Int, PKStroke)])], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
+        self.lassoStrokesInfo = lassoStrokesInfo
+        self.lassoLayer = lassoLayer
+        self.transform = transform
+        self.strokesMovedOnce = strokesMovedOnce
+    }
+
+    func execute() {
+        guard strokesMovedOnce else {
+            strokesMovedOnce = true
+            return
+        }
+        apply(transform: transform)
+        lassoLayer.updateLassoPath(transform: transform)
+    }
+
+    func undo() {
+        apply(transform: CGAffineTransform.identity)
+        lassoLayer.updateLassoPath(transform: CGAffineTransform.identity)
+    }
+
+    private func apply(transform: CGAffineTransform) {
+        for (layer, strokes) in lassoStrokesInfo {
+            var allStrokes = layer.drawing.strokes
+            for (index, stroke) in strokes {
+                allStrokes[index] = transformStroke(stroke: stroke, by: transform)
+            }
+            layer.drawing = PKDrawing(strokes: allStrokes)
         }
     }
 }

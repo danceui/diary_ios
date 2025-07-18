@@ -4,6 +4,7 @@ import PencilKit
 class LassoLayer: UIView {
     var onLassoFinished: ((UIBezierPath) -> Void)?
     var onLassoDragged: ((CGAffineTransform) -> Void)?
+    var onLassoDragFinished: ((CGAffineTransform) -> Void)?
 
     private var lassoPath = UIBezierPath()
     private var originalLassoPath = UIBezierPath()
@@ -92,9 +93,19 @@ class LassoLayer: UIView {
         guard isDragging else { return }
         let offset = gesture.translation(in: self)
         let transform = CGAffineTransform(translationX: offset.x, y: offset.y)
-        onLassoDragged?(transform)
 
-        // 更新套索位置
+        switch gesture.state {
+        case .changed:
+            onLassoDragged?(transform)
+            updateLassoPath(transform: transform)
+        case .ended, .cancelled:
+            onLassoDragFinished?(transform)
+        default:
+            break
+        }
+    }
+
+    func updateLassoPath(transform: CGAffineTransform) {
         if let copiedPath = originalLassoPath.copy() as? UIBezierPath {
             copiedPath.apply(transform)
             lassoPath = copiedPath
