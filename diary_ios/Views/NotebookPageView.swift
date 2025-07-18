@@ -148,21 +148,22 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         currentLassoLayer?.removeFromSuperview()
         currentLassoLayer = nil
     }
-    func clearEmptyHandwritingLayer() {
-        if let lastHandwriting = handwritingLayers.last, lastHandwriting.isEmpty {
-            lastHandwriting.removeFromSuperview()
-            handwritingLayers.removeLast()
-            print("[P\(pageIndex)] 🗑️ Cleared last empty handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
-        }
-    }
+    
+    // func clearEmptyHandwritingLayer() {
+    //     if let lastHandwriting = handwritingLayers.last, lastHandwriting.isEmpty {
+    //         lastHandwriting.removeFromSuperview()
+    //         handwritingLayers.removeLast()
+    //         print("[P\(pageIndex)] 🗑️ Cleared last empty handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
+    //     }
+    // }
 
-    func clearEmptyStickerLayer() {
-        if let lastSticker = stickerLayers.last, lastSticker.isEmpty {
-            lastSticker.removeFromSuperview()
-            stickerLayers.removeLast()
-            print("[P\(pageIndex)] 🗑️ Cleared last empty sticker layer. stickerLayers.count = \(stickerLayers.count).")
-        }
-    }
+    // func clearEmptyStickerLayer() {
+    //     if let lastSticker = stickerLayers.last, lastSticker.isEmpty {
+    //         lastSticker.removeFromSuperview()
+    //         stickerLayers.removeLast()
+    //         print("[P\(pageIndex)] 🗑️ Cleared last empty sticker layer. stickerLayers.count = \(stickerLayers.count).")
+    //     }
+    // }
 
     // MARK: - 监听工具
     func activateToolListener() {

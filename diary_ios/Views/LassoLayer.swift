@@ -8,12 +8,23 @@ class LassoLayer: UIView {
     private var lastPoint: CGPoint?
     private var isDrawing = false
 
+    // 用于绘制虚线套索路径
+    private let shapeLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.strokeColor = UIColor.systemBlue.cgColor
+        layer.fillColor = UIColor.clear.cgColor
+        layer.lineWidth = 1.5
+        layer.lineDashPattern = [6, 4] // 6pt 实线 + 4pt 空白
+        return layer
+    }()
+
     // MARK: - 初始化
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .clear
         isOpaque = false
         isUserInteractionEnabled = true
+        layer.addSublayer(shapeLayer)
     }
 
     required init?(coder: NSCoder) {
@@ -32,6 +43,8 @@ class LassoLayer: UIView {
         lassoPath = UIBezierPath()
         lassoPath.move(to: point)
         lastPoint = point
+        shapeLayer.removeAllAnimations()
+        shapeLayer.path = lassoPath.cgPath
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -39,12 +52,34 @@ class LassoLayer: UIView {
         let midPoint = CGPoint(x: (last.x + point.x) / 2, y: (last.y + point.y) / 2)
         lassoPath.addQuadCurve(to: midPoint, controlPoint: last)
         lastPoint = point
-        setNeedsDisplay()
+        shapeLayer.path = lassoPath.cgPath
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         isDrawing = false
         lassoPath.close()
+        shapeLayer.path = lassoPath.cgPath
+        startWaitingAnimation()
         onLassoFinished?(lassoPath)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        isDrawing = false
+        shapeLayer.path = nil
+    }
+
+    // MARK: - 等待动画效果（动态虚线滚动）
+    private func startWaitingAnimation() {
+        let dashAnimation = CABasicAnimation(keyPath: "lineDashPhase")
+        dashAnimation.fromValue = 0
+        dashAnimation.toValue = 10
+        dashAnimation.duration = 0.4
+        dashAnimation.repeatCount = .infinity
+        shapeLayer.add(dashAnimation, forKey: "dashPhase")
+    }
+    
+    func clearLasso() {
+        shapeLayer.removeAllAnimations()
+        shapeLayer.path = nil
     }
 }
