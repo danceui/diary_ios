@@ -139,18 +139,16 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     func removeCurrentLayers() {
         // currentHandwritingLayer 和 currentStickerLayer 是实际显示层
         currentHandwritingLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared layer.")
         currentStickerLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared sticker layer.")
+        print("[P\(pageIndex)] 🗑️ Cleared Handwriting and Sticker layer.")
 
         // currentEraserLayer 和 currentLassoLayer 只是手势响应层
         currentEraserLayer?.removeFromSuperview()
         currentEraserLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared and removed eraser layer.")
 
         currentLassoLayer?.removeFromSuperview()
         currentLassoLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared and removed lasso layer.")
+        print("[P\(pageIndex)] 🗑️ Cleared and removed Eraser and Lasso layer.")
     }
 
     // MARK: - 监听工具
@@ -270,6 +268,8 @@ extension NotebookPageView: EraserLayerDelegate {
 // MARK: - LassoLayer 回调
 extension NotebookPageView {
     func handleLassoFinished(path: UIBezierPath) {
+        lassoStrokesInfo.removeAll()
+
         for layer in handwritingLayers {
             let currentStrokes = layer.drawing.strokes
             var indexedSelected: [IndexedStroke] = []
@@ -284,7 +284,6 @@ extension NotebookPageView {
                         let point = stroke.path[j]
                         if path.contains(point.location) {
                             indexedSelected.append((i, stroke))
-                            // highlightStrokes(stroke: stroke, in: layer)
                             break
                         }
                     }
@@ -294,10 +293,39 @@ extension NotebookPageView {
             lassoStrokesInfo.append((layer, indexedSelected))
         }
         printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
-        lassoStrokesInfo.removeAll()
+    }
+
+    func handleLassoDragged(offset: CGPoint) {
+        for (layer, indexedStrokes) in lassoStrokesInfo {
+            var updatedStrokes = layer.drawing.strokes
+            // 更新每个 layer 的选中笔画位置
+            for (index, originalStroke) in indexedStrokes {
+                let movedStroke = translateStroke(stroke: originalStroke, by: offset)
+                if updatedStrokes.indices.contains(index) {
+                    updatedStrokes[index] = movedStroke
+                }
+            }
+            layer.drawing = PKDrawing(strokes: updatedStrokes)
+        } 
+    }
+
+    func translateStroke(stroke: PKStroke, by offset: CGPoint) -> PKStroke {
+        // 创建平移变换
+        let transform = CGAffineTransform(translationX: offset.x, y: offset.y)
+        let translatedPoints = stroke.path.map { point in
+            let newLocation = point.location.applying(transform)
+            return PKStrokePoint(
+                location: newLocation,
+                timeOffset: point.timeOffset,
+                size: point.size,
+                opacity: point.opacity,
+                force: point.force,
+                azimuth: point.azimuth,
+                altitude: point.altitude
+            )
+        }
+        let newPath = PKStrokePath(controlPoints: translatedPoints, creationDate: stroke.path.creationDate)
+        return PKStroke(ink: stroke.ink, path: newPath)
     }
     
-    func highlightStrokes(stroke: PKStroke, in layer: PKCanvasView) {
-        print("")
-    }
 }

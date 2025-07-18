@@ -3,10 +3,12 @@ import PencilKit
 
 class LassoLayer: UIView {
     var onLassoFinished: ((UIBezierPath) -> Void)?
+    var onLassoDragged: ((CGPoint) -> Void)?
 
     private var lassoPath = UIBezierPath()
     private var lastPoint: CGPoint?
     private var isDrawing = false
+    private var isDragging = false
 
     // 用于绘制虚线套索路径
     private let shapeLayer: CAShapeLayer = {
@@ -25,6 +27,11 @@ class LassoLayer: UIView {
         isOpaque = false
         isUserInteractionEnabled = true
         layer.addSublayer(shapeLayer)
+
+        // 添加手势识别器
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        panGesture.delegate = self
+        addGestureRecognizer(panGesture)
     }
 
     required init?(coder: NSCoder) {
@@ -68,8 +75,18 @@ class LassoLayer: UIView {
         shapeLayer.path = nil
     }
 
-    // MARK: - 等待动画效果（动态虚线滚动）
+    // MARK: - 手势处理
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        guard isDragging else { return }
+
+        let delta = gesture.translation(in: self)
+        onLassoDragged?(offset: delta)
+        gesture.setTranslation(.zero, in: self)
+    }
+
+    // MARK: - 等待动画
     private func startWaitingAnimation() {
+        // 动态虚线滚动
         let dashAnimation = CABasicAnimation(keyPath: "lineDashPhase")
         dashAnimation.fromValue = 0
         dashAnimation.toValue = 10
@@ -77,8 +94,9 @@ class LassoLayer: UIView {
         dashAnimation.repeatCount = .infinity
         shapeLayer.add(dashAnimation, forKey: "dashPhase")
     }
-    
+
     func clearLasso() {
+        isDragging = false
         shapeLayer.removeAllAnimations()
         shapeLayer.path = nil
     }
