@@ -30,32 +30,36 @@ class LassoLayer: UIView {
 
         // 添加手势识别器
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        panGesture.delegate = self
+        panGesture.cancelsTouchesInView = false
         addGestureRecognizer(panGesture)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func draw(_ rect: CGRect) {
-        UIColor.systemBlue.setStroke()
-        lassoPath.stroke()
-    }
+    }   
 
     // MARK: - 监听触摸
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let point = touches.first?.location(in: self) else { return }
-        isDrawing = true
-        lassoPath = UIBezierPath()
-        lassoPath.move(to: point)
-        lastPoint = point
-        shapeLayer.removeAllAnimations()
-        shapeLayer.path = lassoPath.cgPath
+
+        // 如果当前已经存在一个闭合的套索路径，并且用户点击在套索内 —— 说明是要拖动
+        if shapeLayer.path?.contains(point) == true {
+            isDragging = true
+            isDrawing = false
+        } else {
+            // 否则，说明是要重新开始套索选择
+            isDrawing = true
+            isDragging = false
+            lassoPath = UIBezierPath()
+            lassoPath.move(to: point)
+            lastPoint = point
+            shapeLayer.removeAllAnimations()
+            shapeLayer.path = lassoPath.cgPath
+        }
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard isDrawing, let point = touches.first?.location(in: self), let last = lastPoint else { return }
+        guard !isDragging, isDrawing, let point = touches.first?.location(in: self), let last = lastPoint else { return }
         let midPoint = CGPoint(x: (last.x + point.x) / 2, y: (last.y + point.y) / 2)
         lassoPath.addQuadCurve(to: midPoint, controlPoint: last)
         lastPoint = point
@@ -63,11 +67,15 @@ class LassoLayer: UIView {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        isDrawing = false
-        lassoPath.close()
-        shapeLayer.path = lassoPath.cgPath
-        startWaitingAnimation()
-        onLassoFinished?(lassoPath)
+        if isDrawing {
+            isDrawing = false
+            lassoPath.close()
+            shapeLayer.path = lassoPath.cgPath
+            startWaitingAnimation()
+            onLassoFinished?(lassoPath)
+        } else if isDragging {
+            isDragging = false
+        }
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -80,7 +88,7 @@ class LassoLayer: UIView {
         guard isDragging else { return }
 
         let delta = gesture.translation(in: self)
-        onLassoDragged?(offset: delta)
+        onLassoDragged?(delta)
         gesture.setTranslation(.zero, in: self)
     }
 

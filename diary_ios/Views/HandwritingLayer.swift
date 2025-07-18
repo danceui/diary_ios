@@ -21,12 +21,10 @@ class HandwritingLayer: PKCanvasView {
 
     // MARK: - 监听触摸
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesEnded(touches, with: event)
         touchFinished = true
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesCancelled(touches, with: event)
         touchFinished = true
     }
     

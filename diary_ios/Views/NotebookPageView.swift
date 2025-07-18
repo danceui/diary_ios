@@ -130,6 +130,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         let newLayer = LassoLayer()
         newLayer.frame = bounds
         newLayer.onLassoFinished = { [weak self] path in self?.handleLassoFinished(path: path) }
+        newLayer.onLassoDragged = { [weak self] delta in self?.handleLassoDragged(offset: delta) }
         containerView.addSubview(newLayer)
         currentLassoLayer = newLayer
         print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
