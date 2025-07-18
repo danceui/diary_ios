@@ -3,9 +3,10 @@ import PencilKit
 
 class LassoLayer: UIView {
     var onLassoFinished: ((UIBezierPath) -> Void)?
-    var onLassoDragged: ((CGPoint) -> Void)?
+    var onLassoDragged: ((CGAffineTransform) -> Void)?
 
     private var lassoPath = UIBezierPath()
+    private var originalLassoPath = UIBezierPath()
     private var lastPoint: CGPoint?
     private var isDrawing = false
     private var isDragging = false
@@ -72,6 +73,9 @@ class LassoLayer: UIView {
             lassoPath.close()
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
+            if let copiedPath = lassoPath.copy() as? UIBezierPath {
+                originalLassoPath = copiedPath
+            }
             onLassoFinished?(lassoPath)
         } else if isDragging {
             isDragging = false
@@ -86,10 +90,16 @@ class LassoLayer: UIView {
     // MARK: - 手势处理
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         guard isDragging else { return }
+        let offset = gesture.translation(in: self)
+        let transform = CGAffineTransform(translationX: offset.x, y: offset.y)
+        onLassoDragged?(transform)
 
-        let delta = gesture.translation(in: self)
-        onLassoDragged?(delta)
-        gesture.setTranslation(.zero, in: self)
+        // 更新套索位置
+        if let copiedPath = originalLassoPath.copy() as? UIBezierPath {
+            copiedPath.apply(transform)
+            lassoPath = copiedPath
+            shapeLayer.path = lassoPath.cgPath
+        }
     }
 
     // MARK: - 等待动画

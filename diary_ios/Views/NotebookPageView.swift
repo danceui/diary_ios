@@ -130,7 +130,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         let newLayer = LassoLayer()
         newLayer.frame = bounds
         newLayer.onLassoFinished = { [weak self] path in self?.handleLassoFinished(path: path) }
-        newLayer.onLassoDragged = { [weak self] delta in self?.handleLassoDragged(offset: delta) }
+        newLayer.onLassoDragged = { [weak self] transform in self?.handleLassoDragged(transform: transform) }
         containerView.addSubview(newLayer)
         currentLassoLayer = newLayer
         print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
@@ -293,40 +293,31 @@ extension NotebookPageView {
             guard !indexedSelected.isEmpty else { continue }
             lassoStrokesInfo.append((layer, indexedSelected))
         }
-        printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
+        // printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
     }
 
-    func handleLassoDragged(offset: CGPoint) {
+    func handleLassoDragged(transform: CGAffineTransform) {
         for (layer, indexedStrokes) in lassoStrokesInfo {
-            var updatedStrokes = layer.drawing.strokes
-            // 更新每个 layer 的选中笔画位置
-            for (index, originalStroke) in indexedStrokes {
-                let movedStroke = translateStroke(stroke: originalStroke, by: offset)
-                if updatedStrokes.indices.contains(index) {
-                    updatedStrokes[index] = movedStroke
+            var currentStrokes = layer.drawing.strokes
+            // 更新每个 layer 选中笔画的位置
+            for (index, stroke) in indexedStrokes {
+                let translatedPoints = stroke.path.map { point in
+                    let newLocation = point.location.applying(transform)
+                    return PKStrokePoint(
+                        location: newLocation,
+                        timeOffset: point.timeOffset,
+                        size: point.size,
+                        opacity: point.opacity,
+                        force: point.force,
+                        azimuth: point.azimuth,
+                        altitude: point.altitude
+                    )
                 }
+                let newPath = PKStrokePath(controlPoints: translatedPoints, creationDate: stroke.path.creationDate)
+                currentStrokes[index] = PKStroke(ink: stroke.ink, path: newPath)
             }
-            layer.drawing = PKDrawing(strokes: updatedStrokes)
-        } 
-    }
-
-    func translateStroke(stroke: PKStroke, by offset: CGPoint) -> PKStroke {
-        // 创建平移变换
-        let transform = CGAffineTransform(translationX: offset.x, y: offset.y)
-        let translatedPoints = stroke.path.map { point in
-            let newLocation = point.location.applying(transform)
-            return PKStrokePoint(
-                location: newLocation,
-                timeOffset: point.timeOffset,
-                size: point.size,
-                opacity: point.opacity,
-                force: point.force,
-                azimuth: point.azimuth,
-                altitude: point.altitude
-            )
+            layer.drawing = PKDrawing(strokes: currentStrokes)
         }
-        let newPath = PKStrokePath(controlPoints: translatedPoints, creationDate: stroke.path.creationDate)
-        return PKStroke(ink: stroke.ink, path: newPath)
     }
     
 }
