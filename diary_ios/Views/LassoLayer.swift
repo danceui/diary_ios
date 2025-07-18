@@ -84,8 +84,7 @@ class LassoLayer: UIView {
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        isDrawing = false
-        shapeLayer.path = nil
+        removeLassoPath()
     }
 
     // MARK: - 手势处理
@@ -124,7 +123,8 @@ class LassoLayer: UIView {
         shapeLayer.add(dashAnimation, forKey: "dashPhase")
     }
 
-    func clearLasso() {
+    func removeLassoPath() {
+        isDrawing = false
         isDragging = false
         shapeLayer.removeAllAnimations()
         shapeLayer.path = nil

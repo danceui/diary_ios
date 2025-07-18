@@ -142,7 +142,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         // currentHandwritingLayer 和 currentStickerLayer 是实际显示层
         currentHandwritingLayer = nil
         currentStickerLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared Handwriting and Sticker layer.")
+        print("[P\(pageIndex)] 🗑️ Cleared CurrentHandwritingLayer and CurrentStickerLayer.")
 
         // currentEraserLayer 和 currentLassoLayer 只是手势响应层
         currentEraserLayer?.removeFromSuperview()
@@ -150,7 +150,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
         currentLassoLayer?.removeFromSuperview()
         currentLassoLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared and removed Eraser and Lasso layer.")
+        print("[P\(pageIndex)] 🗑️ Cleared and removed CurrentEraserLayer and CurrentLassoLayer.")
     }
 
     // MARK: - 监听工具
@@ -291,6 +291,9 @@ extension NotebookPageView {
             }
             guard !indexedSelected.isEmpty else { continue }
             lassoStrokesInfo.append((layer, indexedSelected))
+        }
+        if lassoStrokesInfo.isEmpty {
+            currentLassoLayer?.removeLassoPath()
         }
         // printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
     }
