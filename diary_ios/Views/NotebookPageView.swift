@@ -294,11 +294,13 @@ extension NotebookPageView {
         }
         if lassoStrokesInfo.isEmpty {
             currentLassoLayer?.removeLassoPath()
+        } else {
+            printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
         }
-        // printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
     }
 
     func handleLassoDragged(transform: CGAffineTransform) {
+        guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
         // 实时移动
         for (layer, strokes) in lassoStrokesInfo {
             var currentStrokes = layer.drawing.strokes
@@ -307,7 +309,7 @@ extension NotebookPageView {
             }
             layer.drawing = PKDrawing(strokes: currentStrokes)
         }
-        currentLassoLayer?.updateLassoPath(transform: transform)
+        lassoLayer.updateLassoPath(transform: transform)
     }
     
     func handleLassoDragFinished(transform: CGAffineTransform) {
