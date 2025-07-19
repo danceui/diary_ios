@@ -270,6 +270,7 @@ extension NotebookPageView: EraserLayerDelegate {
 // MARK: - Lasso Layer 回调
 extension NotebookPageView {
     func handleLassoFinished(path: UIBezierPath) {
+        lassoStrokesInfo.removeAll()
         for layer in handwritingLayers {
             let currentStrokes = layer.drawing.strokes
             var indexedSelected: [IndexedStroke] = []
@@ -317,6 +318,17 @@ extension NotebookPageView {
         guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
         let cmd = MoveLassoCommand(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
         executeAndSave(command: cmd)
-        lassoStrokesInfo.removeAll()
+        updateLassoStrokesInfo()
+    }
+    
+    func updateLassoStrokesInfo() {
+        for i in 0..<lassoStrokesInfo.count {
+            let (layer, strokes) = lassoStrokesInfo[i]
+            let updatedStrokes = strokes.map { (index, _) in
+                let updatedStroke = layer.drawing.strokes[index]
+                return (index, updatedStroke)
+            }
+            lassoStrokesInfo[i] = (layer, updatedStrokes)
+        }
     }
 }
