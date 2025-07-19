@@ -319,6 +319,7 @@ extension NotebookPageView {
         let cmd = MoveLassoCommand(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
         executeAndSave(command: cmd)
         updateLassoStrokesInfo()
+        lassoLayer.updateOriginalLassoPath()
     }
     
     func updateLassoStrokesInfo() {

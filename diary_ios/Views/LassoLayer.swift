@@ -77,9 +77,7 @@ class LassoLayer: UIView {
             lassoPath.close()
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
-            if let copiedPath = lassoPath.copy() as? UIBezierPath {
-                originalLassoPath = copiedPath
-            }
+            updateOriginalLassoPath()
             onLassoFinished?(lassoPath)
         } else if isDragging {
             print("结束dragging套索")
@@ -108,8 +106,14 @@ class LassoLayer: UIView {
     }
 
     // MARK: - 套索路径
+    func updateOriginalLassoPath() {
+        print("更新参照套索路径")
+        if let copiedPath = lassoPath.copy() as? UIBezierPath {
+            originalLassoPath = copiedPath
+        }
+    }
+
     func updateLassoPath(transform: CGAffineTransform) {
-        print("更新套索路径")
         if let copiedPath = originalLassoPath.copy() as? UIBezierPath {
             copiedPath.apply(transform)
             lassoPath = copiedPath
