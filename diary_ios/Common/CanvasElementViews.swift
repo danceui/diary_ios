@@ -14,7 +14,6 @@ struct Sticker {
 // 贴纸视图（仅显示，不支持交互）
 class StickerView: UIImageView {
     var sticker: Sticker
-    var lassoPath: UIBezierPath?
 
     init(sticker: Sticker) {
         self.sticker = sticker
@@ -25,13 +24,6 @@ class StickerView: UIImageView {
 
         self.image = UIImage(named: "star")
         self.isUserInteractionEnabled = false
-
-        // if let image = self.image {
-        //     if let path = generateLassoPathFromAlpha(image: image, in: self.bounds) {
-        //         path.apply(CGAffineTransform(translationX: self.frame.origin.x, y: self.frame.origin.y))
-        //         self.lassoPath = path
-        //     }
-        // }
     }
 
     required init?(coder: NSCoder) {

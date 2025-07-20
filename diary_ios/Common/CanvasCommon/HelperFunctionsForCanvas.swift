@@ -1,6 +1,5 @@
 import UIKit
 import PencilKit
-import CoreImage
 
 func isStrokeEqual(_ lhs: PKStroke, _ rhs: PKStroke) -> Bool {
     // 快速比较常用字段（颜色、宽度、笔类型）
