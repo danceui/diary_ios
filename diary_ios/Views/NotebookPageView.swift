@@ -21,9 +21,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
-    private var layerStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = []
-    private var pendingEraseInfo: [(HandwritingLayer, [IndexedStroke])] = []
-    private var lassoStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = []
+    private var layerStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 缓存每个 layer 的笔画信息
+    private var pendingEraseInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 记录每个 layer 待擦除的笔画信息
+    private var lassoStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 记录套索选中的每个 layer 的笔画信息
+    private var selectedStickerView: StickerView?
 
     private var isObservingTool: Bool = false
 
@@ -96,47 +97,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         }
     }
 
-    // MARK: - 创建视图层
-    private func createNewHandwritingLayer() {
-        let newLayer = HandwritingLayer()
-        newLayer.frame = bounds
-        newLayer.delegate = self
-        handwritingLayers.append(newLayer)
-        currentHandwritingLayer = newLayer
-        containerView.addSubview(newLayer)
-        print("[P\(pageIndex)] ✏️ Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
-    }
-
-    private func createNewStickerLayer() {
-        let newLayer = StickerLayer()
-        newLayer.frame = bounds
-        newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
-        stickerLayers.append(newLayer)
-        currentStickerLayer = newLayer
-        containerView.addSubview(newLayer)
-        print("[P\(pageIndex)] ⭐️ Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
-    }
-
-    private func createNewEraserLayer() {
-        let newLayer = EraserLayer()
-        newLayer.frame = bounds
-        newLayer.eraseDelegate = self
-        containerView.addSubview(newLayer)
-        currentEraserLayer = newLayer
-        print("[P\(pageIndex)] 🫧 Created eraser layer")
-    }
-
-    private func createNewLassoLayer() {
-        let newLayer = LassoLayer()
-        newLayer.frame = bounds
-        newLayer.onLassoFinished = { [weak self] path in self?.handleLassoFinished(path: path) }
-        newLayer.onLassoDragged = { [weak self] transform in self?.handleLassoDragged(transform: transform) }
-        newLayer.onLassoDragFinished = { [weak self] transform in self?.handleLassoDragFinished(transform: transform) }
-        containerView.addSubview(newLayer)
-        currentLassoLayer = newLayer
-        print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
-    }
-
     // MARK: - 清理视图层
     func removeCurrentLayers() {
         // currentHandwritingLayer 和 currentStickerLayer 是实际显示层
@@ -168,16 +128,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         print("[P\(pageIndex)] ❌ Tool listener deactivated.")
     }
 
-    // MARK: - 处理笔画
-    @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        guard let handwritingLayer = currentHandwritingLayer, handwritingLayer.touchFinished else { return }
-        if let newStroke = handwritingLayer.drawing.strokes.last {
-            let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
-            executeAndSave(command: cmd)
-        }
-        handwritingLayer.touchFinished = false
-    }
-
     // MARK: - Undo/Redo
     func executeAndSave(command: CanvasCommand) {
         command.execute()
@@ -205,8 +155,40 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 }
 
+// MARK: - Handwriting Layer 回调
+extension NotebookPageView {
+    private func createNewHandwritingLayer() {
+        let newLayer = HandwritingLayer()
+        newLayer.frame = bounds
+        newLayer.delegate = self
+        handwritingLayers.append(newLayer)
+        currentHandwritingLayer = newLayer
+        containerView.addSubview(newLayer)
+        print("[P\(pageIndex)] ✏️ Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
+    }
+
+    @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+        guard let handwritingLayer = currentHandwritingLayer, handwritingLayer.touchFinished else { return }
+        if let newStroke = handwritingLayer.drawing.strokes.last {
+            let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
+            executeAndSave(command: cmd)
+        }
+        handwritingLayer.touchFinished = false
+    }
+}
+
 // MARK: - Sticker Layer 回调
-extension NotebookPageView: {
+extension NotebookPageView {
+    private func createNewStickerLayer() {
+        let newLayer = StickerLayer()
+        newLayer.frame = bounds
+        newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
+        stickerLayers.append(newLayer)
+        currentStickerLayer = newLayer
+        containerView.addSubview(newLayer)
+        print("[P\(pageIndex)] ⭐️ Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
+    }
+
     private func handleStickerAdded(_ sticker: Sticker) {
         guard let stickerLayer = currentStickerLayer else { return }
         let cmd = AddStickerCommand(sticker: sticker, stickerLayer: stickerLayer)
@@ -216,6 +198,15 @@ extension NotebookPageView: {
 
 // MARK: - Eraser Layer 代理
 extension NotebookPageView: EraserLayerDelegate {
+    private func createNewEraserLayer() {
+        let newLayer = EraserLayer()
+        newLayer.frame = bounds
+        newLayer.eraseDelegate = self
+        containerView.addSubview(newLayer)
+        currentEraserLayer = newLayer
+        print("[P\(pageIndex)] 🫧 Created eraser layer")
+    }
+
     func applyEraser(eraserLocation: CGPoint, eraserSize: CGFloat) {
         let eraserRect = CGRect(x: eraserLocation.x - eraserSize / 2, y: eraserLocation.y - eraserSize / 2, width: eraserSize, height: eraserSize )
 
@@ -271,12 +262,23 @@ extension NotebookPageView: EraserLayerDelegate {
 
 // MARK: - Lasso Layer 回调
 extension NotebookPageView {
-    func handleLassoFinished(path: UIBezierPath) {
+    private func createNewLassoLayer() {
+        let newLayer = LassoLayer()
+        newLayer.frame = bounds
+        newLayer.onLassoFinished = { [weak self] path in self?.handleLassoFinished(path: path) }
+        newLayer.onLassoDragged = { [weak self] transform in self?.handleLassoDragged(transform: transform) }
+        newLayer.onLassoDragFinished = { [weak self] transform in self?.handleLassoDragFinished(transform: transform) }
+        newLayer.onStickerTapped = { [weak self] point in self?.handleStickerTapped(point: point) }
+        containerView.addSubview(newLayer)
+        currentLassoLayer = newLayer
+        print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
+    }
+
+    private func handleLassoFinished(path: UIBezierPath) {
         lassoStrokesInfo.removeAll()
         for layer in handwritingLayers {
             let currentStrokes = layer.drawing.strokes
             var indexedSelected: [IndexedStroke] = []
-
             // 在当前 strokes 中找出被选中的 stroke
             // 但不需要从 cached 中查原始 index, 只需要按顺序添加 stroke, 递增 index 即可
             for i in 0..<currentStrokes.count {
@@ -302,19 +304,55 @@ extension NotebookPageView {
         }
     }
 
-    func handleLassoDragged(transform: CGAffineTransform) {
+    private func handleLassoDragged(transform: CGAffineTransform) {
         guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
         // 实时移动
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
-        lassoLayer.updateLassoPath(originalLassoPath: lassoLayer.originalLassoPath, transform: transform)
+        lassoLayer.updateLassoPath(transform: transform)
     }
     
-    func handleLassoDragFinished(transform: CGAffineTransform) {
-        // 提交 command
+    private func handleLassoDragFinished(transform: CGAffineTransform) {
         guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
+        // 提交 command
         let cmd = MoveStrokes(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
         executeAndSave(command: cmd)
         // 更新 lassoLayer 的 originalLassoPath
         lassoLayer.updateOriginalLassoPath()
+    }
+
+    private func handleStickerTapped(point: CGPoint) {
+        guard let lassoLayer = currentLassoLayer else { return }
+        // 从顶层到低层寻找贴纸（优先最上方）
+        for layer in stickerLayers.reversed() {
+            for view in layer.stickerViews.reversed() {
+                let convertedPoint = view.convert(point, from: currentLassoLayer)
+                if view.bounds.contains(convertedPoint) {
+                    selectSticker(view)
+                    return
+                }
+            }
+        }
+        // 如果没有贴纸被点击，则移除 lassoPath
+        deselectCurrentSticker()
+    }
+
+    private func selectSticker(_ view: StickerView) {
+        if selectedStickerView === view { return } // 已选中, 忽略
+
+        deselectCurrentSticker()
+
+        selectedStickerView = view
+        view.layer.borderColor = UIColor.systemBlue.cgColor
+        view.layer.borderWidth = 2
+        view.layer.cornerRadius = 4
+        view.layer.masksToBounds = true
+
+        print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
+    }
+
+    private func deselectCurrentSticker() {
+        guard let view = selectedStickerView else { return }
+        view.layer.borderWidth = 0
+        selectedStickerView = nil
     }
 }
