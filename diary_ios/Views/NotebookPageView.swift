@@ -328,10 +328,24 @@ extension NotebookPageView {
                 let convertedPoint = view.convert(point, from: currentLassoLayer)
                 if view.bounds.contains(convertedPoint) {
                     selectSticker(view)
-                    // 构造 sticker 的包围框路径
-                    let frameInLasso = currentLassoLayer?.convert(view.frame, from: view.superview) ?? .zero
-                    let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
-                    currentLassoLayer?.configureLassoPath(path: path)
+                    if let image = view.image,
+                    let outlinePath = image.alphaMaskPath(in: view.bounds) {
+                        
+                        // 把 path 转换到 lassoLayer 的坐标系
+                        var transform = CGAffineTransform(translationX: view.frame.origin.x, y: view.frame.origin.y)
+                        if let transformedCGPath = outlinePath.cgPath.copy(using: &transform) {
+        
+                            // 转换成 UIBezierPath
+                            let bezierPath = UIBezierPath(cgPath: transformedCGPath)
+                            
+                            // 再把它从 view.superview 转换到 lassoLayer 坐标系
+                            let originInLasso = currentLassoLayer?.convert(view.frame.origin, from: view.superview) ?? .zero
+                            bezierPath.apply(CGAffineTransform(translationX: originInLasso.x - view.frame.origin.x,
+                                                            y: originInLasso.y - view.frame.origin.y))
+                            
+                            currentLassoLayer?.configureLassoPath(path: bezierPath)
+                        }
+                    }
                     return
                 }
             }
@@ -351,5 +365,65 @@ extension NotebookPageView {
         guard let view = selectedStickerView else { return }
         view.layer.borderWidth = 0
         selectedStickerView = nil
+    }
+}
+extension UIImage {
+    /// 根据 alpha 通道提取贴纸实际轮廓路径（基于透明区域）
+    func alphaMaskPath(in bounds: CGRect) -> UIBezierPath? {
+        guard let cgImage = self.cgImage else { return nil }
+
+        let width = Int(bounds.width)
+        let height = Int(bounds.height)
+        let bytesPerPixel = 4
+        let bytesPerRow = bytesPerPixel * width
+        let bitsPerComponent = 8
+
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: bitsPerComponent,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+
+        context.draw(cgImage, in: CGRect(origin: .zero, size: bounds.size))
+
+        guard let pixelBuffer = context.data else { return nil }
+
+        let path = UIBezierPath()
+        let threshold: UInt8 = 20
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset = y * bytesPerRow + x * bytesPerPixel
+                let alpha = pixelBuffer.load(fromByteOffset: offset + 3, as: UInt8.self)
+
+                if alpha > threshold {
+                    let point = CGPoint(x: CGFloat(x), y: CGFloat(y))
+                    if path.isEmpty {
+                        path.move(to: point)
+                    } else {
+                        path.addLine(to: point)
+                    }
+                    break // 每行只取最左边那个点，简单轮廓
+                }
+            }
+        }
+
+        path.close()
+        return path
+    }
+}
+extension UIView {
+    func convertTransform(to targetLayer: CALayer?) -> CGAffineTransform {
+        guard let superview = self.superview,
+              let target = targetLayer else { return .identity }
+        
+        let originInTarget = target.convert(self.frame.origin, from: superview.layer)
+        return CGAffineTransform(translationX: originInTarget.x, y: originInTarget.y)
     }
 }
