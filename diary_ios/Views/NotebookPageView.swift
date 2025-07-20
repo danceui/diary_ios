@@ -178,13 +178,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         handwritingLayer.touchFinished = false
     }
 
-    // MARK: - 处理贴纸
-    private func handleStickerAdded(_ sticker: Sticker) {
-        guard let stickerLayer = currentStickerLayer else { return }
-        let cmd = AddStickerCommand(sticker: sticker, stickerLayer: stickerLayer)
-        executeAndSave(command: cmd)
-    }
-    
     // MARK: - Undo/Redo
     func executeAndSave(command: CanvasCommand) {
         command.execute()
@@ -209,6 +202,15 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         undoStack.append(command)
         updateLayerIndexedStrokeInfo()
         print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+    }
+}
+
+// MARK: - Sticker Layer 回调
+extension NotebookPageView: {
+    private func handleStickerAdded(_ sticker: Sticker) {
+        guard let stickerLayer = currentStickerLayer else { return }
+        let cmd = AddStickerCommand(sticker: sticker, stickerLayer: stickerLayer)
+        executeAndSave(command: cmd)
     }
 }
 
@@ -308,7 +310,7 @@ extension NotebookPageView {
     }
     
     func handleLassoDragFinished(transform: CGAffineTransform) {
-        // 提交移动command
+        // 提交 command
         guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
         let cmd = MoveStrokes(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
         executeAndSave(command: cmd)

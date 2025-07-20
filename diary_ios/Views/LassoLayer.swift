@@ -7,7 +7,7 @@ class LassoLayer: UIView {
     var onLassoDragFinished: ((CGAffineTransform) -> Void)?
 
     private var lassoPath = UIBezierPath()
-    private(set) var originalLassoPath = UIBezierPath()
+    private var originalLassoPath = UIBezierPath()
     private var lastPoint: CGPoint?
     private var isDrawing = false
     private var isDragging = false
@@ -44,12 +44,12 @@ class LassoLayer: UIView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let point = touches.first?.location(in: self) else { return }
 
-        // 如果当前已经存在一个闭合的套索路径，并且用户点击在套索内 —— 说明是要拖动
+        // 如果当前已经存在一个闭合的套索路径并且用户点击在套索内, 说明是要拖动
         if shapeLayer.path?.contains(point) == true {
             isDragging = true
             isDrawing = false
         } else {
-            // 否则，说明是要重新开始套索选择
+            // 否则说明是要重新开始套索选择
             isDrawing = true
             isDragging = false
             lassoPath = UIBezierPath()
