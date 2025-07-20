@@ -325,14 +325,13 @@ extension NotebookPageView {
         // 从顶层到低层寻找贴纸（优先最上方）
         for layer in stickerLayers.reversed() {
             for view in layer.stickerViews.reversed() {
-                let convertedPoint = view.convert(point, from: currentLassoLayer)
-                if view.bounds.contains(convertedPoint) {
-                    selectSticker(view)
-                    // 构造 sticker 的包围框路径
-                    let frameInLasso = currentLassoLayer?.convert(view.frame, from: view.superview) ?? .zero
-                    let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
-                    currentLassoLayer?.configureLassoPath(path: path)
-                    return
+                if let path = view.lassoPath {
+                    let hitPath = path.cgPath.copy(strokingWithWidth: 20, lineCap: .round, lineJoin: .round, miterLimit: 0)
+                    if hitPath.contains(point) {
+                        selectSticker(view)
+                        lassoLayer.configureLassoPath(path: path)
+                        return
+                    }
                 }
             }
         }
