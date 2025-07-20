@@ -314,20 +314,5 @@ extension NotebookPageView {
         executeAndSave(command: cmd)
         // 更新 lassoLayer 的 originalLassoPath
         lassoLayer.updateOriginalLassoPath()
-        // // 更新 lassoStrokesInfo 
-        // lassoStrokesInfo = lassoStrokesInfo.compactMap { (layer, indexed) in
-        //     let allStrokes = layer.drawing.strokes
-        //     let updatedIndexed: [(Int, PKStroke)] = indexed.compactMap { (index, _) in
-        //         guard index >= 0, index < allStrokes.count else { return nil }
-        //         return (index, allStrokes[index])
-        //     }
-        //     // 如果 updatedIndexed 是空的, 就删掉它
-        //     return updatedIndexed.isEmpty ? nil : (layer, updatedIndexed)
-        // }
-        // if lassoStrokesInfo.isEmpty {
-        //     currentLassoLayer?.removeLassoPath()
-        // } else {
-        //     printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Updated Selected Strokes")
-        // }
     }
 }
