@@ -99,14 +99,12 @@ class AddStickerCommand: CanvasCommand {
 class MoveLassoCommand: CanvasCommand {
     private var lassoStrokesInfo: [(layer: HandwritingLayer, indexedStrokes: [(Int, PKStroke)])]
     private var transform: CGAffineTransform
-    private var originalLassoPath: UIBezierPath
     private var strokesMovedOnce: Bool = false
     private unowned let lassoLayer: LassoLayer
 
     init(lassoStrokesInfo: [(HandwritingLayer, [(Int, PKStroke)])], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
         self.lassoStrokesInfo = lassoStrokesInfo
         self.lassoLayer = lassoLayer
-        self.originalLassoPath = lassoLayer.originalLassoPath
         self.transform = transform
         self.strokesMovedOnce = strokesMovedOnce
     }
@@ -117,14 +115,12 @@ class MoveLassoCommand: CanvasCommand {
             return
         }
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
-        lassoLayer.updateLassoPath(originalLassoPath: originalLassoPath, transform: transform)
-        lassoLayer.updateOriginalLassoPath()
+        lassoLayer.removeLassoPath()
     }
 
     func undo() {
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: CGAffineTransform.identity)
-        lassoLayer.updateLassoPath(originalLassoPath: originalLassoPath, transform: CGAffineTransform.identity)
-        lassoLayer.updateOriginalLassoPath()
+        lassoLayer.removeLassoPath()
     }
 
 }
