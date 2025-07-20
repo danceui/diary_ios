@@ -118,11 +118,13 @@ class MoveLassoCommand: CanvasCommand {
         }
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
         lassoLayer.updateLassoPath(originalLassoPath: originalLassoPath, transform: transform)
+        lassoLayer.updateOriginalLassoPath()
     }
 
     func undo() {
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: CGAffineTransform.identity)
         lassoLayer.updateLassoPath(originalLassoPath: originalLassoPath, transform: CGAffineTransform.identity)
+        lassoLayer.updateOriginalLassoPath()
     }
 
 }
