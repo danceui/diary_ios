@@ -192,6 +192,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         redoStack.removeAll()
         lastEditedTimestamp = Date()
         updateLayerIndexedStrokeInfo()
+        updateLassoStrokesInfo()
         print("[P\(pageIndex)] 🕹️ Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
@@ -200,6 +201,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         command.undo()
         redoStack.append(command)
         updateLayerIndexedStrokeInfo()
+        updateLassoStrokesInfo()
         print("[P\(pageIndex)] 🕹️ UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
@@ -208,6 +210,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         command.execute()
         undoStack.append(command)
         updateLayerIndexedStrokeInfo()
+        updateLassoStrokesInfo()
         print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 }
@@ -303,14 +306,8 @@ extension NotebookPageView {
     func handleLassoDragged(transform: CGAffineTransform) {
         guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
         // 实时移动
-        for (layer, strokes) in lassoStrokesInfo {
-            var currentStrokes = layer.drawing.strokes
-            for (index, stroke) in strokes {
-                currentStrokes[index] = transformStroke(stroke: stroke, by: transform)
-            }
-            layer.drawing = PKDrawing(strokes: currentStrokes)
-        }
-        lassoLayer.updateLassoPath(transform: transform)
+        transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
+        lassoLayer.updateLassoPath(originalLassoPath: lassoLayer.originalLassoPath, transform: transform)
     }
     
     func handleLassoDragFinished(transform: CGAffineTransform) {
@@ -318,10 +315,9 @@ extension NotebookPageView {
         guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
         let cmd = MoveLassoCommand(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
         executeAndSave(command: cmd)
-        updateLassoStrokesInfo()
         lassoLayer.updateOriginalLassoPath()
     }
-    
+
     func updateLassoStrokesInfo() {
         for i in 0..<lassoStrokesInfo.count {
             let (layer, strokes) = lassoStrokesInfo[i]

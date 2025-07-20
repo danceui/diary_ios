@@ -97,14 +97,16 @@ class AddStickerCommand: CanvasCommand {
 
 // MARK: - MoveLasso
 class MoveLassoCommand: CanvasCommand {
-    var lassoStrokesInfo: [(layer: PKCanvasView, indexedStrokes: [(Int, PKStroke)])]
-    var transform: CGAffineTransform
+    private var lassoStrokesInfo: [(layer: PKCanvasView, indexedStrokes: [(Int, PKStroke)])]
+    private var transform: CGAffineTransform
+    private var originalLassoPath: UIBezierPath
     private var strokesMovedOnce: Bool = false
     private unowned let lassoLayer: LassoLayer
 
     init(lassoStrokesInfo: [(PKCanvasView, [(Int, PKStroke)])], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
         self.lassoStrokesInfo = lassoStrokesInfo
         self.lassoLayer = lassoLayer
+        self.originalLassoPath = lassoLayer.originalLassoPath
         self.transform = transform
         self.strokesMovedOnce = strokesMovedOnce
     }
@@ -114,24 +116,15 @@ class MoveLassoCommand: CanvasCommand {
             strokesMovedOnce = true
             return
         }
-        apply(transform: transform)
-        lassoLayer.updateLassoPath(transform: transform)
+        transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
+        lassoLayer.updateLassoPath(originalLassoPath: originalLassoPath, transform: transform)
     }
 
     func undo() {
-        apply(transform: CGAffineTransform.identity)
-        lassoLayer.updateLassoPath(transform: CGAffineTransform.identity)
+        transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: CGAffineTransform.identity)
+        lassoLayer.updateLassoPath(originalLassoPath: originalLassoPath, transform: CGAffineTransform.identity)
     }
 
-    private func apply(transform: CGAffineTransform) {
-        for (layer, strokes) in lassoStrokesInfo {
-            var allStrokes = layer.drawing.strokes
-            for (index, stroke) in strokes {
-                allStrokes[index] = transformStroke(stroke: stroke, by: transform)
-            }
-            layer.drawing = PKDrawing(strokes: allStrokes)
-        }
-    }
 }
 
 // class EraseStrokesCommand: CanvasCommand {

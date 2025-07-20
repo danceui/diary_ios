@@ -50,3 +50,13 @@ func transformStroke(stroke: PKStroke, by transform: CGAffineTransform) -> PKStr
     let newPath = PKStrokePath(controlPoints: newPoints, creationDate: stroke.path.creationDate)
     return PKStroke(ink: stroke.ink, path: newPath)
 }
+
+func transformStrokes(lassoStrokesInfo: [(layer: PKCanvasView, indexedStrokes: [(Int, PKStroke)])], transform: CGAffineTransform) {
+    for (layer, strokes) in lassoStrokesInfo {
+        var allStrokes = layer.drawing.strokes
+        for (index, stroke) in strokes {
+            allStrokes[index] = transformStroke(stroke: stroke, by: transform)
+        }
+        layer.drawing = PKDrawing(strokes: allStrokes)
+    }
+}

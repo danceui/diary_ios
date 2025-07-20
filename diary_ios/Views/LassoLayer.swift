@@ -7,7 +7,7 @@ class LassoLayer: UIView {
     var onLassoDragFinished: ((CGAffineTransform) -> Void)?
 
     private var lassoPath = UIBezierPath()
-    private var originalLassoPath = UIBezierPath()
+    private(set) var originalLassoPath = UIBezierPath()
     private var lastPoint: CGPoint?
     private var isDrawing = false
     private var isDragging = false
@@ -46,12 +46,10 @@ class LassoLayer: UIView {
 
         // 如果当前已经存在一个闭合的套索路径，并且用户点击在套索内 —— 说明是要拖动
         if shapeLayer.path?.contains(point) == true {
-            print("开始dragging套索")
             isDragging = true
             isDrawing = false
         } else {
             // 否则，说明是要重新开始套索选择
-            print("开始drawing套索")
             isDrawing = true
             isDragging = false
             lassoPath = UIBezierPath()
@@ -72,7 +70,6 @@ class LassoLayer: UIView {
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         if isDrawing {
-            print("结束drawing套索")
             isDrawing = false
             lassoPath.close()
             shapeLayer.path = lassoPath.cgPath
@@ -80,7 +77,6 @@ class LassoLayer: UIView {
             updateOriginalLassoPath()
             onLassoFinished?(lassoPath)
         } else if isDragging {
-            print("结束dragging套索")
             isDragging = false
         }
     }
@@ -107,13 +103,12 @@ class LassoLayer: UIView {
 
     // MARK: - 套索路径
     func updateOriginalLassoPath() {
-        print("更新参照套索路径")
         if let copiedPath = lassoPath.copy() as? UIBezierPath {
             originalLassoPath = copiedPath
         }
     }
 
-    func updateLassoPath(transform: CGAffineTransform) {
+    func updateLassoPath(originalLassoPath: UIBezierPath, transform: CGAffineTransform) {
         if let copiedPath = originalLassoPath.copy() as? UIBezierPath {
             copiedPath.apply(transform)
             lassoPath = copiedPath
@@ -122,7 +117,6 @@ class LassoLayer: UIView {
     }
 
     func removeLassoPath() {
-        print("移除套索路径")
         isDrawing = false
         isDragging = false
         shapeLayer.removeAllAnimations()
