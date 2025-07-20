@@ -319,13 +319,16 @@ extension NotebookPageView {
     }
 
     func updateLassoStrokesInfo() {
+        print("[P\(pageIndex)] 📄 Updating Lasso Strokes Info")
         for i in 0..<lassoStrokesInfo.count {
-            let (layer, strokes) = lassoStrokesInfo[i]
-            let updatedStrokes = strokes.map { (index, _) in
-                let updatedStroke = layer.drawing.strokes[index]
-                return (index, updatedStroke)
+            let (layer, indexed) = lassoStrokesInfo[i]
+            let allStrokes = layer.drawing.strokes
+            let updatedIndexed: [(Int, PKStroke)] = indexed.compactMap { (index, _) in
+                guard index >= 0, index < allStrokes.count else { return nil }
+                return (index, allStrokes[index])
             }
-            lassoStrokesInfo[i] = (layer, updatedStrokes)
+            lassoStrokesInfo[i] = (layer, updatedIndexed)
+            print("        Layer \(i): \(allStrokes.count) strokes, \(updatedIndexed.count) selected.")
         }
     }
 }

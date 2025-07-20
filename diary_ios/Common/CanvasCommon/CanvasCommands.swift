@@ -97,13 +97,13 @@ class AddStickerCommand: CanvasCommand {
 
 // MARK: - MoveLasso
 class MoveLassoCommand: CanvasCommand {
-    private var lassoStrokesInfo: [(layer: PKCanvasView, indexedStrokes: [(Int, PKStroke)])]
+    private var lassoStrokesInfo: [(layer: HandwritingLayer, indexedStrokes: [(Int, PKStroke)])]
     private var transform: CGAffineTransform
     private var originalLassoPath: UIBezierPath
     private var strokesMovedOnce: Bool = false
     private unowned let lassoLayer: LassoLayer
 
-    init(lassoStrokesInfo: [(PKCanvasView, [(Int, PKStroke)])], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
+    init(lassoStrokesInfo: [(HandwritingLayer, [(Int, PKStroke)])], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
         self.lassoStrokesInfo = lassoStrokesInfo
         self.lassoLayer = lassoLayer
         self.originalLassoPath = lassoLayer.originalLassoPath
