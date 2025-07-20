@@ -249,7 +249,7 @@ extension NotebookPageView: EraserLayerDelegate {
             } else {
                 pendingEraseInfo.append((layer, indexedErased))
             }
-            // printLayerStrokesInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 📄 Erasing Strokes")
+            // printLayerStrokesInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 🧩 Erasing Strokes")
         }
     }
 
@@ -299,7 +299,7 @@ extension NotebookPageView {
         if lassoStrokesInfo.isEmpty {
             currentLassoLayer?.removeLassoPath()
         } else {
-            printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 📄 Lasso Strokes")
+            printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Selected Strokes")
         }
     }
 
@@ -319,16 +319,19 @@ extension NotebookPageView {
     }
 
     func updateLassoStrokesInfo() {
-        print("[P\(pageIndex)] 📄 Updating Lasso Strokes Info")
-        for i in 0..<lassoStrokesInfo.count {
-            let (layer, indexed) = lassoStrokesInfo[i]
+        lassoStrokesInfo = lassoStrokesInfo.compactMap { (layer, indexed) in
             let allStrokes = layer.drawing.strokes
             let updatedIndexed: [(Int, PKStroke)] = indexed.compactMap { (index, _) in
                 guard index >= 0, index < allStrokes.count else { return nil }
                 return (index, allStrokes[index])
             }
-            lassoStrokesInfo[i] = (layer, updatedIndexed)
-            print("        Layer \(i): \(allStrokes.count) strokes, \(updatedIndexed.count) selected.")
+            // 如果 updatedIndexed 是空的, 就删掉它
+            return updatedIndexed.isEmpty ? nil : (layer, updatedIndexed)
+        }
+        if lassoStrokesInfo.isEmpty {
+            currentLassoLayer?.removeLassoPath()
+        } else {
+            printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Updated Selected Strokes")
         }
     }
 }

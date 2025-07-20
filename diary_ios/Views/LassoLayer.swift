@@ -121,6 +121,8 @@ class LassoLayer: UIView {
         isDragging = false
         shapeLayer.removeAllAnimations()
         shapeLayer.path = nil
+        lassoPath.removeAllPoints()
+        originalLassoPath.removeAllPoints()
     }
 
     // MARK: - 等待动画

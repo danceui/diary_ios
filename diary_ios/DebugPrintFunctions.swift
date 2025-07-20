@@ -39,14 +39,18 @@ func printDrawingInfo(drawing: PKDrawing) {
 }
 
 func printLayerStrokesInfo(info: [(HandwritingLayer, [IndexedStroke])], context: String) {
-    print("\(context)")
+    print("\(context)", terminator: ": ")
     for (layerIndex, (layer, indexedStrokes)) in info.enumerated() {
-        printIndexedStrokesInfo(indexedStrokes: indexedStrokes, index: layerIndex)
+        if layerIndex == info.count - 1 {
+            print("\(indexedStrokes.count)", terminator: " ")
+        } else {
+            print("\(indexedStrokes.count) +", terminator: " ")
+        }
     }
+    print("Strokes.")
 }
 
 func printIndexedStrokesInfo(indexedStrokes: [IndexedStroke], index: Int) {
-    print("      🔹 Layer \(index) has \(indexedStrokes.count) strokes.")
     // for (i, s) in indexedStrokes.enumerated() {
     //     print("         • Stroke \(s.index) has \(s.stroke.path.count) points")
     // }
