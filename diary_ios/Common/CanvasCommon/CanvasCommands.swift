@@ -95,8 +95,8 @@ class AddStickerCommand: CanvasCommand {
     }
 }
 
-// MARK: - MoveLasso
-class MoveLassoCommand: CanvasCommand {
+// MARK: - MoveStrokes
+class MoveStrokes: CanvasCommand {
     private var lassoStrokesInfo: [(layer: HandwritingLayer, indexedStrokes: [(Int, PKStroke)])]
     private var transform: CGAffineTransform
     private var strokesMovedOnce: Bool = false

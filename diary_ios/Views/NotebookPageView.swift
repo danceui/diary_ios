@@ -192,7 +192,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         redoStack.removeAll()
         lastEditedTimestamp = Date()
         updateLayerIndexedStrokeInfo()
-        updateLassoStrokesInfo()
         print("[P\(pageIndex)] 🕹️ Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
@@ -201,7 +200,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         command.undo()
         redoStack.append(command)
         updateLayerIndexedStrokeInfo()
-        updateLassoStrokesInfo()
         print("[P\(pageIndex)] 🕹️ UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
@@ -210,7 +208,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         command.execute()
         undoStack.append(command)
         updateLayerIndexedStrokeInfo()
-        updateLassoStrokesInfo()
         print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 }
@@ -311,27 +308,26 @@ extension NotebookPageView {
     }
     
     func handleLassoDragFinished(transform: CGAffineTransform) {
-        // 完成移动
+        // 提交移动command
         guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
-        let cmd = MoveLassoCommand(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
+        let cmd = MoveStrokes(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
         executeAndSave(command: cmd)
+        // 更新 lassoLayer 的 originalLassoPath
         lassoLayer.updateOriginalLassoPath()
-    }
-
-    func updateLassoStrokesInfo() {
-        lassoStrokesInfo = lassoStrokesInfo.compactMap { (layer, indexed) in
-            let allStrokes = layer.drawing.strokes
-            let updatedIndexed: [(Int, PKStroke)] = indexed.compactMap { (index, _) in
-                guard index >= 0, index < allStrokes.count else { return nil }
-                return (index, allStrokes[index])
-            }
-            // 如果 updatedIndexed 是空的, 就删掉它
-            return updatedIndexed.isEmpty ? nil : (layer, updatedIndexed)
-        }
-        if lassoStrokesInfo.isEmpty {
-            currentLassoLayer?.removeLassoPath()
-        } else {
-            printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Updated Selected Strokes")
-        }
+        // // 更新 lassoStrokesInfo 
+        // lassoStrokesInfo = lassoStrokesInfo.compactMap { (layer, indexed) in
+        //     let allStrokes = layer.drawing.strokes
+        //     let updatedIndexed: [(Int, PKStroke)] = indexed.compactMap { (index, _) in
+        //         guard index >= 0, index < allStrokes.count else { return nil }
+        //         return (index, allStrokes[index])
+        //     }
+        //     // 如果 updatedIndexed 是空的, 就删掉它
+        //     return updatedIndexed.isEmpty ? nil : (layer, updatedIndexed)
+        // }
+        // if lassoStrokesInfo.isEmpty {
+        //     currentLassoLayer?.removeLassoPath()
+        // } else {
+        //     printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Updated Selected Strokes")
+        // }
     }
 }
