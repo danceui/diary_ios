@@ -49,12 +49,12 @@ class LassoLayer: UIView {
         firstPoint = point
         lastPoint = point
 
-        // 如果当前已经存在一个闭合的套索路径并且用户点击在套索内, 说明是要拖动
-        if shapeLayer.path?.contains(point) == true {
+        if let path = shapeLayer.path, path.contains(point) {
+            // 如果当前已有路径并且触点在其内, 开启拖动
             isDragging = true
             isDrawing = false
         } else {
-            // 否则，还不确定是点还是画，等 touchesMoved 判断
+            // 否则，还不确定是点击还是绘制，等 touchesMoved 和 touchesEnded 判断
             isDrawing = false
             isDragging = false
         }
@@ -62,11 +62,10 @@ class LassoLayer: UIView {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let point = touches.first?.location(in: self), let first = firstPoint else { return }
-        // 检查是否超过阈值
         if !isDragging, !isDrawing {
             let distance = hypot(point.x - first.x, point.y - first.y)
             if distance > threshold {
-                // 正式进入画套索
+                // 移动距离超过阈值，开始绘制套索
                 isDrawing = true
                 lassoPath = UIBezierPath()
                 lassoPath.move(to: first)
@@ -74,10 +73,11 @@ class LassoLayer: UIView {
                 shapeLayer.removeAllAnimations()
                 shapeLayer.path = lassoPath.cgPath
             } else {
+                // 移动距离没有超过阈值, 算作点击, 等待 touchesEnded 处理
                 return
             }
         }
-        // 绘制套索
+        // 继续绘制套索
         guard isDrawing, let last = lastPoint else { return }
         let midPoint = CGPoint(x: (last.x + point.x) / 2, y: (last.y + point.y) / 2)
         lassoPath.addQuadCurve(to: midPoint, controlPoint: last)
@@ -88,13 +88,14 @@ class LassoLayer: UIView {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let point = touches.first?.location(in: self) else { return } 
         if isDrawing {
+            // 结束绘制套索
             lassoPath.close()
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
             updateOriginalLassoPath()
             onLassoFinished?(lassoPath)
         } else if !isDragging {
-            // 没有拖动也没有画, 说明是轻点 —— 检查贴纸
+            // 没有拖动也没有画, 说明是轻点, 检查贴纸
             onStickerTapped?(point)
         }
         isDrawing = false
@@ -122,6 +123,15 @@ class LassoLayer: UIView {
     }
 
     // MARK: - 套索路径
+    func configureLassoPath(path: UIBezierPath) {
+        if let copiedPath = path.copy() as? UIBezierPath {
+            lassoPath = copiedPath
+            shapeLayer.path = lassoPath.cgPath
+            startWaitingAnimation()
+            updateOriginalLassoPath()
+        }
+    }
+
     func updateOriginalLassoPath() {
         if let copiedPath = lassoPath.copy() as? UIBezierPath {
             originalLassoPath = copiedPath

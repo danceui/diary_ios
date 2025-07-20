@@ -328,25 +328,22 @@ extension NotebookPageView {
                 let convertedPoint = view.convert(point, from: currentLassoLayer)
                 if view.bounds.contains(convertedPoint) {
                     selectSticker(view)
+                    // 构造 sticker 的包围框路径
+                    let frameInLasso = currentLassoLayer?.convert(view.frame, from: view.superview) ?? .zero
+                    let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
+                    currentLassoLayer?.configureLassoPath(path: path)
                     return
                 }
             }
         }
         // 如果没有贴纸被点击，则移除 lassoPath
         deselectCurrentSticker()
+        lassoLayer.removeLassoPath()
     }
 
     private func selectSticker(_ view: StickerView) {
         if selectedStickerView === view { return } // 已选中, 忽略
-
         deselectCurrentSticker()
-
-        selectedStickerView = view
-        view.layer.borderColor = UIColor.systemBlue.cgColor
-        view.layer.borderWidth = 2
-        view.layer.cornerRadius = 4
-        view.layer.masksToBounds = true
-
         print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
     }
 

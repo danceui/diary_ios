@@ -1,5 +1,6 @@
 import UIKit
 import PencilKit
+import CoreImage
 
 func isStrokeEqual(_ lhs: PKStroke, _ rhs: PKStroke) -> Bool {
     // 快速比较常用字段（颜色、宽度、笔类型）
@@ -59,4 +60,44 @@ func transformStrokes(lassoStrokesInfo: [(layer: PKCanvasView, indexedStrokes: [
         }
         layer.drawing = PKDrawing(strokes: allStrokes)
     }
+}
+
+func generateAlphaMaskPath(from image: UIImage, in frame: CGRect) -> UIBezierPath? {
+guard let cgImage = image.cgImage else { return nil }
+
+let width = cgImage.width
+let height = cgImage.height
+let colorSpace = CGColorSpaceCreateDeviceGray()
+let bytesPerRow = width
+var pixelData = [UInt8](repeating: 0, count: width * height)
+
+guard let context = CGContext(data: &pixelData,
+                                width: width,
+                                height: height,
+                                bitsPerComponent: 8,
+                                bytesPerRow: bytesPerRow,
+                                space: colorSpace,
+                                bitmapInfo: 0) else {
+    return nil
+}
+
+context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+let path = UIBezierPath()
+for y in 0..<height {
+    for x in 0..<width {
+        let alpha = pixelData[y * width + x]
+        if alpha > 10 {
+            let point = CGPoint(x: CGFloat(x) / CGFloat(width) * frame.width,
+                                y: CGFloat(y) / CGFloat(height) * frame.height)
+            if path.isEmpty {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+    }
+}
+path.close()
+return path
 }
