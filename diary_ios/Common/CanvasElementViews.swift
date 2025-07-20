@@ -26,15 +26,12 @@ class StickerView: UIImageView {
         self.image = UIImage(named: "star")
         self.isUserInteractionEnabled = false
 
-        if let img = self.image {
-            // 注意：此时 bounds 已正确设置
-            if let rawPath = generateLassoPathFromAlpha(image: img, in: self.bounds) {
-                // 将 path 偏移到视图的 frame 坐标中
-                rawPath.apply(CGAffineTransform(translationX: self.frame.origin.x,
-                                                y: self.frame.origin.y))
-                self.lassoPath = rawPath
-            }
-        }
+        // if let image = self.image {
+        //     if let path = generateLassoPathFromAlpha(image: image, in: self.bounds) {
+        //         path.apply(CGAffineTransform(translationX: self.frame.origin.x, y: self.frame.origin.y))
+        //         self.lassoPath = path
+        //     }
+        // }
     }
 
     required init?(coder: NSCoder) {
