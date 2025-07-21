@@ -124,15 +124,17 @@ class MoveStrokesCommand: CanvasCommand {
     }
 
 }
-
+// MARK: - MoveSticker
 class MoveStickerCommand: CanvasCommand {
     private var view: StickerView
+    private var originalCenter: CGPoint
     private let transform: CGAffineTransform
     private var stickerMovedOnce: Bool
     private weak var lassoLayer: LassoLayer?
 
     init(view: StickerView, lassoLayer: LassoLayer, transform: CGAffineTransform, stickerMovedOnce: Bool) {
         self.view = view
+        self.originalCenter = view.sticker.center
         self.transform = transform
         self.stickerMovedOnce = stickerMovedOnce
         self.lassoLayer = lassoLayer
@@ -143,12 +145,12 @@ class MoveStickerCommand: CanvasCommand {
             stickerMovedOnce = true
             return
         }
-        view.sticker.center = view.center.applying(transform)
+        view.center = originalCenter.applying(transform)
         lassoLayer?.removeLassoPath()
     }
 
     func undo() {
-        view.sticker.center = view.center
+        view.center = originalCenter
         lassoLayer?.removeLassoPath()
     }
 }
