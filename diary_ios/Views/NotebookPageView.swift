@@ -21,9 +21,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
     private var undoStack: [CanvasCommand] = []
     private var redoStack: [CanvasCommand] = []
-    private var layerStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 缓存每个 layer 的笔画信息
-    private var pendingEraseInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 记录每个 layer 待擦除的笔画信息
-    private var lassoStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 记录套索选中的每个 layer 的笔画信息
+    private var layerStrokesInfo: [LayerStrokes] = [] // 缓存每个 layer 的笔画信息
+    private var pendingEraseInfo: [LayerStrokes] = [] // 记录每个 layer 待擦除的笔画信息
+    private var lassoStrokesInfo: [LayerStrokes] = [] // 记录套索选中的每个 layer 的笔画信息
     private var lassoStickerInfo: (StickerView, CGPoint)? // 记录套索选中的贴纸信息
 
     private var isObservingTool: Bool = false
@@ -211,7 +211,7 @@ extension NotebookPageView: EraserLayerDelegate {
         let eraserRect = CGRect(x: eraserLocation.x - eraserSize / 2, y: eraserLocation.y - eraserSize / 2, width: eraserSize, height: eraserSize )
 
         for layer in handwritingLayers {
-            guard let cachedInfo = layerStrokesInfo.first(where: { $0.0 === layer }) else { continue }
+            guard let cachedInfo = layerStrokesInfo.first(where: { $0.layer === layer }) else { continue }
             let currentStrokes = layer.drawing.strokes
             var indexedErased: [IndexedStroke] = []
             
@@ -219,7 +219,7 @@ extension NotebookPageView: EraserLayerDelegate {
             // 并从 cached 中查原始 index 存储
             for stroke in currentStrokes {
                 if strokeIntersectsRect(stroke: stroke, eraserRect: eraserRect), 
-                    let index = cachedInfo.1.first(where: { isStrokeEqual($0.stroke, stroke) })?.index {
+                    let index = cachedInfo.indexedStrokes.first(where: { isStrokeEqual($0.stroke, stroke) })?.index {
                     indexedErased.append((index, stroke))
                 }
             }
@@ -234,10 +234,10 @@ extension NotebookPageView: EraserLayerDelegate {
             layer.drawing = PKDrawing(strokes: remainingStrokes)
 
             // 记录擦除笔画
-            if let index = pendingEraseInfo.firstIndex(where: { $0.0 === layer }) {
-                pendingEraseInfo[index].1 = mergeUniqueStrokes(existing: pendingEraseInfo[index].1, new: indexedErased)
+            if let index = pendingEraseInfo.firstIndex(where: { $0.layer === layer }) {
+                pendingEraseInfo[index].indexedStrokes = mergeUniqueStrokes(existing: pendingEraseInfo[index].indexedStrokes, new: indexedErased)
             } else {
-                pendingEraseInfo.append((layer, indexedErased))
+                pendingEraseInfo.append(LayerStrokes(layer: layer, indexedStrokes: indexedErased))
             }
             // printLayerStrokesInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 🧩 Erasing Strokes")
         }
@@ -255,7 +255,7 @@ extension NotebookPageView: EraserLayerDelegate {
         for layer in handwritingLayers {
             let strokes = layer.drawing.strokes
             let indexedStrokes = strokes.enumerated().map { (i, s) in (i, s) }
-            layerStrokesInfo.append((layer: layer, indexedStrokes: indexedStrokes))
+            layerStrokesInfo.append(LayerStrokes(layer: layer, indexedStrokes: indexedStrokes))
         }
     }
 }
@@ -288,7 +288,7 @@ extension NotebookPageView {
                 }
             }
             if !selected.isEmpty {
-                lassoStrokesInfo.append((layer, selected))
+                lassoStrokesInfo.append(LayerStrokes(layer: layer, indexedStrokes: selected))
             }
         }
         if lassoStrokesInfo.isEmpty {
@@ -350,13 +350,13 @@ extension NotebookPageView {
 
     // 辅助函数
     private func updateLassoStrokesInfo() {
-        lassoStrokesInfo = lassoStrokesInfo.compactMap { (layer, indexed) in
-            let allStrokes = layer.drawing.strokes
-            let updatedIndexed: [(Int, PKStroke)] = indexed.compactMap { (index, _) in
+        lassoStrokesInfo = lassoStrokesInfo.compactMap { info in
+            let allStrokes = info.layer.drawing.strokes
+            let updatedIndexed: [IndexedStroke] = info.indexedStrokes.compactMap { (index, _) in
                 guard index >= 0, index < allStrokes.count else { return nil }
                 return (index, allStrokes[index])
             }
-            return updatedIndexed.isEmpty ? nil : (layer, updatedIndexed)
+            return updatedIndexed.isEmpty ? nil : LayerStrokes(layer: info.layer, indexedStrokes: updatedIndexed)
         }
     }
 

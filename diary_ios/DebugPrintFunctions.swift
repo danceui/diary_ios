@@ -38,13 +38,13 @@ func printDrawingInfo(drawing: PKDrawing) {
     }
 }
 
-func printLayerStrokesInfo(info: [(HandwritingLayer, [IndexedStroke])], context: String) {
+func printLayerStrokesInfo(info: [LayerStrokes], context: String) {
     print("\(context)", terminator: ": ")
-    for (layerIndex, (layer, indexedStrokes)) in info.enumerated() {
-        if layerIndex == info.count - 1 {
-            print("\(indexedStrokes.count)", terminator: " ")
+    for (i, item) in info.enumerated() {
+        if i == info.count - 1 {
+            print("\(item.indexedStrokes.count)", terminator: " ")
         } else {
-            print("\(indexedStrokes.count) +", terminator: " ")
+            print("\(item.indexedStrokes.count) +", terminator: " ")
         }
     }
     print("Strokes.")

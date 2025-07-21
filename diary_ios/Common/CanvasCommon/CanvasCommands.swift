@@ -34,10 +34,10 @@ class AddStrokeCommand: CanvasCommand {
 
 // MARK: - MultiErase
 class MultiEraseCommand: CanvasCommand {
-    private var eraseInfo: [(HandwritingLayer, [IndexedStroke])]
+    private var eraseInfo: [LayerStrokes]
     private var strokesErasedOnce: Bool = false
 
-    init(eraseInfo: [(HandwritingLayer, [IndexedStroke])], strokesErasedOnce: Bool) {
+    init(eraseInfo: [LayerStrokes], strokesErasedOnce: Bool) {
         self.eraseInfo = eraseInfo
         self.strokesErasedOnce = strokesErasedOnce
     }
@@ -47,24 +47,24 @@ class MultiEraseCommand: CanvasCommand {
             strokesErasedOnce = true
             return
         }
-        for (layer, indexedStrokes) in eraseInfo {
-            let current = layer.drawing.strokes
+        for info in eraseInfo {
+            let current = info.layer.drawing.strokes
             let remaining = current.enumerated().filter { (i, s) in
-                !indexedStrokes.contains { indexed in 
+                !info.indexedStrokes.contains { indexed in 
                     indexed.index == i && isStrokeEqual(indexed.stroke, s) 
                 }
             }.map { $0.element }
-            layer.drawing = PKDrawing(strokes: remaining)
+            info.layer.drawing = PKDrawing(strokes: remaining)
         }
     }
 
     func undo() {
-        for (layer, indexedStrokes) in eraseInfo {
-            var current = layer.drawing.strokes
-            for (i, s) in indexedStrokes.sorted(by: { $0.index < $1.index }) {
+        for info in eraseInfo {
+            var current = info.layer.drawing.strokes
+            for (i, s) in info.indexedStrokes.sorted(by: { $0.index < $1.index }) {
                 current.insert(s, at: min(i, current.count))
             }
-            layer.drawing = PKDrawing(strokes: current)
+            info.layer.drawing = PKDrawing(strokes: current)
         }
     }
 }
@@ -97,12 +97,12 @@ class AddStickerCommand: CanvasCommand {
 
 // MARK: - MoveStrokes
 class MoveStrokes: CanvasCommand {
-    private var lassoStrokesInfo: [(layer: HandwritingLayer, indexedStrokes: [(Int, PKStroke)])]
+    private var lassoStrokesInfo: [LayerStrokes]
     private var transform: CGAffineTransform
     private var strokesMovedOnce: Bool = false
     private weak var lassoLayer: LassoLayer?
 
-    init(lassoStrokesInfo: [(HandwritingLayer, [(Int, PKStroke)])], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
+    init(lassoStrokesInfo: [LayerStrokes], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
         self.lassoStrokesInfo = lassoStrokesInfo
         self.lassoLayer = lassoLayer
         self.transform = transform

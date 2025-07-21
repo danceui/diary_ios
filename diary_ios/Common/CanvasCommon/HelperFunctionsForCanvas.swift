@@ -51,12 +51,13 @@ func transformStroke(stroke: PKStroke, by transform: CGAffineTransform) -> PKStr
     return PKStroke(ink: stroke.ink, path: newPath)
 }
 
-func transformStrokes(lassoStrokesInfo: [(layer: PKCanvasView, indexedStrokes: [(Int, PKStroke)])], transform: CGAffineTransform) {
-    for (layer, strokes) in lassoStrokesInfo {
-        var allStrokes = layer.drawing.strokes
-        for (index, stroke) in strokes {
+func transformStrokes(lassoStrokesInfo: [LayerStrokes], transform: CGAffineTransform) {
+    for info in lassoStrokesInfo {
+        var allStrokes = info.layer.drawing.strokes
+        for (index, stroke) in info.indexedStrokes {
+            guard index >= 0, index < allStrokes.count else { continue }
             allStrokes[index] = transformStroke(stroke: stroke, by: transform)
         }
-        layer.drawing = PKDrawing(strokes: allStrokes)
+        info.layer.drawing = PKDrawing(strokes: allStrokes)
     }
 }

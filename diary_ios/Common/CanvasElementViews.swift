@@ -4,6 +4,11 @@ import PencilKit
 // MARK: - 笔画
 typealias IndexedStroke = (index: Int, stroke: PKStroke)
 
+struct LayerStrokes {
+    let layer: HandwritingLayer
+    var indexedStrokes: [IndexedStroke]
+}
+
 // MARK: - 贴纸
 struct Sticker {
     var id: UUID
