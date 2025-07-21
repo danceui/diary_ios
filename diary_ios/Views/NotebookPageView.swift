@@ -275,6 +275,7 @@ extension NotebookPageView {
     }
 
     private func handleLassoFinished(path: UIBezierPath) {
+        guard let lassoLayer = currentLassoLayer else { return }
         lassoStrokesInfo.removeAll()
         lassoStickerInfo = nil
         for layer in handwritingLayers {
@@ -299,7 +300,7 @@ extension NotebookPageView {
             lassoStrokesInfo.append((layer, indexedSelected))
         }
         if lassoStrokesInfo.isEmpty {
-            currentLassoLayer?.removeLassoPath()
+            lassoLayer.removeLassoPath()
         } else {
             printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Selected Strokes")
         }
@@ -324,17 +325,22 @@ extension NotebookPageView {
         if let lassoStickerInfo = lassoStickerInfo {
             let cmd = MoveStickerCommand(lassoStickerInfo: lassoStickerInfo, lassoLayer: lassoLayer, transform: transform, stickerMovedOnce: false)
             executeAndSave(command: cmd)
+            updateLassoStickerInfo()
             lassoLayer.updateOriginalLassoPath()
         }
         if !lassoStrokesInfo.isEmpty {
             let cmd = MoveStrokes(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
             executeAndSave(command: cmd)
+            updateLassoStrokesInfo()
             lassoLayer.updateOriginalLassoPath()
         }
     }
 
+    // Sticker 轻点处理
     private func handleStickerTapped(point: CGPoint) {
         guard let lassoLayer = currentLassoLayer else { return }
+        lassoStrokesInfo.removeAll()
+        lassoStickerInfo = nil
         // 从顶层到低层寻找贴纸（优先最上方）
         for layer in stickerLayers.reversed() {
             for view in layer.stickerViews.reversed() {
@@ -342,7 +348,6 @@ extension NotebookPageView {
                 if view.bounds.contains(convertedPoint) {
                     lassoStickerInfo = (view, point)
                     print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
-                    // 构造 sticker 的包围框路径
                     let frameInLasso = lassoLayer.convert(view.frame, from: view.superview) ?? .zero
                     let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
                     lassoLayer.configureLassoPath(path: path)
@@ -350,8 +355,24 @@ extension NotebookPageView {
                 }
             }
         }
-        // 如果没有贴纸被点击，则移除 lassoPath
-        lassoStickerInfo = nil
         lassoLayer.removeLassoPath()
+    }
+
+    // 辅助函数
+    private func updateLassoStrokesInfo() {
+        lassoStrokesInfo = lassoStrokesInfo.compactMap { (layer, indexed) in
+            let allStrokes = layer.drawing.strokes
+            let updatedIndexed: [(Int, PKStroke)] = indexed.compactMap { (index, _) in
+                guard index >= 0, index < allStrokes.count else { return nil }
+                return (index, allStrokes[index])
+            }
+            return updatedIndexed.isEmpty ? nil : (layer, updatedIndexed)
+        }
+    }
+
+    private func updateLassoStickerInfo() {
+        if let (view, _) = lassoStickerInfo {
+            lassoStickerInfo = (view, view.center)
+        }
     }
 }
