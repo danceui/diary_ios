@@ -96,7 +96,7 @@ class AddStickerCommand: CanvasCommand {
 }
 
 // MARK: - MoveStrokes
-class MoveStrokes: CanvasCommand {
+class MoveStrokesCommand: CanvasCommand {
     private var lassoStrokesInfo: [LayerStrokes]
     private var transform: CGAffineTransform
     private var strokesMovedOnce: Bool = false
@@ -126,13 +126,13 @@ class MoveStrokes: CanvasCommand {
 }
 
 class MoveStickerCommand: CanvasCommand {
-    private var lassoStickerInfo: (StickerView, CGPoint)
+    private var view: StickerView
     private let transform: CGAffineTransform
     private var stickerMovedOnce: Bool
     private weak var lassoLayer: LassoLayer?
 
-    init(lassoStickerInfo: (StickerView, CGPoint), lassoLayer: LassoLayer, transform: CGAffineTransform, stickerMovedOnce: Bool) {
-        self.lassoStickerInfo = lassoStickerInfo
+    init(view: StickerView, lassoLayer: LassoLayer, transform: CGAffineTransform, stickerMovedOnce: Bool) {
+        self.view = view
         self.transform = transform
         self.stickerMovedOnce = stickerMovedOnce
         self.lassoLayer = lassoLayer
@@ -143,12 +143,12 @@ class MoveStickerCommand: CanvasCommand {
             stickerMovedOnce = true
             return
         }
-        lassoStickerInfo.0.center = lassoStickerInfo.1.applying(transform)
+        view.sticker.center = view.center.applying(transform)
         lassoLayer?.removeLassoPath()
     }
 
     func undo() {
-        lassoStickerInfo.0.center = lassoStickerInfo.1
+        view.sticker.center = view.center
         lassoLayer?.removeLassoPath()
     }
 }
