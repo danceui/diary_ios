@@ -24,7 +24,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var layerStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 缓存每个 layer 的笔画信息
     private var pendingEraseInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 记录每个 layer 待擦除的笔画信息
     private var lassoStrokesInfo: [(HandwritingLayer, [IndexedStroke])] = [] // 记录套索选中的每个 layer 的笔画信息
-    private var selectedStickerView: StickerView?
+    private var lassoStickerInfo: (StickerView, CGPoint)? // 记录套索选中的贴纸信息
 
     private var isObservingTool: Bool = false
 
@@ -276,6 +276,7 @@ extension NotebookPageView {
 
     private func handleLassoFinished(path: UIBezierPath) {
         lassoStrokesInfo.removeAll()
+        lassoStickerInfo = nil
         for layer in handwritingLayers {
             let currentStrokes = layer.drawing.strokes
             var indexedSelected: [IndexedStroke] = []
@@ -305,19 +306,31 @@ extension NotebookPageView {
     }
 
     private func handleLassoDragged(transform: CGAffineTransform) {
-        guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
-        // 实时移动
-        transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
-        lassoLayer.updateLassoPath(transform: transform)
+        guard let lassoLayer = currentLassoLayer else { return }
+        
+        if let lassoStickerInfo = lassoStickerInfo {
+            lassoStickerInfo.0.center = lassoStickerInfo.1.applying(transform)
+            lassoLayer.updateLassoPath(transform: transform)
+        }
+        if !lassoStrokesInfo.isEmpty {
+            transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
+            lassoLayer.updateLassoPath(transform: transform)
+        }
     }
     
     private func handleLassoDragFinished(transform: CGAffineTransform) {
-        guard !lassoStrokesInfo.isEmpty, let lassoLayer = currentLassoLayer else { return }
-        // 提交 command
-        let cmd = MoveStrokes(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
-        executeAndSave(command: cmd)
-        // 更新 lassoLayer 的 originalLassoPath
-        lassoLayer.updateOriginalLassoPath()
+        guard let lassoLayer = currentLassoLayer else { return }
+        
+        if let lassoStickerInfo = lassoStickerInfo {
+            let cmd = MoveStickerCommand(lassoStickerInfo: lassoStickerInfo, lassoLayer: lassoLayer, transform: transform, stickerMovedOnce: false)
+            executeAndSave(command: cmd)
+            lassoLayer.updateOriginalLassoPath()
+        }
+        if !lassoStrokesInfo.isEmpty {
+            let cmd = MoveStrokes(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
+            executeAndSave(command: cmd)
+            lassoLayer.updateOriginalLassoPath()
+        }
     }
 
     private func handleStickerTapped(point: CGPoint) {
@@ -325,115 +338,20 @@ extension NotebookPageView {
         // 从顶层到低层寻找贴纸（优先最上方）
         for layer in stickerLayers.reversed() {
             for view in layer.stickerViews.reversed() {
-                let convertedPoint = view.convert(point, from: currentLassoLayer)
+                let convertedPoint = view.convert(point, from: lassoLayer)
                 if view.bounds.contains(convertedPoint) {
-                    selectSticker(view)
-                    if let image = view.image,
-                    let outlinePath = image.alphaMaskPath(in: view.bounds) {
-                        
-                        // 把 path 转换到 lassoLayer 的坐标系
-                        var transform = CGAffineTransform(translationX: view.frame.origin.x, y: view.frame.origin.y)
-                        if let transformedCGPath = outlinePath.cgPath.copy(using: &transform) {
-        
-                            // 转换成 UIBezierPath
-                            let bezierPath = UIBezierPath(cgPath: transformedCGPath)
-                            
-                            // 再把它从 view.superview 转换到 lassoLayer 坐标系
-                            let originInLasso = currentLassoLayer?.convert(view.frame.origin, from: view.superview) ?? .zero
-                            bezierPath.apply(CGAffineTransform(translationX: originInLasso.x - view.frame.origin.x,
-                                                            y: originInLasso.y - view.frame.origin.y))
-                            
-                            currentLassoLayer?.configureLassoPath(path: bezierPath)
-                        }
-                    }
+                    lassoStickerInfo = (view, point)
+                    print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
+                    // 构造 sticker 的包围框路径
+                    let frameInLasso = lassoLayer.convert(view.frame, from: view.superview) ?? .zero
+                    let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
+                    lassoLayer.configureLassoPath(path: path)
                     return
                 }
             }
         }
         // 如果没有贴纸被点击，则移除 lassoPath
-        deselectCurrentSticker()
+        lassoStickerInfo = nil
         lassoLayer.removeLassoPath()
     }
-
-    private func selectSticker(_ view: StickerView) {
-        if selectedStickerView === view { return } // 已选中, 忽略
-        deselectCurrentSticker()
-        print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
-    }
-
-    private func deselectCurrentSticker() {
-        guard let view = selectedStickerView else { return }
-        view.layer.borderWidth = 0
-        selectedStickerView = nil
-    }
 }
-
-/*
-从一个带透明通道 alpha channel 的 PNG 图片中，提取非透明区域的轮廓路径，返回为 UIBezierPath。
-	•	图片数据按像素排列，每个像素由 RGBA（红绿蓝 + alpha）4个字节组成。
-	•	alpha 表示透明度（0 = 完全透明，255 = 完全不透明）。
-	•	“追踪”所有不透明区域的边缘，构成一条轮廓路径。
-*/
-extension UIImage {
-    func alphaMaskPath(in bounds: CGRect) -> UIBezierPath? {
-        guard let cgImage = self.cgImage else { return nil }
-
-        let width = Int(bounds.width)
-        let height = Int(bounds.height)
-        let bytesPerPixel = 4
-        let bytesPerRow = bytesPerPixel * width
-        let bitsPerComponent = 8
-
-        guard let context = CGContext(
-            data: nil,
-            width: width,
-            height: height,
-            bitsPerComponent: bitsPerComponent,
-            bytesPerRow: bytesPerRow,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
-            return nil
-        }
-
-        //将图片绘制到 context 中，使像素数据写入 context.data
-        context.draw(cgImage, in: CGRect(origin: .zero, size: bounds.size))
-
-        guard let pixelBuffer = context.data else { return nil }
-
-        let path = UIBezierPath()
-        let threshold: UInt8 = 20
-
-        for y in 0..<height {
-            for x in 0..<width {
-                let offset = y * bytesPerRow + x * bytesPerPixel
-                // 读取当前像素的 alpha 值
-                let alpha = pixelBuffer.load(fromByteOffset: offset + 3, as: UInt8.self)
-
-                if alpha > threshold {
-                    // 如果 alpha 大于阈值，说明是非透明像素
-                    let point = CGPoint(x: CGFloat(x), y: CGFloat(y))
-                    if path.isEmpty {
-                        path.move(to: point)
-                    } else {
-                        path.addLine(to: point)
-                    }
-                    break // 每行只取最左边那个点，简单轮廓
-                }
-            }
-        }
-
-        path.close()
-        return path
-    }
-}
-
-// extension UIView {
-//     func convertTransform(to targetLayer: CALayer?) -> CGAffineTransform {
-//         guard let superview = self.superview,
-//               let target = targetLayer else { return .identity }
-        
-//         let originInTarget = target.convert(self.frame.origin, from: superview.layer)
-//         return CGAffineTransform(translationX: originInTarget.x, y: originInTarget.y)
-//     }
-// }

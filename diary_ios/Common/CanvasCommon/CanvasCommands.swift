@@ -125,6 +125,33 @@ class MoveStrokes: CanvasCommand {
 
 }
 
+class MoveStickerCommand: CanvasCommand {
+    private var lassoStickerInfo: (StickerView, CGPoint)
+    private let transform: CGAffineTransform
+    private var stickerMovedOnce: Bool
+    private unowned let lassoLayer: LassoLayer
+
+    init(lassoStickerInfo: (StickerView, CGPoint), lassoLayer: LassoLayer, transform: CGAffineTransform, stickerMovedOnce: Bool) {
+        self.lassoStickerInfo = lassoStickerInfo
+        self.transform = transform
+        self.stickerMovedOnce = stickerMovedOnce
+        self.lassoLayer = lassoLayer
+    }
+
+    func execute() {
+        guard stickerMovedOnce else {
+            stickerMovedOnce = true
+            return
+        }
+        lassoStickerInfo.0.center = lassoStickerInfo.1.applying(transform)
+        lassoLayer.removeLassoPath()
+    }
+
+    func undo() {
+        lassoStickerInfo.0.center = lassoStickerInfo.1
+        lassoLayer.removeLassoPath()
+    }
+}
 // class EraseStrokesCommand: CanvasCommand {
 //     private let erasedStrokes: [PKStroke]
 //     private var strokesErasedOnce: Bool
