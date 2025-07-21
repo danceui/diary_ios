@@ -100,7 +100,7 @@ class MoveStrokes: CanvasCommand {
     private var lassoStrokesInfo: [(layer: HandwritingLayer, indexedStrokes: [(Int, PKStroke)])]
     private var transform: CGAffineTransform
     private var strokesMovedOnce: Bool = false
-    private unowned let lassoLayer: LassoLayer
+    private weak var lassoLayer: LassoLayer?
 
     init(lassoStrokesInfo: [(HandwritingLayer, [(Int, PKStroke)])], lassoLayer: LassoLayer, transform: CGAffineTransform, strokesMovedOnce: Bool) {
         self.lassoStrokesInfo = lassoStrokesInfo
@@ -115,12 +115,12 @@ class MoveStrokes: CanvasCommand {
             return
         }
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
-        lassoLayer.removeLassoPath()
+        lassoLayer?.removeLassoPath()
     }
 
     func undo() {
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: CGAffineTransform.identity)
-        lassoLayer.removeLassoPath()
+        lassoLayer?.removeLassoPath()
     }
 
 }
@@ -129,7 +129,7 @@ class MoveStickerCommand: CanvasCommand {
     private var lassoStickerInfo: (StickerView, CGPoint)
     private let transform: CGAffineTransform
     private var stickerMovedOnce: Bool
-    private unowned let lassoLayer: LassoLayer
+    private weak var lassoLayer: LassoLayer?
 
     init(lassoStickerInfo: (StickerView, CGPoint), lassoLayer: LassoLayer, transform: CGAffineTransform, stickerMovedOnce: Bool) {
         self.lassoStickerInfo = lassoStickerInfo
@@ -144,12 +144,12 @@ class MoveStickerCommand: CanvasCommand {
             return
         }
         lassoStickerInfo.0.center = lassoStickerInfo.1.applying(transform)
-        lassoLayer.removeLassoPath()
+        lassoLayer?.removeLassoPath()
     }
 
     func undo() {
         lassoStickerInfo.0.center = lassoStickerInfo.1
-        lassoLayer.removeLassoPath()
+        lassoLayer?.removeLassoPath()
     }
 }
 // class EraseStrokesCommand: CanvasCommand {

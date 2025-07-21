@@ -45,7 +45,7 @@ class LassoLayer: UIView {
 
     // MARK: - 监听触摸
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let point = touches.first?.location(in: self) else { return }
+        guard let point = touches.first?.location(in: self), touches.first?.type == .pencil else { return }
         firstPoint = point
         lastPoint = point
 
@@ -61,7 +61,7 @@ class LassoLayer: UIView {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let point = touches.first?.location(in: self), let first = firstPoint else { return }
+        guard let point = touches.first?.location(in: self), let first = firstPoint, touches.first?.type == .pencil else { return }
         if !isDragging, !isDrawing {
             let distance = hypot(point.x - first.x, point.y - first.y)
             if distance > threshold {
@@ -86,7 +86,7 @@ class LassoLayer: UIView {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let point = touches.first?.location(in: self) else { return } 
+        guard let point = touches.first?.location(in: self), touches.first?.type == .pencil else { return } 
         if isDrawing {
             // 结束绘制套索
             lassoPath.close()
