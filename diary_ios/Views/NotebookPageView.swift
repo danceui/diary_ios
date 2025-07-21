@@ -78,22 +78,22 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
             }
-            currentHandwritingLayer!.setTool(tool: tool)
+            currentHandwritingLayer?.setTool(tool: tool)
         } else if tool.isEraser {
             if currentEraserLayer == nil {
                 createNewEraserLayer()
             }
-            // currentEraserLayer!.setTool(tool: tool)
+            // currentEraserLayer?.setTool(tool: tool)
         } else if tool.isSticker {
             if currentStickerLayer == nil {
                 createNewStickerLayer()
             }
-            // currentStickerLayer!.setTool(tool: tool)
+            // currentStickerLayer?.setTool(tool: tool)
         } else if tool.isLasso {
             if currentLassoLayer == nil {
                 createNewLassoLayer()
             }
-            // currentLassoLayer!.setTool(tool: tool)
+            // currentLassoLayer?.setTool(tool: tool)
         }
     }
 
@@ -279,25 +279,17 @@ extension NotebookPageView {
         lassoStrokesInfo.removeAll()
         lassoStickerInfo = nil
         for layer in handwritingLayers {
-            let currentStrokes = layer.drawing.strokes
-            var indexedSelected: [IndexedStroke] = []
-            // 在当前 strokes 中找出被选中的 stroke
-            // 但不需要从 cached 中查原始 index, 只需要按顺序添加 stroke, 递增 index 即可
-            for i in 0..<currentStrokes.count {
-                // 先用边界框快速筛选
-                let stroke = currentStrokes[i]
-                if path.bounds.intersects(stroke.renderBounds) {
-                    for j in 0..<stroke.path.count {
-                        let point = stroke.path[j]
-                        if path.contains(point.location) {
-                            indexedSelected.append((i, stroke))
-                            break
-                        }
-                    }
+            let strokes = layer.drawing.strokes
+            var selected: [IndexedStroke] = []
+            
+            for (i, stroke) in strokes.enumerated() where path.bounds.intersects(stroke.renderBounds) {
+                if stroke.path.contains(where: { path.contains($0.location) }) {
+                    selected.append((i, stroke))
                 }
             }
-            guard !indexedSelected.isEmpty else { continue }
-            lassoStrokesInfo.append((layer, indexedSelected))
+            if !selected.isEmpty {
+                lassoStrokesInfo.append((layer, selected))
+            }
         }
         if lassoStrokesInfo.isEmpty {
             lassoLayer.removeLassoPath()
@@ -311,7 +303,7 @@ extension NotebookPageView {
         
         if let lassoStickerInfo = lassoStickerInfo {
             lassoStickerInfo.0.center = lassoStickerInfo.1.applying(transform)
-            lassoLayer.updateLassoPath(transform: transform)
+            updateLassoPathForSticker(lassoStickerInfo: lassoStickerInfo, in: lassoLayer)
         }
         if !lassoStrokesInfo.isEmpty {
             transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
@@ -322,10 +314,10 @@ extension NotebookPageView {
     private func handleLassoDragFinished(transform: CGAffineTransform) {
         guard let lassoLayer = currentLassoLayer else { return }
         
-        if let lassoStickerInfo = lassoStickerInfo {
+        if var lassoStickerInfo = lassoStickerInfo {
             let cmd = MoveStickerCommand(lassoStickerInfo: lassoStickerInfo, lassoLayer: lassoLayer, transform: transform, stickerMovedOnce: false)
             executeAndSave(command: cmd)
-            updateLassoStickerInfo()
+            lassoStickerInfo = (lassoStickerInfo.0, lassoStickerInfo.0.center)
             lassoLayer.updateOriginalLassoPath()
         }
         if !lassoStrokesInfo.isEmpty {
@@ -348,9 +340,7 @@ extension NotebookPageView {
                 if view.bounds.contains(convertedPoint) {
                     lassoStickerInfo = (view, point)
                     print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
-                    let frameInLasso = lassoLayer.convert(view.frame, from: view.superview) ?? .zero
-                    let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
-                    lassoLayer.configureLassoPath(path: path)
+                    updateLassoPathForSticker(lassoStickerInfo: lassoStickerInfo, in: lassoLayer)
                     return
                 }
             }
@@ -370,9 +360,10 @@ extension NotebookPageView {
         }
     }
 
-    private func updateLassoStickerInfo() {
-        if let (view, _) = lassoStickerInfo {
-            lassoStickerInfo = (view, view.center)
-        }
+    private func updateLassoPathForSticker(lassoStickerInfo: (StickerView, CGPoint)?, in lassoLayer: LassoLayer) {
+        guard let lassoStickerInfo = lassoStickerInfo else { return }
+        let frameInLasso = lassoLayer.convert(lassoStickerInfo.0.frame, from: lassoStickerInfo.0.superview)
+        let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
+        lassoLayer.configureLassoPath(path: path)
     }
 }
