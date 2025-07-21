@@ -367,8 +367,14 @@ extension NotebookPageView {
         selectedStickerView = nil
     }
 }
+
+/*
+从一个带透明通道 alpha channel 的 PNG 图片中，提取非透明区域的轮廓路径，返回为 UIBezierPath。
+	•	图片数据按像素排列，每个像素由 RGBA（红绿蓝 + alpha）4个字节组成。
+	•	alpha 表示透明度（0 = 完全透明，255 = 完全不透明）。
+	•	“追踪”所有不透明区域的边缘，构成一条轮廓路径。
+*/
 extension UIImage {
-    /// 根据 alpha 通道提取贴纸实际轮廓路径（基于透明区域）
     func alphaMaskPath(in bounds: CGRect) -> UIBezierPath? {
         guard let cgImage = self.cgImage else { return nil }
 
@@ -390,6 +396,7 @@ extension UIImage {
             return nil
         }
 
+        //将图片绘制到 context 中，使像素数据写入 context.data
         context.draw(cgImage, in: CGRect(origin: .zero, size: bounds.size))
 
         guard let pixelBuffer = context.data else { return nil }
@@ -400,9 +407,11 @@ extension UIImage {
         for y in 0..<height {
             for x in 0..<width {
                 let offset = y * bytesPerRow + x * bytesPerPixel
+                // 读取当前像素的 alpha 值
                 let alpha = pixelBuffer.load(fromByteOffset: offset + 3, as: UInt8.self)
 
                 if alpha > threshold {
+                    // 如果 alpha 大于阈值，说明是非透明像素
                     let point = CGPoint(x: CGFloat(x), y: CGFloat(y))
                     if path.isEmpty {
                         path.move(to: point)
@@ -418,12 +427,13 @@ extension UIImage {
         return path
     }
 }
-extension UIView {
-    func convertTransform(to targetLayer: CALayer?) -> CGAffineTransform {
-        guard let superview = self.superview,
-              let target = targetLayer else { return .identity }
+
+// extension UIView {
+//     func convertTransform(to targetLayer: CALayer?) -> CGAffineTransform {
+//         guard let superview = self.superview,
+//               let target = targetLayer else { return .identity }
         
-        let originInTarget = target.convert(self.frame.origin, from: superview.layer)
-        return CGAffineTransform(translationX: originInTarget.x, y: originInTarget.y)
-    }
-}
+//         let originInTarget = target.convert(self.frame.origin, from: superview.layer)
+//         return CGAffineTransform(translationX: originInTarget.x, y: originInTarget.y)
+//     }
+// }
