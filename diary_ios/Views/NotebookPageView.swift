@@ -218,8 +218,8 @@ extension NotebookPageView: EraserLayerDelegate {
             // 在当前 strokes 中找被擦中的 stroke
             // 并从 cached 中查原始 index 存储
             for stroke in currentStrokes {
-                if strokeIntersectsRect(stroke: stroke, eraserRect: eraserRect), 
-                    let index = cachedInfo.indexedStrokes.first(where: { isStrokeEqual($0.stroke, stroke) })?.index {
+                if stroke.intersectsRect(eraserRect),
+                   let index = cachedInfo.indexedStrokes.first(where: { $0.stroke.isEqualTo(stroke) })?.index {
                     indexedErased.append((index, stroke))
                 }
             }
@@ -228,7 +228,7 @@ extension NotebookPageView: EraserLayerDelegate {
             // 实时擦除
             let remainingStrokes = currentStrokes.filter { stroke in 
                 !indexedErased.contains { indexed in 
-                    isStrokeEqual(indexed.stroke, stroke)
+                    indexed.stroke.isEqualTo(stroke)
                 }
             }
             layer.drawing = PKDrawing(strokes: remainingStrokes)

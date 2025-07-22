@@ -51,7 +51,7 @@ class MultiEraseCommand: CanvasCommand {
             let current = info.layer.drawing.strokes
             let remaining = current.enumerated().filter { (i, s) in
                 !info.indexedStrokes.contains { indexed in 
-                    indexed.index == i && isStrokeEqual(indexed.stroke, s) 
+                    indexed.index == i && indexed.stroke.isEqualTo(s) 
                 }
             }.map { $0.element }
             info.layer.drawing = PKDrawing(strokes: remaining)

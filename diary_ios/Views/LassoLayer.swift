@@ -14,7 +14,7 @@ class LassoLayer: UIView {
     private var dragStartPoint: CGPoint?
     private var isDrawing = false
     private var isDragging = false
-    
+
     private let threshold: CGFloat = 7 // 超过则视为滑动
 
     // 用于绘制虚线套索路径
@@ -63,8 +63,7 @@ class LassoLayer: UIView {
         guard let point = touches.first?.location(in: self), let first = firstPoint else { return }
         // 如果不是拖动且不是绘制, 判断是点触还是绘制
         if !isDragging, !isDrawing {
-            let distance = hypot(point.x - first.x, point.y - first.y)
-            if distance > threshold {
+            if point.distance(first) > threshold {
                 // 移动距离超过阈值，开始绘制套索
                 isDrawing = true
                 lassoPath = UIBezierPath()
@@ -101,6 +100,7 @@ class LassoLayer: UIView {
             let dy = point.y - start.y
             let transform = CGAffineTransform(translationX: dx, y: dy)
             onLassoDragFinished?(transform)
+            showButtonsOnLassoPath()
         } else if isDrawing {
             // 如果是绘制，结束套索路径
             lassoPath.close()
@@ -108,6 +108,7 @@ class LassoLayer: UIView {
             startWaitingAnimation()
             updateOriginalLassoPath()
             onLassoFinished?(lassoPath)
+            showButtonsOnLassoPath()
         } else {
             // 没有拖动也没有画, 说明是轻点, 检查贴纸
             onStickerTapped?(point)
@@ -128,6 +129,7 @@ class LassoLayer: UIView {
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
             updateOriginalLassoPath()
+            showButtonsOnLassoPath()
         }
     }
 
@@ -155,7 +157,7 @@ class LassoLayer: UIView {
         originalLassoPath.removeAllPoints()
     }
 
-    // MARK: - 等待动画
+    // MARK: - 套索样式
     private func startWaitingAnimation() {
         // 动态虚线滚动
         let dashAnimation = CABasicAnimation(keyPath: "lineDashPhase")
@@ -164,5 +166,52 @@ class LassoLayer: UIView {
         dashAnimation.duration = 0.4
         dashAnimation.repeatCount = .infinity
         shapeLayer.add(dashAnimation, forKey: "dashPhase")
+    }
+    
+    private func showButtonsOnLassoPath() {
+        guard let corners = lassoPath.cornerPoints() else { return }
+        let buttonSize: CGFloat = 30
+        
+        func createButton(imageName: String, tint: UIColor, action: Selector) -> UIButton {
+            let btn = UIButton(type: .custom)
+            btn.setImage(UIImage(systemName: imageName), for: .normal)
+            btn.tintColor = tint
+            btn.frame = CGRect(x: 0, y: 0, width: buttonSize, height: buttonSize)
+            btn.backgroundColor = .white
+            btn.layer.cornerRadius = buttonSize / 2
+            btn.layer.shadowOpacity = 0.3
+            btn.layer.shadowRadius = 2
+            btn.addTarget(self, action: action, for: .touchUpInside)
+            return btn
+        }
+
+        let deleteBtn = createButton(imageName: "trash", tint: .systemRed, action: #selector(didTapDelete))
+        deleteBtn.center = corners.topLeft 
+
+        let copyBtn = createButton(imageName: "doc.on.doc", tint: .systemBlue, action: #selector(didTapCopy))
+        copyBtn.center = corners.topRight 
+
+        let scaleBtn = createButton(imageName: "arrow.up.left.and.down.right.magnifyingglass", tint: .systemGray, action: #selector(didTapScale))
+        scaleBtn.center = corners.bottomRight
+
+        // 直接添加到 self 上
+        addSubview(deleteBtn)
+        addSubview(copyBtn)
+        addSubview(scaleBtn)
+    }
+
+
+    // MARK: - 套索按钮
+    @objc private func didTapDelete() {
+        print("Delete button tapped")
+        removeLassoPath()
+    }
+
+    @objc private func didTapCopy() {
+        print("Copy button tapped")
+    }
+
+    @objc private func didTapScale() {
+        print("Scale button tapped")
     }
 }
