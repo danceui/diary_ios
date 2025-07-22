@@ -9,11 +9,13 @@ class LassoLayer: UIView {
 
     private var lassoPath = UIBezierPath()
     private var originalLassoPath = UIBezierPath()
-    private var lastPoint: CGPoint?
+    private var previousPoint: CGPoint?
     private var firstPoint: CGPoint?
-    private let threshold: CGFloat = 7 // 超过则视为滑动
+    private var dragStartPoint: CGPoint?
     private var isDrawing = false
     private var isDragging = false
+    
+    private let threshold: CGFloat = 7 // 超过则视为滑动
 
     // 用于绘制虚线套索路径
     private let shapeLayer: CAShapeLayer = {
@@ -32,11 +34,6 @@ class LassoLayer: UIView {
         isOpaque = false
         isUserInteractionEnabled = true
         layer.addSublayer(shapeLayer)
-
-        // 添加手势识别器
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        panGesture.cancelsTouchesInView = false
-        addGestureRecognizer(panGesture)
     }
 
     required init?(coder: NSCoder) {
@@ -45,23 +42,26 @@ class LassoLayer: UIView {
 
     // MARK: - 监听触摸
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let point = touches.first?.location(in: self), touches.first?.type == .pencil else { return }
+        guard let point = touches.first?.location(in: self) else { return }
         firstPoint = point
-        lastPoint = point
+        previousPoint = point
 
+        // 如果当前已有路径并且触点在其内, 开启拖动
         if let path = shapeLayer.path, path.contains(point) {
-            // 如果当前已有路径并且触点在其内, 开启拖动
             isDragging = true
             isDrawing = false
+            dragStartPoint = point
         } else {
             // 否则，还不确定是点击还是绘制，等 touchesMoved 和 touchesEnded 判断
             isDrawing = false
             isDragging = false
+            dragStartPoint = nil
         }
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let point = touches.first?.location(in: self), let first = firstPoint, touches.first?.type == .pencil else { return }
+        guard let point = touches.first?.location(in: self), let first = firstPoint else { return }
+        // 如果不是拖动且不是绘制, 判断是点触还是绘制
         if !isDragging, !isDrawing {
             let distance = hypot(point.x - first.x, point.y - first.y)
             if distance > threshold {
@@ -69,7 +69,7 @@ class LassoLayer: UIView {
                 isDrawing = true
                 lassoPath = UIBezierPath()
                 lassoPath.move(to: first)
-                lastPoint = first
+                previousPoint = first
                 shapeLayer.removeAllAnimations()
                 shapeLayer.path = lassoPath.cgPath
             } else {
@@ -77,49 +77,48 @@ class LassoLayer: UIView {
                 return
             }
         }
+        // 如果正在拖动, 计算偏移量并应用变换
+        if isDragging, let start = dragStartPoint {
+            let dx = point.x - start.x
+            let dy = point.y - start.y
+            let transform = CGAffineTransform(translationX: dx, y: dy)
+            onLassoDragged?(transform)
+            return
+        }
         // 继续绘制套索
-        guard isDrawing, let last = lastPoint else { return }
-        let midPoint = CGPoint(x: (last.x + point.x) / 2, y: (last.y + point.y) / 2)
-        lassoPath.addQuadCurve(to: midPoint, controlPoint: last)
-        lastPoint = point
+        guard isDrawing, let prev = previousPoint else { return }
+        let midPoint = CGPoint(x: (prev.x + point.x) / 2, y: (prev.y + point.y) / 2)
+        lassoPath.addQuadCurve(to: midPoint, controlPoint: prev)
+        previousPoint = point
         shapeLayer.path = lassoPath.cgPath
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let point = touches.first?.location(in: self), touches.first?.type == .pencil else { return } 
-        if isDrawing {
-            // 结束绘制套索
+        guard let point = touches.first?.location(in: self) else { return }
+        // 如果是拖动，计算最终变换
+        if isDragging, let start = dragStartPoint {
+            let dx = point.x - start.x
+            let dy = point.y - start.y
+            let transform = CGAffineTransform(translationX: dx, y: dy)
+            onLassoDragFinished?(transform)
+        } else if isDrawing {
+            // 如果是绘制，结束套索路径
             lassoPath.close()
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
             updateOriginalLassoPath()
             onLassoFinished?(lassoPath)
-        } else if !isDragging {
+        } else {
             // 没有拖动也没有画, 说明是轻点, 检查贴纸
             onStickerTapped?(point)
         }
         isDrawing = false
         isDragging = false
+        dragStartPoint = nil
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         removeLassoPath()
-    }
-
-    // MARK: - 拖动手势处理
-    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        guard isDragging else { return }
-        let offset = gesture.translation(in: self)
-        let transform = CGAffineTransform(translationX: offset.x, y: offset.y)
-
-        switch gesture.state {
-        case .changed:
-            onLassoDragged?(transform)
-        case .ended, .cancelled:
-            onLassoDragFinished?(transform)
-        default:
-            break
-        }
     }
 
     // MARK: - 套索路径
@@ -149,6 +148,7 @@ class LassoLayer: UIView {
     func removeLassoPath() {
         isDrawing = false
         isDragging = false
+        dragStartPoint = nil
         shapeLayer.removeAllAnimations()
         shapeLayer.path = nil
         lassoPath.removeAllPoints()
