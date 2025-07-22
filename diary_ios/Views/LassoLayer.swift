@@ -63,7 +63,7 @@ class LassoLayer: UIView {
         guard let point = touches.first?.location(in: self), let first = firstPoint else { return }
         // 如果不是拖动且不是绘制, 判断是点触还是绘制
         if !isDragging, !isDrawing {
-            if point.distance(first) > threshold {
+            if point.distanceTo(first) > threshold {
                 // 移动距离超过阈值，开始绘制套索
                 isDrawing = true
                 lassoPath = UIBezierPath()
@@ -168,6 +168,7 @@ class LassoLayer: UIView {
         shapeLayer.add(dashAnimation, forKey: "dashPhase")
     }
     
+    // MARK: - 套索按钮
     private func showButtonsOnLassoPath() {
         guard let corners = lassoPath.cornerPoints() else { return }
         let buttonSize: CGFloat = 30
@@ -185,13 +186,13 @@ class LassoLayer: UIView {
             return btn
         }
 
-        let deleteBtn = createButton(imageName: "trash", tint: .systemRed, action: #selector(didTapDelete))
+        let deleteBtn = createButton(imageName: "xmark.circle", tint: .systemRed, action: #selector(didTapDelete))
         deleteBtn.center = corners.topLeft 
 
-        let copyBtn = createButton(imageName: "doc.on.doc", tint: .systemBlue, action: #selector(didTapCopy))
+        let copyBtn = createButton(imageName: "rectangle.on.rectangle", tint: .systemBlue, action: #selector(didTapCopy))
         copyBtn.center = corners.topRight 
 
-        let scaleBtn = createButton(imageName: "arrow.up.left.and.down.right.magnifyingglass", tint: .systemGray, action: #selector(didTapScale))
+        let scaleBtn = createButton(imageName: "crop.rotate", tint: .systemGray, action: #selector(didTapScale))
         scaleBtn.center = corners.bottomRight
 
         // 直接添加到 self 上
@@ -200,8 +201,6 @@ class LassoLayer: UIView {
         addSubview(scaleBtn)
     }
 
-
-    // MARK: - 套索按钮
     @objc private func didTapDelete() {
         print("Delete button tapped")
         removeLassoPath()

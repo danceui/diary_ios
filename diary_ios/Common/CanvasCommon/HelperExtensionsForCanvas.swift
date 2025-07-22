@@ -1,6 +1,13 @@
 import UIKit
 import PencilKit
 
+// MARK: - CGPoint 相关
+extension CGPoint {
+    func distanceTo(_ point: CGPoint) -> CGFloat {
+        hypot(self.x - point.x, self.y - point.y)
+    }
+}
+
 // MARK: - PKStroke 相关
 extension PKStroke {
     func isEqualTo(_ stroke: PKStroke) -> Bool {
@@ -73,30 +80,23 @@ extension UIBezierPath {
             let dist = hypot(dx, dy)
             
             if dx <= 0 && dy <= 0 { // 左上象限
-                if dist > topLeft.distance(centerPoint) {
+                if dist > topLeft.distanceTo(centerPoint) {
                     topLeft = p
                 }
             } else if dx > 0 && dy <= 0 { // 右上象限
-                if dist > topRight.distance(centerPoint) {
+                if dist > topRight.distanceTo(centerPoint) {
                     topRight = p
                 }
             } else if dx <= 0 && dy > 0 { // 左下象限
-                if dist > bottomLeft.distance(centerPoint) {
+                if dist > bottomLeft.distanceTo(centerPoint) {
                     bottomLeft = p
                 }
             } else if dx > 0 && dy > 0 { // 右下象限
-                if dist > bottomRight.distance(centerPoint) {
+                if dist > bottomRight.distanceTo(centerPoint) {
                     bottomRight = p
                 }
             }
         }
         return (topLeft, topRight, bottomLeft, bottomRight)
-    }
-}
-
-// MARK: - CGPoint 相关
-extension CGPoint {
-    func distance(_ point: CGPoint) -> CGFloat {
-        hypot(self.x - point.x, self.y - point.y)
     }
 }
