@@ -16,6 +16,7 @@ class LassoLayer: UIView {
     private var isDragging = false
 
     private let threshold: CGFloat = 7 // 超过则视为滑动
+    private let cornerRadius = LassoConstants.cornerRadius
 
     // 用于绘制虚线套索路径
     private let shapeLayer: CAShapeLayer = {
@@ -170,30 +171,32 @@ class LassoLayer: UIView {
     
     // MARK: - 套索按钮
     private func showButtonsOnLassoPath() {
-        guard let corners = lassoPath.cornerPoints() else { return }
-        let buttonSize: CGFloat = 30
+        let rect = lassoPath.bounds
         
-        func createButton(imageName: String, tint: UIColor, action: Selector) -> UIButton {
+        func createButton(imageName: String, tint: UIColor, buttonSize: CGFloat, action: Selector) -> UIButton {
             let btn = UIButton(type: .custom)
             btn.setImage(UIImage(systemName: imageName), for: .normal)
             btn.tintColor = tint
             btn.frame = CGRect(x: 0, y: 0, width: buttonSize, height: buttonSize)
-            btn.backgroundColor = .white
-            btn.layer.cornerRadius = buttonSize / 2
-            btn.layer.shadowOpacity = 0.3
-            btn.layer.shadowRadius = 2
+            btn.imageView?.contentMode = .scaleAspectFit
+            btn.backgroundColor = .clear
             btn.addTarget(self, action: action, for: .touchUpInside)
             return btn
         }
 
-        let deleteBtn = createButton(imageName: "xmark.circle", tint: .systemRed, action: #selector(didTapDelete))
-        deleteBtn.center = corners.topLeft 
+        let topLeft = CGPoint(x: rect.minX, y: rect.minY)
+        let topRight = CGPoint(x: rect.maxX, y: rect.minY)
+        let bottomLeft = CGPoint(x: rect.minX, y: rect.maxY)
+        let bottomRight = CGPoint(x: rect.maxX, y: rect.maxY)
 
-        let copyBtn = createButton(imageName: "rectangle.on.rectangle", tint: .systemBlue, action: #selector(didTapCopy))
-        copyBtn.center = corners.topRight 
+        let deleteBtn = createButton(imageName: "xmark.circle.fill", tint: .systemRed, buttonSize: 65, action: #selector(didTapDelete))
+        deleteBtn.center = topLeft 
 
-        let scaleBtn = createButton(imageName: "crop.rotate", tint: .systemGray, action: #selector(didTapScale))
-        scaleBtn.center = corners.bottomRight
+        let copyBtn = createButton(imageName: "rectangle.fill.on.rectangle.fill", tint: .systemBlue, buttonSize: 55, action: #selector(didTapCopy))
+        copyBtn.center = topRight 
+
+        let scaleBtn = createButton(imageName: "crop.rotate", tint: .darkGray, buttonSize: 80, action: #selector(didTapScale))
+        scaleBtn.center = bottomRight
 
         // 直接添加到 self 上
         addSubview(deleteBtn)

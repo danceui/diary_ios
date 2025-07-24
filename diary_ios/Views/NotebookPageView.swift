@@ -7,6 +7,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     var pageIndex: Int
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
+    private let lassoCornerRadius = LassoConstants.cornerRadius
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
     private(set) var lastEditedTimestamp: Date?
@@ -294,6 +295,7 @@ extension NotebookPageView {
         if lassoStrokesInfo.isEmpty {
             lassoLayer.removeLassoPath()
         } else {
+            updateLassoPathForStrokes(strokesInfo: lassoStrokesInfo, in: lassoLayer)
             printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Selected Strokes")
         }
     }
@@ -303,7 +305,7 @@ extension NotebookPageView {
         
         if let view = lassoStickerView {
             view.center = view.sticker.center.applying(transform)
-            updateLassoPathForSticker(view: lassoStickerView, in: lassoLayer)
+            updateLassoPathForSticker(view: view, in: lassoLayer)
         }
         if !lassoStrokesInfo.isEmpty {
             transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
@@ -363,7 +365,22 @@ extension NotebookPageView {
     private func updateLassoPathForSticker(view: StickerView?, in lassoLayer: LassoLayer) {
         guard let view = view else { return }
         let frameInLasso = lassoLayer.convert(view.frame, from: view.superview)
-        let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: 6)
+        let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: lassoCornerRadius)
         lassoLayer.configureLassoPath(path: path)
+    }
+
+    private func updateLassoPathForStrokes(strokesInfo: [LayerStrokes], in lassoLayer: LassoLayer) {
+        guard !strokesInfo.isEmpty else { return }
+        var unionBounds: CGRect?
+        for indexed in strokesInfo {
+            for (_, stroke) in indexed.indexedStrokes {
+                let strokeBounds = stroke.renderBounds
+                unionBounds = unionBounds == nil ? strokeBounds : unionBounds!.union(strokeBounds)
+            }
+        }
+        if let bounds = unionBounds {
+            let path = UIBezierPath(roundedRect: bounds, cornerRadius: lassoCornerRadius)
+            lassoLayer.configureLassoPath(path: path)
+        }
     }
 }
