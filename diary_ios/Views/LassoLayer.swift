@@ -152,6 +152,7 @@ class LassoLayer: UIView {
     }
 
     func removeLassoPath() {
+        // 在 undo 时清除套索
         isDrawing = false
         isDragging = false
         dragStartPoint = nil
