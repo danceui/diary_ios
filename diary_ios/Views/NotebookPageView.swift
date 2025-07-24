@@ -7,7 +7,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     var pageIndex: Int
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
-    private let lassoCornerRadius = LassoConstants.cornerRadius
     private let inset = LassoConstants.inset
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
@@ -350,7 +349,6 @@ extension NotebookPageView {
             executeAndSave(command: cmd)
             updateLassoStrokesInfo()
         }
-        lassoLayer.updateOriginalLassoPath()
     }
 
 

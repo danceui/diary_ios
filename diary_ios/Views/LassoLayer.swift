@@ -16,7 +16,7 @@ class LassoLayer: UIView {
     private var isDragging = false
 
     private let threshold: CGFloat = 7 // 超过则视为滑动
-    private let cornerRadius = LassoConstants.cornerRadius
+    // private let size: CGFloat = LassoConstants.lassoButtonSize
 
     // 用于绘制虚线套索路径
     private let shapeLayer: CAShapeLayer = {
@@ -101,13 +101,12 @@ class LassoLayer: UIView {
             let dy = point.y - start.y
             let transform = CGAffineTransform(translationX: dx, y: dy)
             onLassoDragFinished?(transform)
+            updateOriginalLassoPath()
             // showButtonsOnLassoPath()
         } else if isDrawing {
             // 如果是绘制，结束套索路径
             lassoPath.close()
             shapeLayer.path = lassoPath.cgPath
-            startWaitingAnimation()
-            updateOriginalLassoPath()
             onLassoFinished?(lassoPath)
             // showButtonsOnLassoPath()
         } else {
@@ -131,11 +130,11 @@ class LassoLayer: UIView {
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
             updateOriginalLassoPath()
-            // showButtonsOnLassoPath()
+            showButtonsOnLassoPath()
         }
     }
 
-    func updateOriginalLassoPath() {
+    private func updateOriginalLassoPath() {
         // 每次设置套索路径后保存为 originalLassoPath
         if let copiedPath = lassoPath.copy() as? UIBezierPath {
             originalLassoPath = copiedPath
@@ -177,14 +176,15 @@ class LassoLayer: UIView {
     private func showButtonsOnLassoPath() {
         let rect = lassoPath.bounds
         
-        func createButton(imageName: String, tint: UIColor, buttonSize: CGFloat, action: Selector) -> UIButton {
+        func createButton(imageName: String, tint: UIColor, size: CGFloat, action: Selector) -> UIButton {
             let btn = UIButton(type: .custom)
-            btn.setImage(UIImage(systemName: imageName), for: .normal)
-            btn.tintColor = tint
-            btn.frame = CGRect(x: 0, y: 0, width: buttonSize, height: buttonSize)
-            btn.imageView?.contentMode = .scaleAspectFit
+            btn.frame = CGRect(x: 0, y: 0, width: size, height: size)
             btn.backgroundColor = .clear
             btn.addTarget(self, action: action, for: .touchUpInside)
+            let config = UIImage.SymbolConfiguration(pointSize: size, weight: .regular)
+            let image = UIImage(systemName: imageName, withConfiguration: config)
+            btn.setImage(image, for: .normal)
+            btn.tintColor = tint
             return btn
         }
 
@@ -193,13 +193,13 @@ class LassoLayer: UIView {
         let bottomLeft = CGPoint(x: rect.minX, y: rect.maxY)
         let bottomRight = CGPoint(x: rect.maxX, y: rect.maxY)
 
-        let deleteBtn = createButton(imageName: "xmark.circle.fill", tint: .systemRed, buttonSize: 65, action: #selector(didTapDelete))
+        let deleteBtn = createButton(imageName: "xmark.circle.fill", tint: .systemRed, size: 35, action: #selector(didTapDelete))
         deleteBtn.center = topLeft 
 
-        let copyBtn = createButton(imageName: "rectangle.fill.on.rectangle.fill", tint: .systemBlue, buttonSize: 55, action: #selector(didTapCopy))
+        let copyBtn = createButton(imageName: "rectangle.fill.on.rectangle.fill", tint: .systemBlue, size: 30, action: #selector(didTapCopy))
         copyBtn.center = topRight 
 
-        let scaleBtn = createButton(imageName: "crop.rotate", tint: .darkGray, buttonSize: 80, action: #selector(didTapScale))
+        let scaleBtn = createButton(imageName: "crop.rotate", tint: .darkGray, size: 40, action: #selector(didTapScale))
         scaleBtn.center = bottomRight
 
         // 直接添加到 self 上
