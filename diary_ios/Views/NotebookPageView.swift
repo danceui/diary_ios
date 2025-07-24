@@ -366,15 +366,13 @@ extension NotebookPageView {
         }
     }
 
-    private func updateLassoPathForSticker(view: StickerView?, in lassoLayer: LassoLayer) {
-        guard let view = view else { return }
+    private func updateLassoPathForSticker(view: StickerView, in lassoLayer: LassoLayer) {
         let frameInLasso = lassoLayer.convert(view.frame, from: view.superview)
         let path = UIBezierPath(rect: frameInLasso.insetBy(dx: inset, dy: inset))
         lassoLayer.configureLassoPath(path: path)
     }
 
     private func updateLassoPathForStrokes(strokesInfo: [LayerStrokes], in lassoLayer: LassoLayer) {
-        guard !strokesInfo.isEmpty else { return }
         var unionBounds: CGRect?
         for indexed in strokesInfo {
             for (_, stroke) in indexed.indexedStrokes {
