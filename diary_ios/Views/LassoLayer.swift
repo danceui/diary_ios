@@ -14,6 +14,10 @@ class LassoLayer: UIView {
     private var dragStartPoint: CGPoint?
     private var isDrawing = false
     private var isDragging = false
+    
+    private var deleteBtn: UIButton?
+    private var copyBtn: UIButton?
+    private var scaleBtn: UIButton?
 
     private let threshold: CGFloat = 7 // 超过则视为滑动
     // private let size: CGFloat = LassoConstants.lassoButtonSize
@@ -46,7 +50,6 @@ class LassoLayer: UIView {
         guard let point = touches.first?.location(in: self) else { return }
         firstPoint = point
         previousPoint = point
-
         // 如果当前已有路径并且触点在其内, 开启拖动
         if let path = shapeLayer.path, path.contains(point) {
             isDragging = true
@@ -54,6 +57,7 @@ class LassoLayer: UIView {
             dragStartPoint = point
         } else {
             // 否则，还不确定是点击还是绘制，等 touchesMoved 和 touchesEnded 判断
+            removeLassoPath()
             isDrawing = false
             isDragging = false
             dragStartPoint = nil
@@ -62,7 +66,6 @@ class LassoLayer: UIView {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let point = touches.first?.location(in: self), let first = firstPoint else { return }
-        // 如果不是拖动且不是绘制, 判断是点触还是绘制
         if !isDragging, !isDrawing {
             if point.distanceTo(first) > threshold {
                 // 移动距离超过阈值，开始绘制套索
@@ -102,13 +105,11 @@ class LassoLayer: UIView {
             let transform = CGAffineTransform(translationX: dx, y: dy)
             onLassoDragFinished?(transform)
             updateOriginalLassoPath()
-            // showButtonsOnLassoPath()
         } else if isDrawing {
             // 如果是绘制，结束套索路径
             lassoPath.close()
             shapeLayer.path = lassoPath.cgPath
             onLassoFinished?(lassoPath)
-            // showButtonsOnLassoPath()
         } else {
             // 没有拖动也没有画, 说明是轻点, 检查贴纸
             onStickerTapped?(point)
@@ -130,7 +131,7 @@ class LassoLayer: UIView {
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
             updateOriginalLassoPath()
-            showButtonsOnLassoPath()
+            createButtonsOnLassoPath()
         }
     }
 
@@ -148,6 +149,8 @@ class LassoLayer: UIView {
             lassoPath = copiedPath
             shapeLayer.path = lassoPath.cgPath
         }
+        // 更新按钮位置
+        updateButtonsWithLassoPath()
     }
 
     func removeLassoPath() {
@@ -159,6 +162,7 @@ class LassoLayer: UIView {
         shapeLayer.path = nil
         lassoPath.removeAllPoints()
         originalLassoPath.removeAllPoints()
+        removeButtons()
     }
 
     // MARK: - 套索样式
@@ -173,9 +177,7 @@ class LassoLayer: UIView {
     }
     
     // MARK: - 套索按钮
-    private func showButtonsOnLassoPath() {
-        let rect = lassoPath.bounds
-        
+    private func createButtonsOnLassoPath() {
         func createButton(imageName: String, tint: UIColor, size: CGFloat, action: Selector) -> UIButton {
             let btn = UIButton(type: .custom)
             btn.frame = CGRect(x: 0, y: 0, width: size, height: size)
@@ -188,24 +190,32 @@ class LassoLayer: UIView {
             return btn
         }
 
-        let topLeft = CGPoint(x: rect.minX, y: rect.minY)
-        let topRight = CGPoint(x: rect.maxX, y: rect.minY)
-        let bottomLeft = CGPoint(x: rect.minX, y: rect.maxY)
-        let bottomRight = CGPoint(x: rect.maxX, y: rect.maxY)
+        deleteBtn = createButton(imageName: "xmark.circle.fill", tint: .systemRed, size: 35, action: #selector(didTapDelete))
+        copyBtn = createButton(imageName: "rectangle.fill.on.rectangle.fill", tint: .systemBlue, size: 30, action: #selector(didTapCopy))
+        scaleBtn = createButton(imageName: "crop.rotate", tint: .darkGray, size: 40, action: #selector(didTapScale))
 
-        let deleteBtn = createButton(imageName: "xmark.circle.fill", tint: .systemRed, size: 35, action: #selector(didTapDelete))
-        deleteBtn.center = topLeft 
+        updateButtonsWithLassoPath() // 初始化位置
 
-        let copyBtn = createButton(imageName: "rectangle.fill.on.rectangle.fill", tint: .systemBlue, size: 30, action: #selector(didTapCopy))
-        copyBtn.center = topRight 
+        if let deleteBtn = deleteBtn { addSubview(deleteBtn) }
+        if let copyBtn = copyBtn { addSubview(copyBtn) }
+        if let scaleBtn = scaleBtn { addSubview(scaleBtn) }
+    }
 
-        let scaleBtn = createButton(imageName: "crop.rotate", tint: .darkGray, size: 40, action: #selector(didTapScale))
-        scaleBtn.center = bottomRight
+    private func updateButtonsWithLassoPath() {
+        let rect = lassoPath.bounds
+        deleteBtn?.center = CGPoint(x: rect.minX, y: rect.minY)
+        copyBtn?.center = CGPoint(x: rect.maxX, y: rect.minY)
+        scaleBtn?.center = CGPoint(x: rect.maxX, y: rect.maxY)
+    }
 
-        // 直接添加到 self 上
-        addSubview(deleteBtn)
-        addSubview(copyBtn)
-        addSubview(scaleBtn)
+    private func removeButtons() {
+        deleteBtn?.removeFromSuperview()
+        copyBtn?.removeFromSuperview()
+        scaleBtn?.removeFromSuperview()
+        
+        deleteBtn = nil
+        copyBtn = nil
+        scaleBtn = nil
     }
 
     @objc private func didTapDelete() {
