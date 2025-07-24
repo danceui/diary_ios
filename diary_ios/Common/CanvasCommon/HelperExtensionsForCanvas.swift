@@ -36,9 +36,4 @@ extension PKStroke {
 
 // MARK: - UIBezierPath 相关
 extension UIBezierPath {
-    func convertToBoundingPath() {
-        let bounding = self.bounds
-        self.removeAllPoints()
-        self.append(UIBezierPath(rect: bounding))
-    }
 }

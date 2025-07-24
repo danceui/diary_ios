@@ -293,12 +293,12 @@ extension NotebookPageView {
                 lassoStrokesInfo.append(LayerStrokes(layer: layer, indexedStrokes: selected))
             }
         }
-        if lassoStrokesInfo.isEmpty {
-            lassoLayer.removeLassoPath()
-        } else {
-            // 有笔画被选中，按笔画更新套索路径
+        // 如果有笔画被选中，按笔画范围更新套索路径
+        if !lassoStrokesInfo.isEmpty {
             updateLassoPathForStrokes(strokesInfo: lassoStrokesInfo, in: lassoLayer)
             printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Selected Strokes")
+        } else {
+            lassoLayer.removeLassoPath()
         }
     }
 
@@ -318,9 +318,8 @@ extension NotebookPageView {
                 }
             }
         }
-        lassoLayer.removeLassoPath()
     }
-    
+
     private func handleLassoDragged(transform: CGAffineTransform) {
         guard let lassoLayer = currentLassoLayer else { return }
         
@@ -370,7 +369,7 @@ extension NotebookPageView {
     private func updateLassoPathForSticker(view: StickerView?, in lassoLayer: LassoLayer) {
         guard let view = view else { return }
         let frameInLasso = lassoLayer.convert(view.frame, from: view.superview)
-        let path = UIBezierPath(roundedRect: frameInLasso, cornerRadius: lassoCornerRadius)
+        let path = UIBezierPath(rect: frameInLasso.insetBy(dx: inset, dy: inset))
         lassoLayer.configureLassoPath(path: path)
     }
 
@@ -384,7 +383,7 @@ extension NotebookPageView {
             }
         }
         if let bounds = unionBounds {
-            let path = UIBezierPath(roundedRect: bounds.insetBy(dx: inset, dy: inset), cornerRadius: lassoCornerRadius)
+            let path = UIBezierPath(rect: bounds.insetBy(dx: -inset, dy: -inset))
             lassoLayer.configureLassoPath(path: path)
         }
     }
