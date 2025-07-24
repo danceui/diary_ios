@@ -8,6 +8,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let isLeft: Bool
     private let pageCornerRadius = PageConstants.pageCornerRadius
     private let lassoCornerRadius = LassoConstants.cornerRadius
+    private let inset = LassoConstants.inset
     private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
     private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
     private(set) var lastEditedTimestamp: Date?
@@ -295,6 +296,7 @@ extension NotebookPageView {
         if lassoStrokesInfo.isEmpty {
             lassoLayer.removeLassoPath()
         } else {
+            // 有笔画被选中，按笔画更新套索路径
             updateLassoPathForStrokes(strokesInfo: lassoStrokesInfo, in: lassoLayer)
             printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Selected Strokes")
         }
@@ -304,10 +306,12 @@ extension NotebookPageView {
         guard let lassoLayer = currentLassoLayer else { return }
         
         if let view = lassoStickerView {
+            // 有贴纸被选中，实时更新贴纸及其套索位置
             view.center = view.sticker.center.applying(transform)
             updateLassoPathForSticker(view: view, in: lassoLayer)
         }
         if !lassoStrokesInfo.isEmpty {
+            // 有笔画被选中，实时更新笔画及套索位置
             transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
             lassoLayer.updateLassoPath(transform: transform)
         }
@@ -317,12 +321,14 @@ extension NotebookPageView {
         guard let lassoLayer = currentLassoLayer else { return }
         
         if let view = lassoStickerView {
-            let cmd = MoveStickerCommand(view: view, lassoLayer: lassoLayer, transform: transform, stickerMovedOnce: false)
+            // 有贴纸被选中，提交移动命令
+            let cmd = MoveStickerCommand(stickerView: view, lassoLayer: lassoLayer, transform: transform, stickerMovedOnce: false)
             executeAndSave(command: cmd)
             view.sticker.center = view.center
             lassoLayer.updateOriginalLassoPath()
         }
         if !lassoStrokesInfo.isEmpty {
+            // 有笔画被选中，提交移动命令
             let cmd = MoveStrokesCommand(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer, transform: transform, strokesMovedOnce: false)
             executeAndSave(command: cmd)
             updateLassoStrokesInfo()
@@ -330,7 +336,6 @@ extension NotebookPageView {
         }
     }
 
-    // Sticker 轻点处理
     private func handleStickerTapped(point: CGPoint) {
         guard let lassoLayer = currentLassoLayer else { return }
         lassoStrokesInfo.removeAll()
@@ -365,7 +370,7 @@ extension NotebookPageView {
     private func updateLassoPathForSticker(view: StickerView?, in lassoLayer: LassoLayer) {
         guard let view = view else { return }
         let frameInLasso = lassoLayer.convert(view.frame, from: view.superview)
-        let path = UIBezierPath(roundedRect: frameInLasso.insetBy(dx: -8, dy: -8), cornerRadius: lassoCornerRadius)
+        let path = UIBezierPath(roundedRect: frameInLasso, cornerRadius: lassoCornerRadius)
         lassoLayer.configureLassoPath(path: path)
     }
 
@@ -379,7 +384,7 @@ extension NotebookPageView {
             }
         }
         if let bounds = unionBounds {
-            let path = UIBezierPath(roundedRect: bounds, cornerRadius: lassoCornerRadius)
+            let path = UIBezierPath(roundedRect: bounds.insetBy(dx: inset, dy: inset), cornerRadius: lassoCornerRadius)
             lassoLayer.configureLassoPath(path: path)
         }
     }

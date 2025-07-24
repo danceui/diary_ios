@@ -101,7 +101,7 @@ class LassoLayer: UIView {
             let dy = point.y - start.y
             let transform = CGAffineTransform(translationX: dx, y: dy)
             onLassoDragFinished?(transform)
-            showButtonsOnLassoPath()
+            // showButtonsOnLassoPath()
         } else if isDrawing {
             // 如果是绘制，结束套索路径
             lassoPath.close()
@@ -109,7 +109,7 @@ class LassoLayer: UIView {
             startWaitingAnimation()
             updateOriginalLassoPath()
             onLassoFinished?(lassoPath)
-            showButtonsOnLassoPath()
+            // showButtonsOnLassoPath()
         } else {
             // 没有拖动也没有画, 说明是轻点, 检查贴纸
             onStickerTapped?(point)
@@ -125,22 +125,25 @@ class LassoLayer: UIView {
 
     // MARK: - 套索路径
     func configureLassoPath(path: UIBezierPath) {
+        // 供外部设置套索路径
         if let copiedPath = path.copy() as? UIBezierPath {
             lassoPath = copiedPath
             shapeLayer.path = lassoPath.cgPath
             startWaitingAnimation()
             updateOriginalLassoPath()
-            showButtonsOnLassoPath()
+            // showButtonsOnLassoPath()
         }
     }
 
     func updateOriginalLassoPath() {
+        // 每次设置套索路径后保存为 originalLassoPath
         if let copiedPath = lassoPath.copy() as? UIBezierPath {
             originalLassoPath = copiedPath
         }
     }
 
     func updateLassoPath(transform: CGAffineTransform) {
+        // 实时更新套索位置
         if let copiedPath = originalLassoPath.copy() as? UIBezierPath {
             copiedPath.apply(transform)
             lassoPath = copiedPath

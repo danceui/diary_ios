@@ -115,26 +115,25 @@ class MoveStrokesCommand: CanvasCommand {
             return
         }
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: transform)
-        lassoLayer?.removeLassoPath()
     }
 
     func undo() {
         transformStrokes(lassoStrokesInfo: lassoStrokesInfo, transform: CGAffineTransform.identity)
         lassoLayer?.removeLassoPath()
     }
-
 }
+
 // MARK: - MoveSticker
 class MoveStickerCommand: CanvasCommand {
-    private var view: StickerView
+    private var stickerView: StickerView
     private var originalCenter: CGPoint
     private let transform: CGAffineTransform
     private var stickerMovedOnce: Bool
     private weak var lassoLayer: LassoLayer?
 
-    init(view: StickerView, lassoLayer: LassoLayer, transform: CGAffineTransform, stickerMovedOnce: Bool) {
-        self.view = view
-        self.originalCenter = view.sticker.center
+    init(stickerView: StickerView, lassoLayer: LassoLayer, transform: CGAffineTransform, stickerMovedOnce: Bool) {
+        self.stickerView = stickerView
+        self.originalCenter = stickerView.sticker.center
         self.transform = transform
         self.stickerMovedOnce = stickerMovedOnce
         self.lassoLayer = lassoLayer
@@ -145,15 +144,15 @@ class MoveStickerCommand: CanvasCommand {
             stickerMovedOnce = true
             return
         }
-        view.center = originalCenter.applying(transform)
-        lassoLayer?.removeLassoPath()
+        stickerView.center = originalCenter.applying(transform)
     }
 
     func undo() {
-        view.center = originalCenter
+        stickerView.center = originalCenter
         lassoLayer?.removeLassoPath()
     }
 }
+
 // class EraseStrokesCommand: CanvasCommand {
 //     private let erasedStrokes: [PKStroke]
 //     private var strokesErasedOnce: Bool

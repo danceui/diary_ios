@@ -1,5 +1,6 @@
 import UIKit
 
 struct LassoConstants {
-    static let cornerRadius: CGFloat = 8.0
+    static let cornerRadius: CGFloat = -4.0
+    static let inset: CGFloat = -4.0
 }
