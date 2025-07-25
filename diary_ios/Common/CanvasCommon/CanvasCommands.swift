@@ -71,19 +71,20 @@ class MultiEraseCommand: CanvasCommand {
 
 // MARK: - AddSticker
 class AddStickerCommand: CanvasCommand {
-    private let sticker: Sticker
+    private let stickerView: StickerView
     private unowned let stickerLayer: StickerLayer
+    private unowned let lassoLayer: LassoLayer?
 
-    init(sticker: Sticker, stickerLayer: StickerLayer) {
-        self.sticker = sticker
+    init(stickerView: StickerView, stickerLayer: StickerLayer, lassoLayer: LassoLayer? = nil) {
+        self.stickerView = stickerView
         self.stickerLayer = stickerLayer
+        self.lassoLayer = lassoLayer
     }
 
     func execute() {
-        let view = StickerView(sticker: sticker)
-        stickerLayer.stickers.append(sticker)
-        stickerLayer.stickerViews.append(view)
-        stickerLayer.addSubview(view)
+        stickerLayer.stickers.append(stickerView.sticker)
+        stickerLayer.stickerViews.append(stickerView)
+        stickerLayer.addSubview(stickerView)
     }
 
     func undo() {
@@ -92,6 +93,7 @@ class AddStickerCommand: CanvasCommand {
             let view = stickerLayer.stickerViews.removeLast()
             view.removeFromSuperview()
         }
+        lassoLayer?.removeLassoPath()
     }
 }
 

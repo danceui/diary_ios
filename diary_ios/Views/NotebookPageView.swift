@@ -158,13 +158,17 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
 
 // MARK: - Handwriting Layer 回调
 extension NotebookPageView {
-    private func createNewHandwritingLayer() {
+    private func createNewHandwritingLayer(at index: Int? = nil) {
         let newLayer = HandwritingLayer()
         newLayer.frame = bounds
         newLayer.delegate = self
         handwritingLayers.append(newLayer)
         currentHandwritingLayer = newLayer
-        containerView.addSubview(newLayer)
+        if let index = index, index < containerView.subviews.count {
+            containerView.insertSubview(newLayer, at: index)
+        } else {
+            containerView.addSubview(newLayer)
+        }
         print("[P\(pageIndex)] ✏️ Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
     }
 
@@ -180,19 +184,23 @@ extension NotebookPageView {
 
 // MARK: - Sticker Layer 回调
 extension NotebookPageView {
-    private func createNewStickerLayer() {
+    private func createNewStickerLayer(at index: Int? = nil) {
         let newLayer = StickerLayer()
         newLayer.frame = bounds
-        newLayer.onStickerAdded = { [weak self] sticker in self?.handleStickerAdded(sticker) }
+        newLayer.onStickerAdded = { [weak self] stickerView in self?.handleStickerAdded(stickerView: stickerView) }
         stickerLayers.append(newLayer)
         currentStickerLayer = newLayer
-        containerView.addSubview(newLayer)
+        if let index = index, index < containerView.subviews.count {
+            containerView.insertSubview(newLayer, at: index)
+        } else {
+            containerView.addSubview(newLayer)
+        }
         print("[P\(pageIndex)] ⭐️ Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
     }
 
-    private func handleStickerAdded(_ sticker: Sticker) {
+    private func handleStickerAdded(stickerView: StickerView) {
         guard let stickerLayer = currentStickerLayer else { return }
-        let cmd = AddStickerCommand(sticker: sticker, stickerLayer: stickerLayer)
+        let cmd = AddStickerCommand(stickerView: stickerView, stickerLayer: stickerLayer, lassoLayer: currentLassoLayer)
         executeAndSave(command: cmd)
     }
 }
@@ -203,8 +211,8 @@ extension NotebookPageView: EraserLayerDelegate {
         let newLayer = EraserLayer()
         newLayer.frame = bounds
         newLayer.eraseDelegate = self
-        containerView.addSubview(newLayer)
         currentEraserLayer = newLayer
+        containerView.addSubview(newLayer)
         print("[P\(pageIndex)] 🫧 Created eraser layer")
     }
 
@@ -271,6 +279,7 @@ extension NotebookPageView {
         newLayer.onLassoDragged = { [weak self] transform in self?.handleLassoDragged(transform: transform) }
         newLayer.onLassoDragFinished = { [weak self] transform in self?.handleLassoDragFinished(transform: transform) }
         newLayer.onDelete = { [weak self] in self?.handleDelete() }
+        newLayer.onDuplicate = { [weak self] in self?.handleDuplicate() }
         containerView.addSubview(newLayer)
         currentLassoLayer = newLayer
         print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
@@ -375,6 +384,27 @@ extension NotebookPageView {
             let cmd = MultiEraseCommand(eraseInfo: lassoStrokesInfo, strokesErasedOnce: true)
             executeAndSave(command: cmd)
             lassoLayer.removeLassoPath()
+        }
+    }
+
+    private func handleDuplicate() {
+        guard let lassoLayer = currentLassoLayer else { return }
+        
+        if let stickerInfo = lassoStickerInfo {
+            // 复制选中的贴纸
+            let stickerView = stickerInfo.indexedStickerView.stickerView
+            let newStickerView = stickerView.copy(offset: CGPoint(x: 10, y: 10))
+            createNewStickerLayer(at: containerView.subviews.count - 1)
+            handleStickerAdded(stickerView: newStickerView)
+            lassoStickerInfo = LayerSticker(layer: currentStickerLayer!, indexedStickerView: (currentStickerLayer!.subviews.count - 1, newStickerView))
+            updateLassoPathForSticker(stickerInfo: lassoStickerInfo!, in: lassoLayer)
+            return
+        }
+        if !lassoStrokesInfo.isEmpty {
+            // 复制选中的笔画
+            // let cmd = DuplicateStrokesCommand(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer)
+            // executeAndSave(command: cmd)
+            // updateLassoPathForStrokes(strokesInfo: lassoStrokesInfo, in: lassoLayer)
         }
     }
 

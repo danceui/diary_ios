@@ -2,7 +2,7 @@ import UIKit
 
 class StickerLayer: UIView {
     var readyToAddSticker = true
-    var onStickerAdded: ((Sticker) -> Void)?
+    var onStickerAdded: ((StickerView) -> Void)?
     var stickers: [Sticker] = []
     var stickerViews: [StickerView] = []
     var isEmpty: Bool {
@@ -23,7 +23,8 @@ class StickerLayer: UIView {
         super.touchesBegan(touches, with: event)
         guard let touch = touches.first, readyToAddSticker else { return }
         let sticker = Sticker(id: UUID(), center: touch.location(in: self), name: "star")
-        onStickerAdded?(sticker)
+        let stickerView = StickerView(sticker: sticker)
+        onStickerAdded?(stickerView)
         readyToAddSticker = false
     }
 
