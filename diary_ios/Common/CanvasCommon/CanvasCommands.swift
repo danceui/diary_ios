@@ -98,7 +98,7 @@ class MultiEraseCommand: CanvasCommand {
 class AddStickerCommand: CanvasCommand {
     private let stickerView: StickerView
     private unowned let stickerLayer: StickerLayer
-    private unowned let lassoLayer: LassoLayer?
+    private weak var lassoLayer: LassoLayer?
 
     init(stickerView: StickerView, stickerLayer: StickerLayer, lassoLayer: LassoLayer? = nil) {
         self.stickerView = stickerView
