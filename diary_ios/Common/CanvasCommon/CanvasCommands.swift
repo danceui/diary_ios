@@ -124,14 +124,14 @@ class AddStickerCommand: CanvasCommand {
 
 // MARK: - Delete Sticker
 class DeleteStickerCommand: CanvasCommand {
-    private var index: Int
-    private var stickerView: StickerView
+    private let index: Int
+    private let stickerView: StickerView
     private unowned let stickerLayer: StickerLayer
 
-    init(indexedStickerView: IndexedStickerView, stickerLayer: StickerLayer) {
-        self.index = indexedStickerView.index
-        self.stickerView = indexedStickerView.stickerView
-        self.stickerLayer = stickerLayer
+    init(stickerInfo: LayerSticker) {
+        self.index = stickerInfo.indexedStickerView.index
+        self.stickerView = stickerInfo.indexedStickerView.stickerView
+        self.stickerLayer = stickerInfo.layer
     }
 
     func execute() {

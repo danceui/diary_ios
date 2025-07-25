@@ -375,7 +375,7 @@ extension NotebookPageView {
         
         if let stickerInfo = lassoStickerInfo {
             // 删除选中的贴纸
-            let cmd = DeleteStickerCommand(indexedStickerView: stickerInfo.indexedStickerView, stickerLayer: stickerInfo.layer)
+            let cmd = DeleteStickerCommand(stickerInfo: stickerInfo)
             executeAndSave(command: cmd)
             lassoLayer.removeLassoPath()
         }
