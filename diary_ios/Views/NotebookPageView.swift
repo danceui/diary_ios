@@ -391,20 +391,41 @@ extension NotebookPageView {
         guard let lassoLayer = currentLassoLayer else { return }
         
         if let stickerInfo = lassoStickerInfo {
+            createNewStickerLayer(at: containerView.subviews.count - 1)
             // 复制选中的贴纸
             let stickerView = stickerInfo.indexedStickerView.stickerView
             let newStickerView = stickerView.copy(offset: CGPoint(x: 10, y: 10))
-            createNewStickerLayer(at: containerView.subviews.count - 1)
+            // 添加新贴纸到新图层
             handleStickerAdded(stickerView: newStickerView)
+            // 更新套索信息
             lassoStickerInfo = LayerSticker(layer: currentStickerLayer!, indexedStickerView: (currentStickerLayer!.subviews.count - 1, newStickerView))
             updateLassoPathForSticker(stickerInfo: lassoStickerInfo!, in: lassoLayer)
             return
         }
         if !lassoStrokesInfo.isEmpty {
+            createNewHandwritingLayer(at: containerView.subviews.count - 1)
             // 复制选中的笔画
-            // let cmd = DuplicateStrokesCommand(lassoStrokesInfo: lassoStrokesInfo, lassoLayer: lassoLayer)
-            // executeAndSave(command: cmd)
-            // updateLassoPathForStrokes(strokesInfo: lassoStrokesInfo, in: lassoLayer)
+            // let newStrokes: [PKStroke] = lassoStrokesInfo.flatMap { info in
+            //     info.indexedStrokes.map { (_, stroke) in stroke.copy(offset: CGPoint(x: 10, y: 10)) }
+            // }
+            var newStrokes: [PKStroke] = []
+            var newIndexedStrokes: [IndexedStroke] = []
+            var index = 0
+            for info in lassoStrokesInfo {
+                for (_, stroke) in info.indexedStrokes {
+                    index += 1
+                    let newStroke = stroke.copy(offset: CGPoint(x: 10, y: 10))
+                    let newIndexedStroke = (index, newStroke)
+                    newStrokes.append(newStroke)
+                    newIndexedStrokes.append(newIndexedStroke)
+                }
+            }
+            // 添加新笔画到新图层
+            let cmd = AddStrokesCommand(strokes: newStrokes, layer: currentHandwritingLayer!)
+            executeAndSave(command: cmd)
+            // 更新套索信息
+            lassoStrokesInfo = [LayerStrokes(layer: currentHandwritingLayer!, indexedStrokes: newIndexedStrokes)]
+            updateLassoPathForStrokes(strokesInfo: lassoStrokesInfo, in: lassoLayer)
         }
     }
 

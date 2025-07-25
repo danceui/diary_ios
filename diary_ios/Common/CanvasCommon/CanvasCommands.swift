@@ -32,6 +32,31 @@ class AddStrokeCommand: CanvasCommand {
     }
 }
 
+// MARK: - AddStroke
+class AddStrokesCommand: CanvasCommand {
+    private let strokes: [PKStroke]
+    private unowned let handwritingLayer: HandwritingLayer
+    
+    init(strokes: [PKStroke], layer: HandwritingLayer) {
+        self.strokes = strokes
+        self.handwritingLayer = layer
+    }
+
+    func execute() {
+        for stroke in strokes {
+            handwritingLayer.drawing.strokes.append(stroke)
+        }
+    }
+
+    func undo() {
+        for _ in strokes {
+            if !handwritingLayer.drawing.strokes.isEmpty {
+                handwritingLayer.drawing.strokes.removeLast()
+            }
+        }
+    }
+}
+
 // MARK: - MultiErase
 class MultiEraseCommand: CanvasCommand {
     private var eraseInfo: [LayerStrokes]
