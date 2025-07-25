@@ -405,15 +405,15 @@ extension NotebookPageView {
         if !lassoStrokesInfo.isEmpty {
             createNewHandwritingLayer(at: containerView.subviews.count - 1)
             // 复制选中的笔画
-            var newStrokes: [PKStroke] = []
-            for info in lassoStrokesInfo {
-                for (_, stroke) in info.indexedStrokes {
-                    let newStroke = stroke.copy(offset: CGPoint(x: 10, y: 10))
-                    newStrokes.append(newStroke)
+            let newStrokes: [PKStroke] = lassoStrokesInfo.flatMap { info in
+                info.indexedStrokes.map { (_, stroke) in
+                    stroke.copy(offset: CGPoint(x: 10, y: 10))
                 }
             }
             // 构建索引
-            let newIndexedStrokes: [IndexedStroke] = newStrokes.enumerated().map { (index: $0.offset, stroke: $0.element) }
+            let newIndexedStrokes: [IndexedStroke] = newStrokes.enumerated().map { (offset, element) in
+                (index: offset, stroke: element) 
+            }
             // 添加新笔画到新图层
             let cmd = AddStrokesCommand(strokes: newStrokes, layer: currentHandwritingLayer!)
             executeAndSave(command: cmd)

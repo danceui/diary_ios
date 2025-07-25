@@ -5,7 +5,7 @@ protocol CanvasCommand {
     func undo()
 }
 
-// MARK: - AddStroke
+// MARK: - Add Stroke
 class AddStrokeCommand: CanvasCommand {
     private let stroke: PKStroke
     private var strokesAppearedOnce: Bool
@@ -32,7 +32,7 @@ class AddStrokeCommand: CanvasCommand {
     }
 }
 
-// MARK: - AddStroke
+// MARK: - Add Strokes
 class AddStrokesCommand: CanvasCommand {
     private let strokes: [PKStroke]
     private unowned let handwritingLayer: HandwritingLayer
@@ -57,7 +57,7 @@ class AddStrokesCommand: CanvasCommand {
     }
 }
 
-// MARK: - MultiErase
+// MARK: - Multi Erase
 class MultiEraseCommand: CanvasCommand {
     private var eraseInfo: [LayerStrokes]
     private var strokesErasedOnce: Bool = false
@@ -94,7 +94,7 @@ class MultiEraseCommand: CanvasCommand {
     }
 }
 
-// MARK: - AddSticker
+// MARK: - Add Sticker
 class AddStickerCommand: CanvasCommand {
     private let stickerView: StickerView
     private unowned let stickerLayer: StickerLayer
@@ -122,7 +122,7 @@ class AddStickerCommand: CanvasCommand {
     }
 }
 
-// MARK: - DeleteSticker
+// MARK: - Delete Sticker
 class DeleteStickerCommand: CanvasCommand {
     private var index: Int
     private var stickerView: StickerView
@@ -147,7 +147,7 @@ class DeleteStickerCommand: CanvasCommand {
     }
 }
 
-// MARK: - MoveStrokes
+// MARK: - Move Strokes
 class MoveStrokesCommand: CanvasCommand {
     private var lassoStrokesInfo: [LayerStrokes]
     private var transform: CGAffineTransform
@@ -175,7 +175,7 @@ class MoveStrokesCommand: CanvasCommand {
     }
 }
 
-// MARK: - MoveSticker
+// MARK: - Move Sticker
 class MoveStickerCommand: CanvasCommand {
     private var stickerView: StickerView
     private var originalCenter: CGPoint

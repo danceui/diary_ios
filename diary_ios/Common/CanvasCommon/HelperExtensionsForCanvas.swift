@@ -29,10 +29,6 @@ extension PKStroke {
         return true
     }
     
-    func intersectsRect(_ rect: CGRect) -> Bool {
-        return self.renderBounds.intersects(rect)
-    }
-
     func copy(offset: CGPoint) -> PKStroke {
         let translatedPoints = self.path.map { point -> PKStrokePoint in
             return PKStrokePoint(
@@ -48,6 +44,11 @@ extension PKStroke {
         let newPath = PKStrokePath(controlPoints: translatedPoints, creationDate: self.path.creationDate)
         return PKStroke(ink: self.ink, path: newPath, transform: self.transform, mask: self.mask)
     }
+    
+    func intersectsRect(_ rect: CGRect) -> Bool {
+        return self.renderBounds.intersects(rect)
+    }
+
 }
 
 // MARK: - UIBezierPath 相关
