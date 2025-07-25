@@ -267,9 +267,10 @@ extension NotebookPageView {
         let newLayer = LassoLayer()
         newLayer.frame = bounds
         newLayer.onLassoFinished = { [weak self] path in self?.handleLassoFinished(path: path) }
+        newLayer.onStickerTapped = { [weak self] point in self?.handleStickerTapped(point: point) }
         newLayer.onLassoDragged = { [weak self] transform in self?.handleLassoDragged(transform: transform) }
         newLayer.onLassoDragFinished = { [weak self] transform in self?.handleLassoDragFinished(transform: transform) }
-        newLayer.onStickerTapped = { [weak self] point in self?.handleStickerTapped(point: point) }
+        newLayer.onDelete = { [weak self] in self?.handleDelete() }
         containerView.addSubview(newLayer)
         currentLassoLayer = newLayer
         print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
@@ -351,6 +352,23 @@ extension NotebookPageView {
         }
     }
 
+    private func handleDelete() {
+        guard let lassoLayer = currentLassoLayer else { return }
+        
+        if let view = lassoStickerView {
+            // 删除选中的贴纸
+            // let cmd = DeleteStickerCommand(stickerView: view, lassoLayer: lassoLayer)
+            // executeAndSave(command: cmd)
+            print("[P\(pageIndex)] 🗑️ Deleted sticker \(view.sticker.id)")
+        }
+        if !lassoStrokesInfo.isEmpty {
+            // 删除选中的笔画
+            let cmd = MultiEraseCommand(eraseInfo: lassoStrokesInfo, strokesErasedOnce: true)
+            executeAndSave(command: cmd)
+            lassoLayer.removeLassoPath()
+            print("[P\(pageIndex)] 🗑️ Deleted selected strokes")
+        }
+    }
 
     // 辅助函数
     private func updateLassoStrokesInfo() {

@@ -3,9 +3,10 @@ import PencilKit
 
 class LassoLayer: UIView {
     var onLassoFinished: ((UIBezierPath) -> Void)?
+    var onStickerTapped: ((CGPoint) -> Void)?
     var onLassoDragged: ((CGAffineTransform) -> Void)?
     var onLassoDragFinished: ((CGAffineTransform) -> Void)?
-    var onStickerTapped: ((CGPoint) -> Void)?
+    var onDelete: (() -> Void)?
 
     private var lassoPath = UIBezierPath()
     private var originalLassoPath = UIBezierPath()
@@ -190,8 +191,8 @@ class LassoLayer: UIView {
             return btn
         }
 
-        deleteBtn = createButton(imageName: "xmark.circle.fill", tint: .systemRed, size: 35, action: #selector(didTapDelete))
-        copyBtn = createButton(imageName: "rectangle.fill.on.rectangle.fill", tint: .systemBlue, size: 30, action: #selector(didTapCopy))
+        deleteBtn = createButton(imageName: "xmark.circle.fill", tint: .systemRed, size: 33, action: #selector(didTapDelete))
+        copyBtn = createButton(imageName: "rectangle.fill.on.rectangle.fill", tint: .systemBlue, size: 32, action: #selector(didTapCopy))
         scaleBtn = createButton(imageName: "crop.rotate", tint: .darkGray, size: 40, action: #selector(didTapScale))
 
         updateButtonsWithLassoPath() // 初始化位置
@@ -220,7 +221,7 @@ class LassoLayer: UIView {
 
     @objc private func didTapDelete() {
         print("Delete button tapped")
-        removeLassoPath()
+        onDelete?()
     }
 
     @objc private func didTapCopy() {
