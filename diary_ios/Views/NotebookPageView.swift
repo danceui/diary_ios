@@ -251,7 +251,7 @@ extension NotebookPageView: EraserLayerDelegate {
         pendingEraseInfo.removeAll()
     }
     
-    func updateLayerIndexedStrokeInfo() {
+    private func updateLayerIndexedStrokeInfo() {
         layerStrokesInfo.removeAll()
         for layer in handwritingLayers {
             let strokes = layer.drawing.strokes
@@ -350,7 +350,7 @@ extension NotebookPageView {
             var view = stickerInfo.indexedStickerView.stickerView
             let cmd = MoveStickerCommand(stickerView: view, lassoLayer: lassoLayer, transform: transform, stickerMovedOnce: false)
             executeAndSave(command: cmd)
-            view.sticker.center = view.center
+            updateLassoStickerInfo()
         }
         if !lassoStrokesInfo.isEmpty {
             // 有笔画被选中，提交移动命令
@@ -388,6 +388,15 @@ extension NotebookPageView {
             }
             return updatedIndexed.isEmpty ? nil : LayerStrokes(layer: info.layer, indexedStrokes: updatedIndexed)
         }
+    }
+
+    private func updateLassoStickerInfo() {
+        guard let stickerInfo = lassoStickerInfo else { return }
+        let layer = stickerInfo.layer
+        let index = stickerInfo.indexedStickerView.index
+        let view = stickerInfo.indexedStickerView.stickerView
+        view.sticker.center = view.center
+        lassoStickerInfo = LayerSticker(layer: layer, indexedStickerView: (index, view))
     }
 
     private func updateLassoPathForSticker(stickerInfo: LayerSticker, in lassoLayer: LassoLayer) {

@@ -169,11 +169,14 @@ class MoveStickerCommand: CanvasCommand {
             stickerMovedOnce = true
             return
         }
-        stickerView.center = originalCenter.applying(transform)
+        let newCenter = originalCenter.applying(transform)
+        stickerView.center = newCenter
+        stickerView.sticker.center = newCenter
     }
 
     func undo() {
         stickerView.center = originalCenter
+        stickerView.sticker.center = originalCenter 
         lassoLayer?.removeLassoPath()
     }
 }
