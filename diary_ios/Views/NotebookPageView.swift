@@ -25,7 +25,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var layerStrokesInfo: [LayerStrokes] = [] // 缓存每个 layer 的笔画信息
     private var pendingEraseInfo: [LayerStrokes] = [] // 记录每个 layer 待擦除的笔画信息
     private var lassoStrokesInfo: [LayerStrokes] = [] // 记录套索选中的每个 layer 的笔画信息
-    private var lassoStickerView: StickerView? // 记录套索选中的贴纸信息
+    private var lassoStickerInfo: LayerSticker? // 记录套索选中的贴纸信息
 
     private var isObservingTool: Bool = false
 
@@ -276,10 +276,11 @@ extension NotebookPageView {
         print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
     }
 
+    // MARK: - Lasso触摸处理
     private func handleLassoFinished(path: UIBezierPath) {
         guard let lassoLayer = currentLassoLayer else { return }
         lassoStrokesInfo.removeAll()
-        lassoStickerView = nil
+        lassoStickerInfo = nil
         for layer in handwritingLayers {
             let strokes = layer.drawing.strokes
             var selected: [IndexedStroke] = []
@@ -305,16 +306,21 @@ extension NotebookPageView {
     private func handleStickerTapped(point: CGPoint) {
         guard let lassoLayer = currentLassoLayer else { return }
         lassoStrokesInfo.removeAll()
-        lassoStickerView = nil
+        lassoStickerInfo = nil
         // 从顶层到低层寻找贴纸（优先最上方）
         for layer in stickerLayers.reversed() {
             for view in layer.stickerViews.reversed() {
                 let convertedPoint = view.convert(point, from: lassoLayer)
                 if view.bounds.contains(convertedPoint) {
-                    lassoStickerView = view
-                    updateLassoPathForSticker(view: view, in: lassoLayer)
-                    print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
-                    return
+                    // 找到 stickerView 在该 layer 中的索引
+                    if let index = layer.stickerViews.firstIndex(of: view) {
+                        let indexed = (index: index, stickerView: view)
+                        lassoStickerInfo = LayerSticker(layer: layer, indexedStickerView: indexed)
+                        guard let stickerInfo = lassoStickerInfo else { return }
+                        updateLassoPathForSticker(stickerInfo: stickerInfo, in: lassoLayer)
+                        print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
+                        return
+                    }
                 }
             }
         }
@@ -323,8 +329,9 @@ extension NotebookPageView {
     private func handleLassoDragged(transform: CGAffineTransform) {
         guard let lassoLayer = currentLassoLayer else { return }
         
-        if let view = lassoStickerView {
+        if let stickerInfo = lassoStickerInfo {
             // 有贴纸被选中，实时更新贴纸及其套索位置
+            var view = stickerInfo.indexedStickerView.stickerView
             view.center = view.sticker.center.applying(transform)
             lassoLayer.updateLassoPath(transform: transform)
         }
@@ -338,8 +345,9 @@ extension NotebookPageView {
     private func handleLassoDragFinished(transform: CGAffineTransform) {
         guard let lassoLayer = currentLassoLayer else { return }
         
-        if let view = lassoStickerView {
+        if let stickerInfo = lassoStickerInfo {
             // 有贴纸被选中，提交移动命令
+            var view = stickerInfo.indexedStickerView.stickerView
             let cmd = MoveStickerCommand(stickerView: view, lassoLayer: lassoLayer, transform: transform, stickerMovedOnce: false)
             executeAndSave(command: cmd)
             view.sticker.center = view.center
@@ -352,25 +360,25 @@ extension NotebookPageView {
         }
     }
 
+    // MARK: - Lasso按钮
     private func handleDelete() {
         guard let lassoLayer = currentLassoLayer else { return }
         
-        if let view = lassoStickerView {
+        if let stickerInfo = lassoStickerInfo {
             // 删除选中的贴纸
-            // let cmd = DeleteStickerCommand(stickerView: view, lassoLayer: lassoLayer)
-            // executeAndSave(command: cmd)
-            print("[P\(pageIndex)] 🗑️ Deleted sticker \(view.sticker.id)")
+            let cmd = DeleteStickerCommand(indexedStickerView: stickerInfo.indexedStickerView, stickerLayer: stickerInfo.layer)
+            executeAndSave(command: cmd)
+            lassoLayer.removeLassoPath()
         }
         if !lassoStrokesInfo.isEmpty {
             // 删除选中的笔画
             let cmd = MultiEraseCommand(eraseInfo: lassoStrokesInfo, strokesErasedOnce: true)
             executeAndSave(command: cmd)
             lassoLayer.removeLassoPath()
-            print("[P\(pageIndex)] 🗑️ Deleted selected strokes")
         }
     }
 
-    // 辅助函数
+    // MARK: - Lasso辅助函数
     private func updateLassoStrokesInfo() {
         lassoStrokesInfo = lassoStrokesInfo.compactMap { info in
             let allStrokes = info.layer.drawing.strokes
@@ -382,7 +390,8 @@ extension NotebookPageView {
         }
     }
 
-    private func updateLassoPathForSticker(view: StickerView, in lassoLayer: LassoLayer) {
+    private func updateLassoPathForSticker(stickerInfo: LayerSticker, in lassoLayer: LassoLayer) {
+        let view = stickerInfo.indexedStickerView.stickerView
         let frameInLasso = lassoLayer.convert(view.frame, from: view.superview)
         let path = UIBezierPath(rect: frameInLasso.insetBy(dx: inset, dy: inset))
         lassoLayer.configureLassoPath(path: path)

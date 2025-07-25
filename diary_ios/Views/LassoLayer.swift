@@ -220,7 +220,6 @@ class LassoLayer: UIView {
     }
 
     @objc private func didTapDelete() {
-        print("Delete button tapped")
         onDelete?()
     }
 

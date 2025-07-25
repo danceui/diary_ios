@@ -95,6 +95,31 @@ class AddStickerCommand: CanvasCommand {
     }
 }
 
+// MARK: - DeleteSticker
+class DeleteStickerCommand: CanvasCommand {
+    private var index: Int
+    private var stickerView: StickerView
+    private unowned let stickerLayer: StickerLayer
+
+    init(indexedStickerView: IndexedStickerView, stickerLayer: StickerLayer) {
+        self.index = indexedStickerView.index
+        self.stickerView = indexedStickerView.stickerView
+        self.stickerLayer = stickerLayer
+    }
+
+    func execute() {
+        stickerView.removeFromSuperview()
+        stickerLayer.stickerViews.remove(at: index)
+        stickerLayer.stickers.remove(at: index)
+    }
+
+    func undo() {
+        stickerLayer.stickerViews.insert(stickerView, at: index)
+        stickerLayer.stickers.insert(stickerView.sticker, at: index)
+        stickerLayer.addSubview(stickerView) 
+    }
+}
+
 // MARK: - MoveStrokes
 class MoveStrokesCommand: CanvasCommand {
     private var lassoStrokesInfo: [LayerStrokes]

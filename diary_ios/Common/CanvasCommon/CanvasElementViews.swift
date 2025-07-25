@@ -16,6 +16,13 @@ struct Sticker {
     var name: String
 }
 
+typealias IndexedStickerView = (index: Int, stickerView: StickerView)
+
+struct LayerSticker {
+    let layer: StickerLayer
+    var indexedStickerView: IndexedStickerView
+}
+
 // 贴纸视图（仅显示，不支持交互）
 class StickerView: UIImageView {
     var sticker: Sticker
