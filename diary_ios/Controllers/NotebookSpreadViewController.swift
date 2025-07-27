@@ -1,5 +1,9 @@
 import UIKit
 
+protocol NotebookSpreadLayoutDelegate: AnyObject {
+    func currentSpreadContentSize() -> CGSize
+}
+
 @available(iOS 16.0, *)
 class NotebookSpreadViewController: UIViewController, UIGestureRecognizerDelegate  {
     private lazy var flipController = FlipAnimatorController(host: self)

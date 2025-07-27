@@ -1,5 +1,9 @@
 import UIKit
 
+protocol NotebookZoomStateDelegate: AnyObject {
+    func isNotebookZoomedIn() -> Bool
+}
+
 extension NotebookZoomableViewController: NotebookSpreadLayoutDelegate {
     func currentSpreadContentSize() -> CGSize { return spreadContainer.frame.size }
 }
