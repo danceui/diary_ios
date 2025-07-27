@@ -1,63 +1,72 @@
 import SwiftUI
+import UIKit
 
 @available(iOS 16.0, *)
 struct ContentView: View {
     private let notebookSpreadViewController = NotebookSpreadViewController()
-    
+
     var body: some View {
-        VStack(spacing: 0) {
-            NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController)
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController)
+                Spacer() // 让内容不被工具栏遮挡
+            }
             ToolBarView(notebookSpreadViewController: notebookSpreadViewController)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
-    
+
     @available(iOS 16.0, *)
     struct ToolBarView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
-        
+
         var body: some View {
-            HStack(spacing: 20) {
-                // 工具选择
-                Picker("", selection: $selectedTool) {
-                    Text("Pen").tag(Tool.pen)
-                    Text("Eraser").tag(Tool.eraser)
-                    Text("Highlighter").tag(Tool.highlighter)
-                    Text("Sticker").tag(Tool.sticker)
-                    Text("Lasso").tag(Tool.lasso)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .onChange(of: selectedTool) { newTool in
-                    ToolManager.shared.currentTool = newTool
-                    // switch newTool {
-                    // case .pen:
-                    //     ToolManager.shared.strokeColor = .black
-                    //     ToolManager.shared.strokeWidth = 5.0
-                    // case .highlighter:
-                    //     ToolManager.shared.strokeColor = UIColor.yellow.withAlphaComponent(0.5)
-                    //     ToolManager.shared.strokeWidth = 10.0
-                    // case .eraser:
-                    //     break // 颜色／粗细在 HandwritingLayer 忽略
-                    // case .sticker:
-                    //     break // 颜色／粗细忽略
-                    // }
+            HStack(spacing: 24) {
+                toolButton(icon: "pencil.tip", tool: .pen)
+                toolButton(icon: "paintbrush.pointed.fill", tool: .highlighter)
+                toolButton(icon: "eraser.fill", tool: .eraser)
+                toolButton(icon: "sparkles", tool: .sticker)
+                toolButton(icon: "lasso", tool: .lasso)
+
+                Divider().frame(height: 24)
+
+                Button(action: {
+                    notebookSpreadViewController.undo()
+                }) {
+                    Image(systemName: "arrow.uturn.backward")
                 }
 
-                Divider().frame(height: 20)
-                
-                // 撤销／重做／加页
-                Button("Undo") {
-                    notebookSpreadViewController.undo()
-                }
-                Button("Redo") {
+                Button(action: {
                     notebookSpreadViewController.redo()
+                }) {
+                    Image(systemName: "arrow.uturn.forward")
                 }
-                Button("Add Page") {
+
+                Button(action: {
                     notebookSpreadViewController.addNewPagePair()
+                }) {
+                    Image(systemName: "plus.square.on.square")
                 }
             }
-            .padding()
-            .background(Color(UIColor.secondarySystemBackground))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(.ultraThinMaterial) // 半透明磨砂效果
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+        }
+
+        func toolButton(icon: String, tool: Tool) -> some View {
+            Button(action: {
+                selectedTool = tool
+                ToolManager.shared.currentTool = tool
+            }) {
+                Image(systemName: icon)
+                    .foregroundColor(selectedTool == tool ? .accentColor : .primary)
+                    .font(.system(size: 18, weight: .medium))
+            }
         }
     }
 }
