@@ -18,13 +18,6 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var lastZoomScale = NotebookConstants.defaultZoomScale
     private var isZoomedIn = false
 
-
-    private let defaultZoomScale = NotebookConstants.defaultZoomScale
-    private let maxZoomScaleForCentering = NotebookConstants.maxZoomScaleForCentering
-    private let horizontalPadding = ZoomConstants.horizontalPadding
-    private let verticalPadding = ZoomConstants.verticalPadding
-    private let verticalTolerance = ZoomConstants.verticalTolerance
-
     // MARK: - 生命周期
     init(notebookSpreadViewController: NotebookSpreadViewController) {
         super.init(nibName: nil, bundle: nil)
@@ -60,7 +53,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         scrollView.addSubview(spreadContainer)
 
         scrollView.delegate = self
-        scrollView.backgroundColor = .clear
+        scrollView.backgroundColor = backgroundColor
         scrollView.minimumZoomScale = NotebookConstants.minZoomScale
         scrollView.maximumZoomScale = NotebookConstants.maxZoomScale
         scrollView.showsVerticalScrollIndicator = false
@@ -170,6 +163,14 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         super.viewDidDisappear(animated)
         printLifeCycleInfo(context: "[\(type(of: self))] 9️⃣ viewDidDisappear", for: view)
     }
+
+    // MARK: - 常量
+    private let defaultZoomScale = NotebookConstants.defaultZoomScale
+    private let maxZoomScaleForCentering = NotebookConstants.maxZoomScaleForCentering
+    private let horizontalPadding = ZoomConstants.horizontalPadding
+    private let verticalPadding = ZoomConstants.verticalPadding
+    private let verticalTolerance = ZoomConstants.verticalTolerance
+    private let backgroundColor = ZoomConstants.backgroundColor
 
     // MARK: - 测试用
     private func setupTestFunctions() {

@@ -8,8 +8,7 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
-                NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController)
-                Spacer() // 让内容不被工具栏遮挡
+                NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
             }
             ToolBarView(notebookSpreadViewController: notebookSpreadViewController)
                 .padding(.horizontal, 20)
