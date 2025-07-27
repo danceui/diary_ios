@@ -4,12 +4,8 @@ import PencilKit
 @available(iOS 16.0, *)
 class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private let pageRole: PageRole
-    var pageIndex: Int
     private let isLeft: Bool
-    private let pageCornerRadius = PageConstants.pageCornerRadius
-    private let inset = LassoConstants.inset
-    private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
-    private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
+    var pageIndex: Int
     private(set) var lastEditedTimestamp: Date?
 
     private var containerView = UIView()
@@ -64,9 +60,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private func backgroundColorForRole(_ role: PageRole) -> UIColor {
         switch role {
         case .normal:
-            return UIColor(red: 0.76, green: 0.88, blue: 0.77, alpha: 1)
+            return normalBackgroundColor
         case .cover, .back:
-            return UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
+            return coverBackgroundColor
         case .empty:
             return .clear
         }
@@ -154,6 +150,14 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
         updateLayerIndexedStrokeInfo()
         print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
+
+    // MARK: - Page 常量
+    private let pageCornerRadius = PageConstants.pageCornerRadius
+    private let inset = LassoConstants.inset
+    private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
+    private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
+    private let normalBackgroundColor: UIColor = PageConstants.normalBackgroundColor
+    private let coverBackgroundColor: UIColor = PageConstants.coverBackgroundColor
 }
 
 // MARK: - Handwriting Layer 回调
