@@ -6,13 +6,15 @@ struct ContentView: View {
     private let notebookSpreadViewController = NotebookSpreadViewController()
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
+        ZStack(alignment: .topLeading) {
+            NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
+            VStack {
+                Spacer()
+                ToolBarView(notebookSpreadViewController: notebookSpreadViewController)
+                    .padding(.leading, 30)
+                Spacer()
             }
-            ToolBarView(notebookSpreadViewController: notebookSpreadViewController)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+            .frame(maxWidth: .infinity, alignment: .leading) // 左侧工具栏
         }
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
@@ -23,14 +25,14 @@ struct ContentView: View {
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
 
         var body: some View {
-            HStack(spacing: 24) {
+            VStack(spacing: 24) {
                 toolButton(icon: "pencil.tip", tool: .pen)
                 toolButton(icon: "paintbrush.pointed.fill", tool: .highlighter)
                 toolButton(icon: "eraser.fill", tool: .eraser)
                 toolButton(icon: "sparkles", tool: .sticker)
                 toolButton(icon: "lasso", tool: .lasso)
 
-                Divider().frame(height: 24)
+                Divider().frame(width: 24)
 
                 Button(action: {
                     notebookSpreadViewController.undo()
@@ -50,8 +52,7 @@ struct ContentView: View {
                     Image(systemName: "plus.square.on.square")
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(12)
             .background(.ultraThinMaterial) // 半透明磨砂效果
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)

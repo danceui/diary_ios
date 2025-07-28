@@ -17,7 +17,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var spreadContainer = UIView(frame: CGRect(origin: .zero, 
                                     size: CGSize(
                                         width: PageConstants.pageSize.size.width * 2 + ZoomConstants.leftPadding + ZoomConstants.rightPadding, 
-                                        height: PageConstants.pageSize.size.height + ZoomConstants.verticalPadding * 2)))
+                                        height: PageConstants.pageSize.size.height + ZoomConstants.topPadding + ZoomConstants.bottomPadding)))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var lastZoomScale = NotebookConstants.defaultZoomScale
     private var isZoomedIn = false
@@ -79,8 +79,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
 
         notebookSpreadViewController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor, constant: verticalPadding),
-            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor, constant: -verticalPadding),
+            notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor, constant: topPadding),
+            notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor, constant: -bottomPadding),
             notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor, constant: leftPadding),
             notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor, constant: -rightPadding)
         ])
@@ -173,7 +173,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private let maxZoomScaleForCentering = NotebookConstants.maxZoomScaleForCentering
     private let leftPadding = ZoomConstants.leftPadding
     private let rightPadding = ZoomConstants.rightPadding
-    private let verticalPadding = ZoomConstants.verticalPadding
+    private let topPadding = ZoomConstants.topPadding
+    private let bottomPadding = ZoomConstants.bottomPadding
     private let verticalTolerance = ZoomConstants.verticalTolerance
     private let backgroundColor = ZoomConstants.backgroundColor
 
