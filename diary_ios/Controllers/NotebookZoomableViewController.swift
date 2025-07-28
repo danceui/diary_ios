@@ -16,7 +16,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     private var scrollView = UIScrollView()
     private var spreadContainer = UIView(frame: CGRect(origin: .zero, 
                                     size: CGSize(
-                                        width: PageConstants.pageSize.size.width * 2 + ZoomConstants.horizontalPadding * 2, 
+                                        width: PageConstants.pageSize.size.width * 2 + ZoomConstants.leftPadding + ZoomConstants.rightPadding, 
                                         height: PageConstants.pageSize.size.height + ZoomConstants.verticalPadding * 2)))
     private var notebookSpreadViewController = NotebookSpreadViewController()
     private var lastZoomScale = NotebookConstants.defaultZoomScale
@@ -81,8 +81,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         NSLayoutConstraint.activate([
             notebookSpreadViewController.view.topAnchor.constraint(equalTo: spreadContainer.topAnchor, constant: verticalPadding),
             notebookSpreadViewController.view.bottomAnchor.constraint(equalTo: spreadContainer.bottomAnchor, constant: -verticalPadding),
-            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor, constant: horizontalPadding),
-            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor, constant: -horizontalPadding)
+            notebookSpreadViewController.view.leadingAnchor.constraint(equalTo: spreadContainer.leadingAnchor, constant: leftPadding),
+            notebookSpreadViewController.view.trailingAnchor.constraint(equalTo: spreadContainer.trailingAnchor, constant: -rightPadding)
         ])
         // 强制立即布局，确保约束生效，spreadContainer frame 正确
         spreadContainer.layoutIfNeeded()
@@ -171,7 +171,8 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
     // MARK: - 常量
     private let defaultZoomScale = NotebookConstants.defaultZoomScale
     private let maxZoomScaleForCentering = NotebookConstants.maxZoomScaleForCentering
-    private let horizontalPadding = ZoomConstants.horizontalPadding
+    private let leftPadding = ZoomConstants.leftPadding
+    private let rightPadding = ZoomConstants.rightPadding
     private let verticalPadding = ZoomConstants.verticalPadding
     private let verticalTolerance = ZoomConstants.verticalTolerance
     private let backgroundColor = ZoomConstants.backgroundColor
