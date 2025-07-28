@@ -29,7 +29,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         self.notebookSpreadViewController.layoutDelegate = self
         self.notebookSpreadViewController.zoomStateDelegate = self
         self.notebookSpreadViewController.onProgressChanged = { [weak self] offset in
-            self?.centerContent(xOffset: offset)
+            self?.centerSpreadContainer(xOffset: offset)
         }
     }
 
@@ -48,7 +48,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         if scrollView.zoomScale != lastZoomScale {
             scrollView.setZoomScale(lastZoomScale, animated: false)
         }
-        centerContent()
+        centerSpreadContainer()
     }
 
     // MARK: - Setup
@@ -102,11 +102,11 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         lastZoomScale = scrollView.zoomScale
         scrollView.panGestureRecognizer.minimumNumberOfTouches = lastZoomScale <= maxZoomScaleForCentering ? 2 : 1
         if notebookSpreadViewController.currentLeftIndex == 0 {
-            centerContent(xOffset: -spreadContainer.frame.size.width / 4)
+            centerSpreadContainer(xOffset: -spreadContainer.frame.size.width / 4)
         } else if notebookSpreadViewController.currentLeftIndex == notebookSpreadViewController.pageCount - 2 {
-            centerContent(xOffset: spreadContainer.frame.size.width / 4)
+            centerSpreadContainer(xOffset: spreadContainer.frame.size.width / 4)
         } else {
-            centerContent()
+            centerSpreadContainer()
         }
     }
 
@@ -116,7 +116,7 @@ class NotebookZoomableViewController: UIViewController, UIScrollViewDelegate {
         printLayoutInfo(context: "Double Tap")
     }
 
-    private func centerContent(xOffset: CGFloat = 0) {
+    private func centerSpreadContainer(xOffset: CGFloat = 0) {
         let scrollSize = scrollView.bounds.size
         let contentSize = scrollView.contentSize
         let centerX = max((scrollSize.width - contentSize.width) / 2, 0) + contentSize.width / 2
