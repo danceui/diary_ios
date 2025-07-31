@@ -64,11 +64,15 @@ struct ContentView: View {
                                         opacity: style.opacity
                                     )
                                 }) {
-                                    Circle()
-                                        .fill(fillColor)
-                                        .frame(width: size, height: size)
-                                        .overlay(Circle().stroke(Color.black.opacity(0.2), lineWidth: 1))
+                                    let previewColor = style.color?.toColor() ?? .gray
+                                    let previewWidth = CGFloat(style.width ?? 6)
+                                    Image(systemName: "bolt.horizontal.fill")
+                                        .foregroundColor(previewColor)
+                                        // .font(.system(size: 24, weight: fontWeight(for: previewWidth)))
+                                        .frame(width: 28, height: 28)
+                                        .background(.clear)
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                     }
