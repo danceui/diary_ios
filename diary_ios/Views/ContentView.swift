@@ -19,7 +19,7 @@ struct ContentView: View {
             // 右上角功能按钮栏
             VStack {
                 FunctionToolBar(notebookSpreadViewController: notebookSpreadViewController)
-                    .padding(.top, 40)
+                    .padding(.top, 10)
                     .padding(.trailing, 30)
                 Spacer()
             }

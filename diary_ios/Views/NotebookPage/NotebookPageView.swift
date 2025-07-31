@@ -75,7 +75,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
             if currentHandwritingLayer == nil {
                 createNewHandwritingLayer()
             }
-            currentHandwritingLayer?.setTool(tool: tool)
+            currentHandwritingLayer?.setTool(tool: tool, style: style)
         } else if tool.isEraser {
             if currentEraserLayer == nil {
                 createNewEraserLayer()

@@ -29,12 +29,21 @@ class HandwritingLayer: PKCanvasView {
     }
     
     // MARK: - 切换工具
-    func setTool(tool: Tool, color: UIColor = .black, width: CGFloat = 2.0) {
+    func setTool(tool: Tool, style: ToolStyle?) {
+        let color = style?.color ?? UIColor.black
+        let finalColor: UIColor
+        if let opacity = style?.opacity {
+            finalColor = color.withAlphaComponent(opacity)
+        } else {
+            finalColor = color
+        }
+        let width = style?.width ?? 4
+
         switch tool {
         case .pen:
-            self.tool = PKInkingTool(.pen, color: color, width: width)
+            self.tool = PKInkingTool(.pen, color: finalColor, width: width)
         case .highlighter:
-            self.tool = PKInkingTool(.marker, color: color, width: width)
+            self.tool = PKInkingTool(.marker, color: finalColor, width: width)
         default:
             break
         }
