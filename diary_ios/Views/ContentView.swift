@@ -35,31 +35,44 @@ struct ContentView: View {
         var body: some View {
             VStack(spacing: 24) {
                 // 工具选择区
-                toolButton(icon: "pencil.tip", tool: .pen)
-                toolButton(icon: "paintbrush.pointed.fill", tool: .highlighter)
-                toolButton(icon: "eraser.fill", tool: .eraser)
-                toolButton(icon: "sparkles", tool: .sticker)
-                toolButton(icon: "lasso", tool: .lasso)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        toolButton(icon: "pencil.tip", tool: .pen)
+                        toolButton(icon: "paintbrush.pointed.fill", tool: .highlighter)
+                        toolButton(icon: "eraser.fill", tool: .eraser)
+                        toolButton(icon: "sparkles", tool: .sticker)
+                        toolButton(icon: "lasso", tool: .lasso)
+                    }
+                }
+                .frame(height: 160) // 固定工具选择区高度
                 // 分割线
                 Divider()
                     .frame(width: 24)
                     .padding(.top, 8)
                 // 样式预设区：仅支持样式的工具显示
                 if selectedTool.supportColor || selectedTool.supportWidth {
-                    VStack(spacing: 12) {
-                        ForEach(presetStyles(for: selectedTool), id: \.self) { style in
-                            let fillColor = style.color?.toColor() ?? .gray
-                            let size = CGFloat(style.width ?? 8)
-                            Button(action: {
-                                ToolManager.shared.setStyle(for: selectedTool, color: style.color, width: style.width, opacity: style.opacity)
-                            }) {
-                                Circle()
-                                    .fill(fillColor)
-                                    .frame(width: size, height: size)
-                                    .overlay(Circle().stroke(Color.black.opacity(0.2), lineWidth: 1))
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 12) {
+                            ForEach(presetStyles(for: selectedTool), id: \.self) { style in
+                                let fillColor = style.color?.toColor() ?? .gray
+                                let size = CGFloat(style.width ?? 8)
+                                Button(action: {
+                                    ToolManager.shared.setStyle(
+                                        for: selectedTool,
+                                        color: style.color,
+                                        width: style.width,
+                                        opacity: style.opacity
+                                    )
+                                }) {
+                                    Circle()
+                                        .fill(fillColor)
+                                        .frame(width: size, height: size)
+                                        .overlay(Circle().stroke(Color.black.opacity(0.2), lineWidth: 1))
+                                }
                             }
                         }
                     }
+                    .frame(height: 120) // 固定样式区高度
                     .transition(.opacity)
                 }
             }
