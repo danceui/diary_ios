@@ -1,5 +1,6 @@
 import UIKit
 import PencilKit
+import SwiftUI
 
 // MARK: - CGPoint 相关
 extension CGPoint {
@@ -53,4 +54,10 @@ extension PKStroke {
 
 // MARK: - UIBezierPath 相关
 extension UIBezierPath {
+}
+
+extension UIColor {
+    func toColor() -> Color {
+        Color(self)
+    }
 }

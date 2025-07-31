@@ -44,16 +44,18 @@ struct ContentView: View {
                 Divider()
                     .frame(width: 24)
                     .padding(.top, 8)
-                // 工具样式区
-                if selectedTool == .pen || selectedTool == .highlighter {
+                // 样式预设区：仅支持样式的工具显示
+                if selectedTool.supportColor || selectedTool.supportWidth {
                     VStack(spacing: 12) {
                         ForEach(presetStyles(for: selectedTool), id: \.self) { style in
+                            let fillColor = style.color?.toColor() ?? .gray
+                            let size = CGFloat(style.width ?? 8)
                             Button(action: {
-                                ToolManager.shared.applyStyle(tool: selectedTool, color: style.color, width: style.width)
+                                ToolManager.shared.setStyle(for: selectedTool, color: style.color, width: style.width, opacity: style.opacity)
                             }) {
                                 Circle()
-                                    .fill(style.color)
-                                    .frame(width: CGFloat(style.width), height: CGFloat(style.width))
+                                    .fill(fillColor)
+                                    .frame(width: size, height: size)
                                     .overlay(Circle().stroke(Color.black.opacity(0.2), lineWidth: 1))
                             }
                         }
@@ -77,23 +79,24 @@ struct ContentView: View {
                     .font(.system(size: 18, weight: .medium))
             }
         }
-        
-        func presetStyles(for tool: Tool) -> [ToolStylePreset] {
-            // 你可以根据需求添加更多样式组合
-            if tool == .pen {
+
+        func presetStyles(for tool: Tool) -> [ToolStyle] {
+            switch tool {
+            case .pen:
                 return [
-                    ToolStylePreset(color: .black, width: 6),
-                    ToolStylePreset(color: .blue, width: 4),
-                    ToolStylePreset(color: .red, width: 8)
+                    ToolStyle(color: UIColor.black, width: 4, opacity: 1.0),
+                    ToolStyle(color: UIColor.blue, width: 6, opacity: 1.0),
+                    ToolStyle(color: UIColor.red, width: 3, opacity: 1.0)
                 ]
-            } else if tool == .highlighter {
+            case .highlighter:
                 return [
-                    ToolStylePreset(color: .yellow.opacity(0.5), width: 12),
-                    ToolStylePreset(color: .green.opacity(0.5), width: 10),
-                    ToolStylePreset(color: .orange.opacity(0.5), width: 14)
+                    ToolStyle(color: UIColor.yellow.withAlphaComponent(0.5), width: 10, opacity: 0.5),
+                    ToolStyle(color: UIColor.green.withAlphaComponent(0.5), width: 12, opacity: 0.4),
+                    ToolStyle(color: UIColor.orange.withAlphaComponent(0.5), width: 14, opacity: 0.6)
                 ]
+            default:
+                return []
             }
-            return []
         }
     }
 

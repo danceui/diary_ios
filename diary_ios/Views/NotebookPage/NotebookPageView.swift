@@ -69,7 +69,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     }
 
     // MARK: - 切换工具
-    func toolDidChange(tool: Tool) {
+    func toolDidChange(tool: Tool, style: ToolStyle?) {
         removeCurrentLayers()
         if tool.isDrawing {
             if currentHandwritingLayer == nil {

@@ -6,46 +6,45 @@ enum Tool {
     case sticker
     case lasso
 
-    var isDrawing: Bool {
-        switch self {
-        case .pen, .highlighter:
-            return true
-        default:
-            return false
-        }
-    }
+    var isDrawing: Bool { self == .pen || self == .highlighter }
+    var isSticker: Bool { self == .sticker }
+    var isEraser: Bool { self == .eraser }
+    var isLasso: Bool { self == .lasso }
 
-    var isSticker: Bool {
-        if case .sticker = self { return true }
-        return false
-    }
+    var supportColor: Bool { self == .pen || self == .highlighter }
+    var supportWidth: Bool { self == .pen || self == .highlighter || self == .eraser }
+    var supportOpacity: Bool { self == .pen || self == .highlighter }
+}
 
-    var isEraser: Bool {
-        if case .eraser = self { return true }
-        return false
-    }
-
-    var isLasso: Bool {
-        if case .lasso = self { return true }
-        return false
-    }
+struct ToolStyle: Hashable {
+    var color: UIColor?
+    var width: CGFloat?
+    var opacity: CGFloat?
 }
 
 protocol ToolObserver: AnyObject {
-    func toolDidChange(tool: Tool)
+    func toolDidChange(tool: Tool, style: ToolStyle?)
 }
 
 class ToolManager {
     static let shared = ToolManager()
-    private init() {}
+    private init() {
+        toolStyles = [
+            .pen: ToolStyle(color: .black, width: 4, opacity: 1.0),
+            .highlighter: ToolStyle(color: UIColor.yellow.withAlphaComponent(0.5), width: 6, opacity: 0.5),
+            .eraser: ToolStyle(color: nil, width: 10, opacity: nil),
+            .sticker: ToolStyle(color: nil, width: nil, opacity: nil),
+            .lasso: ToolStyle(color: nil, width: nil, opacity: nil)
+        ]
+    }
     
-     var currentTool: Tool = .pen { didSet { notifyToolChange() } }
-
+    var currentTool: Tool = .pen { didSet { notifyToolChange() } }
     private var observers = NSHashTable<AnyObject>.weakObjects()
+    private var toolStyles: [Tool: ToolStyle] = [:]
 
     func addObserver(_ observer: ToolObserver) {
         observers.add(observer)
-        observer.toolDidChange(tool: currentTool)
+        observer.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
     }
 
     func removeObserver(_ observer: ToolObserver) {
@@ -53,10 +52,26 @@ class ToolManager {
     }
 
     private func notifyToolChange() {
+        let style = toolStyles[currentTool]
         for observer in observers.allObjects {
-            if let observer = observer as? ToolObserver {
-                observer.toolDidChange(tool: currentTool)
-            }
+            (observer as? ToolObserver)?.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
+        }
+    }
+
+    func style(for tool: Tool) -> ToolStyle? {
+        return toolStyles[tool]
+    }
+
+    func setStyle(for tool: Tool, color: UIColor? = nil, width: CGFloat? = nil, opacity: CGFloat? = nil) {
+        var style = toolStyles[tool] ?? ToolStyle(color: nil, width: nil, opacity: nil)
+        if let color = color { style.color = color }
+        if let width = width { style.width = width }
+        if let opacity = opacity { style.opacity = opacity }
+        toolStyles[tool] = style
+
+        // 如果是当前工具，主动刷新 UI
+        if tool == currentTool {
+            notifyToolChange()
         }
     }
 }
