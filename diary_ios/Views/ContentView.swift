@@ -37,7 +37,7 @@ struct ContentView: View {
                 // 工具选择区
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 24) {
-                        toolButton(icon: "pencil.tip", tool: .pen)
+                        customToolButton(icon: "pen_drawing", tool: .pen)
                         toolButton(icon: "paintbrush.pointed.fill", tool: .highlighter)
                         toolButton(icon: "eraser.fill", tool: .eraser)
                         toolButton(icon: "sparkles", tool: .sticker)
@@ -94,6 +94,18 @@ struct ContentView: View {
                 Image(systemName: icon)
                     .foregroundColor(selectedTool == tool ? .accentColor : .primary)
                     .font(.system(size: 18, weight: .medium))
+            }
+        }
+        func customToolButton(icon: String, tool: Tool) -> some View {
+            Button(action: {
+                selectedTool = tool
+                ToolManager.shared.currentTool = tool
+            }) {
+                Image(icon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 24, height: 24) // 加上尺寸限制
+                    .foregroundColor(selectedTool == tool ? .blue : .gray)
             }
         }
 
