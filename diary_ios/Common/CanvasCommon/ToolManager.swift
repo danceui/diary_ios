@@ -31,13 +31,40 @@ enum Tool {
             return "lasso"
         }
     }
+
+    var presetStyles: [ToolStyle] {
+        switch self {
+        case .pen:
+            return [
+                ToolStyle(color: UIColor.black, width: 4, opacity: 1.0),
+                ToolStyle(color: UIColor.blue, width: 6, opacity: 1.0),
+                ToolStyle(color: UIColor.red, width: 3, opacity: 1.0)
+            ]
+        case .highlighter:
+            return [
+                ToolStyle(color: UIColor.yellow.withAlphaComponent(0.5), width: 10, opacity: 0.5),
+                ToolStyle(color: UIColor.green.withAlphaComponent(0.5), width: 12, opacity: 0.4),
+                ToolStyle(color: UIColor.orange.withAlphaComponent(0.5), width: 14, opacity: 0.6)
+            ]
+        case .monoline:
+            return [
+                ToolStyle(color: UIColor.black, width: 2, opacity: 1.0),
+                ToolStyle(color: UIColor.gray, width: 3, opacity: 1.0)
+            ]
+        default:
+            return []
+        }
+    }
 }
+
+let allTools: [Tool] = [.pen, .highlighter, .monoline, .eraser, .sticker, .lasso]
 
 struct ToolStyle: Hashable {
     var color: UIColor?
     var width: CGFloat?
     var opacity: CGFloat?
 }
+
 
 protocol ToolObserver: AnyObject {
     func toolDidChange(tool: Tool, style: ToolStyle?)

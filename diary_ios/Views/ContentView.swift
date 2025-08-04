@@ -28,6 +28,33 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
 
+    struct ToolButtonView: View {
+        let tool: Tool
+        let isSelected: Bool
+        let color: Color?
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                Group {
+                    if tool == .monoline || tool == .pen {
+                        Image(tool.iconName)
+                            .renderingMode(.template)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else {
+                        Image(systemName: tool.iconName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    }
+                }
+                .frame(width: 24, height: 24)
+                .foregroundColor(color ?? (isSelected ? .blue : .gray))
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+
     struct DrawingToolBar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
@@ -35,57 +62,16 @@ struct ContentView: View {
         var body: some View {
             VStack(spacing: 24) {
                 // 工具选择区
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        customToolButton(icon: "pen_drawing", tool: .pen)
-                        customToolButton(icon: "monoline_drawing", tool: .monoline)
-                        toolButton(icon: "paintbrush.pointed.fill", tool: .highlighter)
-                        toolButton(icon: "eraser.fill", tool: .eraser)
-                        toolButton(icon: "sparkles", tool: .sticker)
-                        toolButton(icon: "lasso", tool: .lasso)
-                    }
-                }
-                .frame(height: 160) // 固定工具选择区高度
+                ToolSelectionView(selectedTool: $selectedTool)
+                    .frame(height: 160) // 固定工具选择区高度
                 // 分割线
                 Divider()
                     .frame(width: 24)
                     .padding(.top, 8)
-                // 样式预设区：仅支持样式的工具显示
+                // 样式预设区
                 if selectedTool.supportColor || selectedTool.supportWidth {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 12) {
-                            ForEach(presetStyles(for: selectedTool), id: \.self) { style in
-                                let fillColor = style.color?.toColor() ?? .gray
-                                let size = CGFloat(style.width ?? 8)
-                                Button(action: {
-                                    ToolManager.shared.setStyle(
-                                        for: selectedTool,
-                                        color: style.color,
-                                        width: style.width,
-                                        opacity: style.opacity
-                                    )
-                                }) {
-                                    Group {
-                                        if selectedTool == .monoline || selectedTool == .pen {
-                                            Image(selectedTool.iconName)
-                                                .foregroundColor(fillColor)
-                                                .frame(width: 24, height: 24)
-                                        } else {
-                                            Image(systemName: selectedTool.iconName)
-                                                .renderingMode(.template)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                                .frame(width: 24, height: 24)
-                                                .foregroundColor(fillColor)
-                                        }
-                                    }
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                    }
-                    .frame(height: 120) // 固定样式区高度
-                    .transition(.opacity)
+                    StylePresetView(selectedTool: selectedTool)
+                        .frame(height: 120)
                 }
             }
             .padding(12)
@@ -93,56 +79,53 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
         }
+        
+        struct ToolSelectionView: View {
+            @Binding var selectedTool: Tool
 
-        func toolButton(icon: String, tool: Tool) -> some View {
-            Button(action: {
-                selectedTool = tool
-                ToolManager.shared.currentTool = tool
-            }) {
-                Image(systemName: icon)
-                    .foregroundColor(selectedTool == tool ? .accentColor : .primary)
-                    .font(.system(size: 18, weight: .medium))
+            var body: some View {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        ForEach(allTools, id: \.self) { tool in
+                            ToolButtonView(
+                                tool: tool,
+                                isSelected: selectedTool == tool,
+                                color: ToolManager.shared.style(for: tool)?.color?.toColor()
+                            ) {
+                                selectedTool = tool
+                                ToolManager.shared.currentTool = tool
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        func customToolButton(icon: String, tool: Tool) -> some View {
-            Button(action: {
-                selectedTool = tool
-                ToolManager.shared.currentTool = tool
-            }) {
-                Image(icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 24, height: 24) // 加上尺寸限制
-                    .foregroundColor(selectedTool == tool ? .blue : .gray)
-            }
-        }
+        struct StylePresetView: View {
+            let selectedTool: Tool
 
-        func presetStyles(for tool: Tool) -> [ToolStyle] {
-            switch tool {
-            case .pen:
-                return [
-                    ToolStyle(color: UIColor.black, width: 4, opacity: 1.0),
-                    ToolStyle(color: UIColor.blue, width: 6, opacity: 1.0),
-                    ToolStyle(color: UIColor.red, width: 3, opacity: 1.0)
-                ]
-            case .highlighter:
-                return [
-                    ToolStyle(color: UIColor.yellow.withAlphaComponent(0.5), width: 10, opacity: 0.5),
-                    ToolStyle(color: UIColor.green.withAlphaComponent(0.5), width: 12, opacity: 0.4),
-                    ToolStyle(color: UIColor.orange.withAlphaComponent(0.5), width: 14, opacity: 0.6)
-                ]
-            case .monoline:
-                return [
-                    ToolStyle(color: UIColor.black, width: 2, opacity: 1.0),
-                    ToolStyle(color: UIColor.gray, width: 3, opacity: 1.0)
-                ]
-            default:
-                return []
+            var body: some View {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 12) {
+                        ForEach(selectedTool.presetStyles, id: \.self) { style in
+                            ToolButtonView(
+                                tool: selectedTool,
+                                isSelected: false,
+                                color: style.color?.toColor()
+                            ) {
+                                ToolManager.shared.setStyle(
+                                    for: selectedTool,
+                                    color: style.color,
+                                    width: style.width,
+                                    opacity: style.opacity
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-
     struct FunctionToolBar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
 
