@@ -1,6 +1,16 @@
 import SwiftUI
 import UIKit
 
+let toolSelectionHeight = ToolbarConstants.toolSelectionHeight
+let stylePresetHeight = ToolbarConstants.stylePresetHeight
+let leadingPadding = ToolbarConstants.leadingPadding
+let trailingPadding = ToolbarConstants.trailingPadding
+let topPadding = ToolbarConstants.topPadding
+
+let iconSize = ToolbarConstants.iconSize
+let iconPadding = ToolbarConstants.iconPadding
+let iconSpacing = ToolbarConstants.iconSpacing
+
 @available(iOS 16.0, *)
 struct ContentView: View {
     private let notebookSpreadViewController = NotebookSpreadViewController()
@@ -12,15 +22,15 @@ struct ContentView: View {
             VStack {
                 Spacer()
                 DrawingToolBar(notebookSpreadViewController: notebookSpreadViewController)
-                    .padding(.leading, 30)
+                    .padding(.leading, leadingPadding)
                 Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .leading) 
             // 右上角功能按钮栏
             VStack {
                 FunctionToolBar(notebookSpreadViewController: notebookSpreadViewController)
-                    .padding(.top, 10)
-                    .padding(.trailing, 30)
+                    .padding(.top, topPadding)
+                    .padding(.trailing, trailingPadding)
                 Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -34,7 +44,7 @@ struct ContentView: View {
         let color: Color?
         let action: () -> Void
 
-        @State private var isPressed = false
+        @GestureState private var isPressed = false
 
         var body: some View {
             ZStack {
@@ -51,13 +61,9 @@ struct ContentView: View {
                             .aspectRatio(contentMode: .fit)
                     }
                 }
-                .frame(width: 30, height: 30)
+                .frame(width: iconSize, height: iconSize)
                 .foregroundColor(color ?? (isSelected ? .blue : .gray))
-                .padding(7)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isSelected ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
-                )
+                .padding(iconPadding)
                 .scaleEffect(isPressed ? 1.2 : 1.0)
                 .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
             }
@@ -76,27 +82,27 @@ struct ContentView: View {
             )
         }
     }
-    
+
     struct DrawingToolBar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
 
         var body: some View {
-            VStack(spacing: 24) {
+            VStack(spacing: iconSpacing) {
                 // 工具选择区
                 ToolSelectionView(selectedTool: $selectedTool)
-                    .frame(height: 160) // 固定工具选择区高度
+                    .frame(height: toolSelectionHeight)
                 // 分割线
                 Divider()
-                    .frame(width: 24)
-                    .padding(.top, 8)
+                    .frame(width: iconSize)
+                    .padding(.top, iconSpacing)
                 // 样式预设区
                 if selectedTool.supportColor || selectedTool.supportWidth {
                     StylePresetView(selectedTool: selectedTool)
-                        .frame(height: 120)
+                        .frame(height: stylePresetHeight)
                 }
             }
-            .padding(12)
+            .padding(6)
             .background(.ultraThinMaterial) // 半透明磨砂效果
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
@@ -107,7 +113,7 @@ struct ContentView: View {
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: iconSpacing) {
                         ForEach(allTools, id: \.self) { tool in
                             ToolButtonView(
                                 tool: tool,
@@ -128,7 +134,7 @@ struct ContentView: View {
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: iconSpacing) {
                         ForEach(selectedTool.presetStyles, id: \.self) { style in
                             ToolButtonView(
                                 tool: selectedTool,
@@ -152,7 +158,7 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
 
         var body: some View {
-            HStack(spacing: 20) {
+            HStack(spacing: iconSpacing) {
                 Button(action: {
                     notebookSpreadViewController.undo()
                 }) {
