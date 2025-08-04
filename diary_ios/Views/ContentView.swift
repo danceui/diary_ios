@@ -34,8 +34,11 @@ struct ContentView: View {
         let color: Color?
         let action: () -> Void
 
+        @State private var isPressed = false
+
         var body: some View {
-            Button(action: action) {
+            ZStack {
+                // 手势监听包裹图层
                 Group {
                     if tool == .monoline || tool == .pen {
                         Image(tool.iconName)
@@ -48,13 +51,32 @@ struct ContentView: View {
                             .aspectRatio(contentMode: .fit)
                     }
                 }
-                .frame(width: 24, height: 24)
+                .frame(width: 30, height: 30)
                 .foregroundColor(color ?? (isSelected ? .blue : .gray))
+                .padding(7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
+                )
+                .scaleEffect(isPressed ? 1.2 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
             }
-            .buttonStyle(PlainButtonStyle())
+            .contentShape(Rectangle()) // 保证整个区域可点击
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if !isPressed {
+                            isPressed = true
+                        }
+                    }
+                    .onEnded { _ in
+                        isPressed = false
+                        action() // ✅ 点击松开后才触发点击动作
+                    }
+            )
         }
     }
-
+    
     struct DrawingToolBar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
@@ -85,7 +107,7 @@ struct ContentView: View {
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 12) {
                         ForEach(allTools, id: \.self) { tool in
                             ToolButtonView(
                                 tool: tool,

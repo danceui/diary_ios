@@ -57,14 +57,13 @@ enum Tool {
     }
 }
 
-let allTools: [Tool] = [.pen, .highlighter, .monoline, .eraser, .sticker, .lasso]
+let allTools: [Tool] = [.pen, .monoline, .highlighter, .eraser, .sticker, .lasso]
 
 struct ToolStyle: Hashable {
     var color: UIColor?
     var width: CGFloat?
     var opacity: CGFloat?
 }
-
 
 protocol ToolObserver: AnyObject {
     func toolDidChange(tool: Tool, style: ToolStyle?)
@@ -73,14 +72,10 @@ protocol ToolObserver: AnyObject {
 class ToolManager {
     static let shared = ToolManager()
     private init() {
-        toolStyles = [
-            .pen: ToolStyle(color: .black, width: 4, opacity: 1.0),
-            .highlighter: ToolStyle(color: UIColor.yellow, width: 6, opacity: 0.5),
-            .monoline: ToolStyle(color: .black, width: 2, opacity: 1.0),
-            .eraser: ToolStyle(color: nil, width: 10, opacity: nil),
-            .sticker: ToolStyle(color: nil, width: nil, opacity: nil),
-            .lasso: ToolStyle(color: nil, width: nil, opacity: nil)
-        ]
+        toolStyles = Dictionary(uniqueKeysWithValues: allTools.map { tool in
+            let defaultStyle = tool.presetStyles.first ?? ToolStyle(color: nil, width: nil, opacity: nil)
+            return (tool, defaultStyle)
+        })
     }
     
     var currentTool: Tool = .pen { didSet { notifyToolChange() } }
