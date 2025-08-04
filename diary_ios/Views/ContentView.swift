@@ -38,6 +38,7 @@ struct ContentView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 24) {
                         customToolButton(icon: "pen_drawing", tool: .pen)
+                        customToolButton(icon: "monoline_drawing", tool: .monoline)
                         toolButton(icon: "paintbrush.pointed.fill", tool: .highlighter)
                         toolButton(icon: "eraser.fill", tool: .eraser)
                         toolButton(icon: "sparkles", tool: .sticker)
@@ -64,13 +65,20 @@ struct ContentView: View {
                                         opacity: style.opacity
                                     )
                                 }) {
-                                    let previewColor = style.color?.toColor() ?? .gray
-                                    let previewWidth = CGFloat(style.width ?? 6)
-                                    Image(systemName: "bolt.horizontal.fill")
-                                        .foregroundColor(previewColor)
-                                        // .font(.system(size: 24, weight: fontWeight(for: previewWidth)))
-                                        .frame(width: 28, height: 28)
-                                        .background(.clear)
+                                    Group {
+                                        if selectedTool == .monoline || selectedTool == .pen {
+                                            Image(selectedTool.iconName)
+                                                .foregroundColor(fillColor)
+                                                .frame(width: 24, height: 24)
+                                        } else {
+                                            Image(systemName: selectedTool.iconName)
+                                                .renderingMode(.template)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 24, height: 24)
+                                                .foregroundColor(fillColor)
+                                        }
+                                    }
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -96,6 +104,7 @@ struct ContentView: View {
                     .font(.system(size: 18, weight: .medium))
             }
         }
+
         func customToolButton(icon: String, tool: Tool) -> some View {
             Button(action: {
                 selectedTool = tool
@@ -122,6 +131,11 @@ struct ContentView: View {
                     ToolStyle(color: UIColor.yellow.withAlphaComponent(0.5), width: 10, opacity: 0.5),
                     ToolStyle(color: UIColor.green.withAlphaComponent(0.5), width: 12, opacity: 0.4),
                     ToolStyle(color: UIColor.orange.withAlphaComponent(0.5), width: 14, opacity: 0.6)
+                ]
+            case .monoline:
+                return [
+                    ToolStyle(color: UIColor.black, width: 2, opacity: 1.0),
+                    ToolStyle(color: UIColor.gray, width: 3, opacity: 1.0)
                 ]
             default:
                 return []

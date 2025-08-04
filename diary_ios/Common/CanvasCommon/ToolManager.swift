@@ -1,19 +1,36 @@
 import UIKit
 
 enum Tool {
-    case pen, highlighter
+    case pen, highlighter, monoline
     case eraser
     case sticker
     case lasso
 
-    var isDrawing: Bool { self == .pen || self == .highlighter }
+    var isDrawing: Bool { self == .pen || self == .highlighter || self == .monoline }
     var isSticker: Bool { self == .sticker }
     var isEraser: Bool { self == .eraser }
     var isLasso: Bool { self == .lasso }
 
-    var supportColor: Bool { self == .pen || self == .highlighter }
-    var supportWidth: Bool { self == .pen || self == .highlighter || self == .eraser }
-    var supportOpacity: Bool { self == .pen || self == .highlighter }
+    var supportColor: Bool { self == .pen || self == .highlighter || self == .monoline }
+    var supportWidth: Bool { self == .pen || self == .highlighter || self == .monoline || self == .eraser }
+    var supportOpacity: Bool { self == .pen || self == .highlighter || self == .monoline }
+
+    var iconName: String {
+        switch self {
+        case .pen:
+            return "pen_drawing"
+        case .monoline:
+            return "monoline_drawing"
+        case .highlighter:
+            return "paintbrush.pointed.fill" // SF Symbol
+        case .eraser:
+            return "eraser.fill"
+        case .sticker:
+            return "sparkles"
+        case .lasso:
+            return "lasso"
+        }
+    }
 }
 
 struct ToolStyle: Hashable {
@@ -31,7 +48,8 @@ class ToolManager {
     private init() {
         toolStyles = [
             .pen: ToolStyle(color: .black, width: 4, opacity: 1.0),
-            .highlighter: ToolStyle(color: UIColor.yellow.withAlphaComponent(0.5), width: 6, opacity: 0.5),
+            .highlighter: ToolStyle(color: UIColor.yellow, width: 6, opacity: 0.5),
+            .monoline: ToolStyle(color: .black, width: 2, opacity: 1.0),
             .eraser: ToolStyle(color: nil, width: 10, opacity: nil),
             .sticker: ToolStyle(color: nil, width: nil, opacity: nil),
             .lasso: ToolStyle(color: nil, width: nil, opacity: nil)

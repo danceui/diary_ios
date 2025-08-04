@@ -44,6 +44,8 @@ class HandwritingLayer: PKCanvasView {
             self.tool = PKInkingTool(.pen, color: finalColor, width: width)
         case .highlighter:
             self.tool = PKInkingTool(.marker, color: finalColor, width: width)
+        case .monoline:
+            self.tool = PKInkingTool(.monoline, color: finalColor, width: width)
         default:
             break
         }
