@@ -50,13 +50,7 @@ func bellPressure(t: CGFloat) -> CGFloat {
     return ToolConstants.penMinPressure + base * (ToolConstants.penMaxPressure - ToolConstants.penMinPressure)
 }
 
-func generatePenPath(
-    inset: CGFloat,
-    drawingSize: CGSize,
-    width: CGFloat,
-    minPressure: CGFloat = 0.2,
-    maxPressure: CGFloat = 1.0,
-    samplesPerSegment: Int = 20) -> Path {
+func generatePenPath(inset: CGFloat, drawingSize: CGSize, width: CGFloat, minPressure: CGFloat = 0.2, maxPressure: CGFloat = 1.0, samplesPerSegment: Int = 20) -> Path {
     let bezierSegments = generatePenPathSegments(inset: inset, drawingSize: drawingSize)
     var strokePoints: [CGPoint] = []
 
@@ -96,15 +90,40 @@ func generatePenPath(
     for pt in topEdge.dropFirst() {
         path.addLine(to: pt)
     }
+
+    // End cap
+    let capEnd = strokePoints.last!
+    let dxEnd = capEnd.x - strokePoints[strokePoints.count - 2].x
+    let dyEnd = capEnd.y - strokePoints[strokePoints.count - 2].y
+    let angleEnd = atan2(dyEnd, dxEnd)
+    let endRadius = width * bellPressure(t: 1) / 2
+    addRoundCap(path: &path, center: capEnd, radius: endRadius, angle: angleEnd)
+
     for pt in bottomEdge.reversed() {
         path.addLine(to: pt)
     }
-    path.closeSubpath()
 
+    // Start cap
+    let capStart = strokePoints.first!
+    let dxStart = strokePoints[1].x - capStart.x
+    let dyStart = strokePoints[1].y - capStart.y
+    let angleStart = atan2(dyStart, dxStart)
+    let startRadius = width * bellPressure(t: 0) / 2
+    addRoundCap(path: &path, center: capStart, radius: startRadius, angle: angleStart)
+    path.closeSubpath()
     return path
 }
 
-// Bezier curve sampler
+func addRoundCap(path: inout Path, center: CGPoint, radius: CGFloat, angle: CGFloat, samples: Int = 10) {
+    let delta = -2 * .pi / CGFloat(samples - 1)
+    for i in 0..<samples {
+        let a = angle + .pi + delta * CGFloat(i)
+        let x = center.x + cos(a) * radius
+        let y = center.y + sin(a) * radius
+        path.addLine(to: CGPoint(x: x, y: y))
+    }
+}
+
 func sampleCubicBezier(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint, samples: Int) -> [CGPoint] {
     var points: [CGPoint] = []
     for i in 0...samples {

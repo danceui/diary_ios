@@ -2,7 +2,7 @@ import UIKit
 
 struct ToolConstants {
     static let penMinPressure: CGFloat = 0.5
-    static let penMaxPressure: CGFloat = 1.0
+    static let penMaxPressure: CGFloat = 1.3
 }
 
 struct ToolbarConstants {
