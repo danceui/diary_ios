@@ -45,6 +45,7 @@ struct ContentView: View {
         let action: () -> Void
 
         @State private var isPressed = false
+        @State private var startLocation: CGPoint?
 
         var body: some View {
             ZStack {
@@ -68,13 +69,25 @@ struct ContentView: View {
                 .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
             }
             .contentShape(Rectangle()) // 保证整个区域可点击
-            .onLongPressGesture(minimumDuration: 0.01, pressing: { pressing in
-                isPressed = pressing
-            }, perform: {})
-            .simultaneousGesture(
-                TapGesture()
-                    .onEnded {
-                        action()
+            .simultaneousGesture( // 不会阻止 ScrollView 的滚动手势
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        if startLocation == nil {
+                            startLocation = value.startLocation
+                            isPressed = true
+                        }
+                    }
+                    .onEnded { value in
+                        isPressed = false
+                        if let start = startLocation {
+                            let dx = value.location.x - start.x
+                            let dy = value.location.y - start.y
+                            let distance = dx * dx + dy * dy
+                            if distance < 100 { // 判定为点击
+                                action()
+                            }
+                        }
+                        startLocation = nil
                     }
             )
         }
