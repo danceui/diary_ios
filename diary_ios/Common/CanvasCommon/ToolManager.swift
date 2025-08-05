@@ -37,8 +37,8 @@ enum Tool {
         case .pen:
             return [
                 ToolStyle(color: UIColor.black, width: 2, opacity: 1.0),
-                ToolStyle(color: UIColor.blue, width: 4, opacity: 1.0),
-                ToolStyle(color: UIColor.red, width: 6, opacity: 1.0)
+                ToolStyle(color: UIColor.blue, width: 4, opacity: 0.8),
+                ToolStyle(color: UIColor.red, width: 6, opacity: 0.6)
             ]
         case .highlighter:
             return [
@@ -49,8 +49,8 @@ enum Tool {
         case .monoline:
             return [
                 ToolStyle(color: UIColor.black, width: 4, opacity: 1.0),
-                ToolStyle(color: UIColor.gray, width: 6, opacity: 1.0)
-                ToolStyle(color: UIColor.red, width: 8, opacity: 1.0),
+                ToolStyle(color: UIColor.gray, width: 6, opacity: 0.8),
+                ToolStyle(color: UIColor.red, width: 8, opacity: 0.6)
             ]
         default:
             return []
