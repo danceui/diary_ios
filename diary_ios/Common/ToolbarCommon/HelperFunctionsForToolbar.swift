@@ -100,6 +100,7 @@ func generatePenPath(
         path.addLine(to: pt)
     }
     path.closeSubpath()
+
     return path
 }
 
