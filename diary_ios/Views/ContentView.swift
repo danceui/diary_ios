@@ -44,7 +44,7 @@ struct ContentView: View {
         let color: Color?
         let action: () -> Void
 
-        @GestureState private var isPressed = false
+        @State private var isPressed = false
 
         var body: some View {
             ZStack {
@@ -68,16 +68,13 @@ struct ContentView: View {
                 .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
             }
             .contentShape(Rectangle()) // 保证整个区域可点击
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        if !isPressed {
-                            isPressed = true
-                        }
-                    }
-                    .onEnded { _ in
-                        isPressed = false
-                        action() // ✅ 点击松开后才触发点击动作
+            .onLongPressGesture(minimumDuration: 0.01, pressing: { pressing in
+                isPressed = pressing
+            }, perform: {})
+            .simultaneousGesture(
+                TapGesture()
+                    .onEnded {
+                        action()
                     }
             )
         }
