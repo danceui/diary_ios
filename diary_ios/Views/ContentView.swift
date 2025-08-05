@@ -38,10 +38,26 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
 
+    struct FancyBrushPreview: View {
+        let color: Color
+        let width: CGFloat
+
+        var body: some View {
+            Canvas { context, size in
+                var path = Path()
+                path.move(to: CGPoint(x: 0, y: size.height / 2))
+                path.addLine(to: CGPoint(x: size.width, y: size.height / 2))
+                context.stroke(path, with: .color(color), lineWidth: width)
+            }
+            .frame(width: iconSize, height: iconSize)
+        }
+    }
+
     struct ToolButtonView: View {
         let tool: Tool
         let isSelected: Bool
         let color: Color?
+        let width: CGFloat?
         let action: () -> Void
 
         @State private var isPressed = false
@@ -51,11 +67,8 @@ struct ContentView: View {
             ZStack {
                 // 手势监听包裹图层
                 Group {
-                    if tool == .monoline || tool == .pen {
-                        Image(tool.iconName)
-                            .renderingMode(.template)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
+                    if tool == .monoline || tool == .pen, let color = color, let width = width {
+                        FancyBrushPreview(color: color, width: width)
                     } else {
                         Image(systemName: tool.iconName)
                             .resizable()
@@ -128,7 +141,8 @@ struct ContentView: View {
                             ToolButtonView(
                                 tool: tool,
                                 isSelected: selectedTool == tool,
-                                color: ToolManager.shared.style(for: tool)?.color?.toColor()
+                                color: ToolManager.shared.style(for: tool)?.color?.toColor(),
+                                width: ToolManager.shared.style(for: tool)?.width
                             ) {
                                 selectedTool = tool
                                 ToolManager.shared.currentTool = tool
@@ -149,7 +163,8 @@ struct ContentView: View {
                             ToolButtonView(
                                 tool: selectedTool,
                                 isSelected: false,
-                                color: style.color?.toColor()
+                                color: style.color?.toColor(),
+                                width: style.width
                             ) {
                                 ToolManager.shared.setStyle(
                                     for: selectedTool,
