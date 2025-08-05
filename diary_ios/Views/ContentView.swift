@@ -49,77 +49,13 @@ struct ContentView: View {
             Canvas { context, size in
                 let inset: CGFloat = max(width / 2, 1)
                 let drawingSize = CGSize(width: size.width - inset * 2, height: size.height - inset * 2)
-                func convert(x: CGFloat, y: CGFloat) -> CGPoint {
-                    let scaleX = drawingSize.width / 26.458333
-                    let scaleY = drawingSize.height / 26.458333
-                    return CGPoint(x: x * scaleX + inset, y: y * scaleY + inset)
-                }
-                func generateMonolinePath() -> Path {
-                    var path = Path()
-                    // calculated swift path based on SVG data
-                    path.move(to: convert(x: 1.850687, y: 17.570022))
-                    path.addCurve(to: convert(x: 3.595063, y: 10.347862), control1: convert(x: 0.932941, y: 15.069087), control2: convert(x: 2.005763, y: 12.310653))
-                    path.addCurve(to: convert(x: 7.413834, y: 9.341245), control1: convert(x: 4.369668, y: 9.059063), control2: convert(x: 6.114127, y: 8.652024))
-                    path.addCurve(to: convert(x: 10.264806, y: 14.073580), control1: convert(x: 9.210874, y: 10.161493), control2: convert(x: 10.110526, y: 12.176224))
-                    path.addCurve(to: convert(x: 12.273829, y: 17.778131), control1: convert(x: 10.483572, y: 15.465286), control2: convert(x: 10.861685, y: 17.156747))
-                    path.addCurve(to: convert(x: 15.463040, y: 15.976733), control1: convert(x: 13.613956, y: 18.174263), control2: convert(x: 14.812265, y: 17.042496))
-                    path.addCurve(to: convert(x: 19.090702, y: 14.688075), control1: convert(x: 16.207361, y: 14.831670), control2: convert(x: 17.789632, y: 13.946173))
-                    path.addCurve(to: convert(x: 22.366480, y: 17.372298), control1: convert(x: 20.187863, y: 15.560343), control2: convert(x: 20.831390, y: 17.184842))
-                    path.addCurve(to: convert(x: 24.955118, y: 16.138709), control1: convert(x: 23.412848, y: 17.497058), control2: convert(x: 24.159403, y: 16.672955))
-                    return path
-                }
-                func generatePenPathSegments() -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
-                    let bezierSegments: [(CGPoint, CGPoint, CGPoint, CGPoint)] = [
-                        (convert(x: 1.850687, y: 17.570022),
-                        convert(x: 0.932941, y: 15.069087),
-                        convert(x: 2.005763, y: 12.310653),
-                        convert(x: 3.595063, y: 10.347862)),
-                        
-                        (convert(x: 3.595063, y: 10.347862),
-                        convert(x: 4.369668, y: 9.059063),
-                        convert(x: 6.114127, y: 8.652024),
-                        convert(x: 7.413834, y: 9.341245)),
-                        
-                        (convert(x: 7.413834, y: 9.341245),
-                        convert(x: 9.210874, y: 10.161493),
-                        convert(x: 10.110526, y: 12.176224),
-                        convert(x: 10.264806, y: 14.073580)),
-                        
-                        (convert(x: 10.264806, y: 14.073580),
-                        convert(x: 10.483572, y: 15.465286),
-                        convert(x: 10.861685, y: 17.156747),
-                        convert(x: 12.273829, y: 17.778131)),
-
-                        (convert(x: 12.273829, y: 17.778131),
-                        convert(x: 13.613956, y: 18.174263),
-                        convert(x: 14.812265, y: 17.042496),
-                        convert(x: 15.463040, y: 15.976733)),
-
-                        (convert(x: 15.463040, y: 15.976733),
-                        convert(x: 16.207361, y: 14.831670),
-                        convert(x: 17.789632, y: 13.946173),
-                        convert(x: 19.090702, y: 14.688075)),
-
-                        (convert(x: 19.090702, y: 14.688075),
-                        convert(x: 20.187863, y: 15.560343),
-                        convert(x: 20.831390, y: 17.184842),
-                        convert(x: 22.366480, y: 17.372298)),
-
-                        (convert(x: 22.366480, y: 17.372298),
-                        convert(x: 23.412848, y: 17.497058),
-                        convert(x: 24.159403, y: 16.672955),
-                        convert(x: 24.955118, y: 16.138709))
-                    ]
-                    return bezierSegments
-                }
                 if tool == .monoline {
-                    let path = generateMonolinePath()
+                    let path = generateMonolinePath(inset: inset, drawingSize: drawingSize)
                     context.stroke(path, with: .color(color.opacity(opacity)), style: StrokeStyle(lineWidth: width, lineCap: .round))
                 }
                 else if tool == .pen {
-                    let bezierSegments = generatePenPathSegments()
-                    let strokePath = generatePenPath(from: bezierSegments, width: style.width ?? 2.0)
-                    context.fill(strokePath, with: .color(color.opacity(opacity)))
+                    let path = generatePenPath(inset: inset, drawingSize: drawingSize, width: style.width ?? 2.0)
+                    context.fill(path, with: .color(color.opacity(opacity)))
                 }
             }
             .frame(width: iconSize, height: iconSize)

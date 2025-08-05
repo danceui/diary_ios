@@ -1,5 +1,10 @@
 import UIKit
 
+struct ToolConstants {
+    static let penMinPressure: CGFloat = 0.5
+    static let penMaxPressure: CGFloat = 1.0
+}
+
 struct ToolbarConstants {
     static let toolSelectionHeight: CGFloat = 160.0
     static let stylePresetHeight: CGFloat = 120.0
