@@ -36,20 +36,21 @@ enum Tool {
         switch self {
         case .pen:
             return [
-                ToolStyle(color: UIColor.black, width: 4, opacity: 1.0),
-                ToolStyle(color: UIColor.blue, width: 6, opacity: 1.0),
-                ToolStyle(color: UIColor.red, width: 3, opacity: 1.0)
+                ToolStyle(color: UIColor.black, width: 2, opacity: 1.0),
+                ToolStyle(color: UIColor.blue, width: 4, opacity: 1.0),
+                ToolStyle(color: UIColor.red, width: 6, opacity: 1.0)
             ]
         case .highlighter:
             return [
-                ToolStyle(color: UIColor.yellow.withAlphaComponent(0.5), width: 10, opacity: 0.5),
-                ToolStyle(color: UIColor.green.withAlphaComponent(0.5), width: 12, opacity: 0.4),
-                ToolStyle(color: UIColor.orange.withAlphaComponent(0.5), width: 14, opacity: 0.6)
+                ToolStyle(color: UIColor.yellow, width: 4, opacity: 0.5),
+                ToolStyle(color: UIColor.green, width: 6, opacity: 0.4),
+                ToolStyle(color: UIColor.orange, width: 8, opacity: 0.6)
             ]
         case .monoline:
             return [
-                ToolStyle(color: UIColor.black, width: 2, opacity: 1.0),
-                ToolStyle(color: UIColor.gray, width: 3, opacity: 1.0)
+                ToolStyle(color: UIColor.black, width: 4, opacity: 1.0),
+                ToolStyle(color: UIColor.gray, width: 6, opacity: 1.0)
+                ToolStyle(color: UIColor.red, width: 8, opacity: 1.0),
             ]
         default:
             return []

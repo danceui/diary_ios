@@ -44,7 +44,7 @@ struct ContentView: View {
 
         var body: some View {
             Canvas { context, size in
-                let inset: CGFloat = max(width / 2, 2)
+                let inset: CGFloat = max(width / 2, 1)
                 let drawingSize = CGSize(width: size.width - inset * 2, height: size.height - inset * 2)
                 func convert(x: CGFloat, y: CGFloat) -> CGPoint {
                     let scaleX = drawingSize.width / 26.458333
