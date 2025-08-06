@@ -23,7 +23,7 @@ func generateMonolinePath(inset: CGFloat, drawingSize: CGSize) -> Path {
     return path
 }
 
-func generatePenPathSegments(inset: CGFloat, drawingSize: CGSize) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
+func generatePathSegments(inset: CGFloat, drawingSize: CGSize) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
     let scaleX = drawingSize.width / 26.458333
     let scaleY = drawingSize.height / 26.458333
 
@@ -51,7 +51,7 @@ func bellPressure(t: CGFloat) -> CGFloat {
 }
 
 func generatePenPath(inset: CGFloat, drawingSize: CGSize, width: CGFloat, minPressure: CGFloat = 0.2, maxPressure: CGFloat = 1.0, samplesPerSegment: Int = 20) -> Path {
-    let bezierSegments = generatePenPathSegments(inset: inset, drawingSize: drawingSize)
+    let bezierSegments = generatePathSegments(inset: inset, drawingSize: drawingSize)
     var strokePoints: [CGPoint] = []
 
     for (p0, c1, c2, p3) in bezierSegments {

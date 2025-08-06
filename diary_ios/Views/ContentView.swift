@@ -45,18 +45,41 @@ struct ContentView: View {
             let color = (style.color ?? .black).toColor()
             let width = style.width ?? 2.0
             let opacity = Double(style.opacity ?? 1.0)
-
+            let inset: CGFloat = max(width / 2, 1)
+            let strokeColors: [Color] = [
+                .red.opacity(1.0),
+                .blue.opacity(0.7),
+                .green.opacity(0.5),
+                .orange.opacity(0.8),
+                .purple.opacity(0.6),
+                .pink.opacity(1.0),
+                .yellow.opacity(0.5),
+                .pink.opacity(0.9)
+            ]
             Canvas { context, size in
-                let inset: CGFloat = max(width / 2, 1)
-                let drawingSize = CGSize(width: size.width - inset * 2, height: size.height - inset * 2)
-                if tool == .monoline {
-                    let path = generateMonolinePath(inset: inset, drawingSize: drawingSize)
-                    context.stroke(path, with: .color(color.opacity(opacity)), style: StrokeStyle(lineWidth: width, lineCap: .round))
+            let segments = generatePathSegments(inset: inset, drawingSize: CGSize(width: size.width - inset * 2, height: size.height - inset * 2))
+                for (index, segment) in segments.enumerated() {
+                    
+                    let (start, ctrl1, ctrl2, end) = segment
+
+                    var path = Path()
+                    path.move(to: start)
+                    path.addCurve(to: end, control1: ctrl1, control2: ctrl2)
+
+                    context.stroke(path,
+                                with: .color(strokeColors[index]),
+                                style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 }
-                else if tool == .pen {
-                    let path = generatePenPath(inset: inset, drawingSize: drawingSize, width: style.width ?? 2.0)
-                    context.fill(path, with: .color(color.opacity(opacity)))
-                }
+                // let inset: CGFloat = max(width / 2, 1)
+                // let drawingSize = CGSize(width: size.width - inset * 2, height: size.height - inset * 2)
+                // if tool == .monoline {
+                //     let path = generateMonolinePath(inset: inset, drawingSize: drawingSize)
+                //     context.stroke(path, with: .color(color.opacity(opacity)), style: StrokeStyle(lineWidth: width, lineCap: .round))
+                // }
+                // else if tool == .pen {
+                //     let path = generatePenPath(inset: inset, drawingSize: drawingSize, width: style.width ?? 2.0)
+                //     context.fill(path, with: .color(color.opacity(opacity)))
+                // }
             }
             .frame(width: iconSize, height: iconSize)
         }
