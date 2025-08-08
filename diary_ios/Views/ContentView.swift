@@ -42,19 +42,29 @@ struct ContentView: View {
         let tool: Tool
         let style: ToolStyle
         var body: some View {
-            let color = (style.color ?? .black).toColor()
-            let width = style.width ?? 2.0
-            let opacity = Double(style.opacity ?? 1.0)
+            // let color = (style.color ?? .black).toColor()
+             let width = style.width ?? 2.0
+            // let opacity = Double(style.opacity ?? 1.0)
             let inset: CGFloat = max(width / 2, 1)
             Canvas { context, size in
             let segments = generatePathSegments(inset: inset, drawingSize: CGSize(width: size.width - inset * 2, height: size.height - inset * 2))
                 for (index, segment) in segments.enumerated() {
                     let (start, ctrl1, ctrl2, end) = segment
-                    var path = Path()
-                    path.move(to: start)
-                    path.addCurve(to: end, control1: ctrl1, control2: ctrl2)
+                    // var path = Path()
+                    // path.move(to: start)
+                    // path.addCurve(to: end, control1: ctrl1, control2: ctrl2)
                     if tool == .monoline {
-                        context.stroke(path, with: .color(color.opacity(opacity)), style: StrokeStyle(lineWidth: width, lineCap: .round))
+                        // context.stroke(path, with: .color(color.opacity(opacity)), style: StrokeStyle(lineWidth: width, lineCap: .round))
+                        drawMonolinePreview(
+                            context: context,
+                            start: segment.0,
+                            ctrl1: segment.1,
+                            ctrl2: segment.2,
+                            end: segment.3,
+                            style: style,
+                            segmentIndex: index,
+                            totalSegments: segments.count
+                        )
                     } else if tool == .pen {
                         drawPenPreview(
                             context: context,
@@ -62,13 +72,12 @@ struct ContentView: View {
                             ctrl1: segment.1,
                             ctrl2: segment.2,
                             end: segment.3,
-                            color: color,
-                            baseWidth: width,
+                            style: style,
                             segmentIndex: index,
                             totalSegments: segments.count
                         )
                     } else {
-                        context.stroke(path, with: .color(PreviewConstants.previewColors[index]), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                        // context.stroke(path, with: .color(PreviewConstants.previewColors[index]), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     }
                 }
                 // let inset: CGFloat = max(width / 2, 1)
