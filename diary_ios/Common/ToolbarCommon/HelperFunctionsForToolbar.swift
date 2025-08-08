@@ -13,7 +13,7 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
     return CGPoint(x: x, y: y)
 }
 
-// 模拟压力感笔刷效果,沿着一条 Bézier 曲线绘制一系列小圆点,每个圆点的大小根据“笔压”变化
+// 沿着一条 Bézier 曲线绘制一系列小圆点,每个圆点的大小根据“笔压”变化
 func drawPenPreview(
     context: GraphicsContext,
     start: CGPoint,
@@ -24,7 +24,7 @@ func drawPenPreview(
     segmentIndex: Int,
     totalSegments: Int
 ) {
-    let steps = 30 // 每个段的采样点数
+    let steps = PreviewConstants.step // 每个段的采样点数
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
@@ -39,7 +39,7 @@ func drawPenPreview(
     }
 }
 
-// 模拟压力感笔刷效果,沿着一条 Bézier 曲线绘制一系列小圆点
+// 沿着一条 Bézier 曲线绘制一系列小圆点
 func drawMonolinePreview(
     context: GraphicsContext,
     start: CGPoint,
@@ -50,27 +50,27 @@ func drawMonolinePreview(
     segmentIndex: Int,
     totalSegments: Int
 ) {
-    let steps = 30 // 每个段的采样点数
+    let steps = PreviewConstants.step // 每个段的采样点数
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
-    var path = Path()
-    path.move(to: start)
-    path.addCurve(to: end, control1: ctrl1, control2: ctrl2)
+    // var path = Path()
+    // path.move(to: start)
+    // path.addCurve(to: end, control1: ctrl1, control2: ctrl2)
 
-    context.stroke(
-        path,
-        with: .color(color.opacity(opacity)),
-        style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round)
-    )
-    // for i in 0..<steps {
-    //     let t = CGFloat(i) / CGFloat(steps - 1) // 将 i 归一化到[0, 1]
-    //     let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end) // 计算第 i 点的位置
-    //     let radius = width / 2 // 该处圆的半径
-    //     let dot = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-    //     context.fill(dot, with: .color(color.opacity(opacity)))
-    // }
+    // context.stroke(
+    //     path,
+    //     with: .color(color.opacity(opacity)),
+    //     style: StrokeStyle(lineWidth: width, lineCap: .round)
+    // )
+    for i in 0..<steps {
+        let t = CGFloat(i) / CGFloat(steps - 1) // 将 i 归一化到[0, 1]
+        let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end) // 计算第 i 点的位置
+        let radius = width / 2 // 该处圆的半径
+        let dot = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
+        context.fill(dot, with: .color(color.opacity(opacity)))
+    }
 }
 
 func generatePathSegments(inset: CGFloat, drawingSize: CGSize) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {

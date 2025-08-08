@@ -22,6 +22,7 @@ struct ToolbarConstants {
 }
 
 struct PreviewConstants {
+    static let step: Int = 5
     static let segmentCount = 8
     static let previewColors: [Color] = [
         .red.opacity(1.0),
