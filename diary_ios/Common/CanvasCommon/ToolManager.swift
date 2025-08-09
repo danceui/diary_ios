@@ -70,49 +70,54 @@ protocol ToolObserver: AnyObject {
     func toolDidChange(tool: Tool, style: ToolStyle?)
 }
 
-class ToolManager {
+class ToolManager: ObservableObject {
     static let shared = ToolManager()
+    
+    // 驱动 UI 的两个源：当前工具、每个工具的样式
+    @Published var currentTool: Tool = .pen
+    @Published private(set) var toolStyles: [Tool: ToolStyle]
+
     private init() {
+        // 初始化每个工具的默认样式
         toolStyles = Dictionary(uniqueKeysWithValues: allTools.map { tool in
             let defaultStyle = tool.presetStyles.first ?? ToolStyle(color: nil, width: nil, opacity: nil)
             return (tool, defaultStyle)
         })
     }
-    
-    var currentTool: Tool = .pen { didSet { notifyToolChange() } }
-    private var observers = NSHashTable<AnyObject>.weakObjects()
-    private var toolStyles: [Tool: ToolStyle] = [:]
+    // var currentTool: Tool = .pen { didSet { notifyToolChange() } }
+    // private var observers = NSHashTable<AnyObject>.weakObjects()
+    // private var toolStyles: [Tool: ToolStyle] = [:]
 
-    func addObserver(_ observer: ToolObserver) {
-        observers.add(observer)
-        observer.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
-    }
+    // func addObserver(_ observer: ToolObserver) {
+    //     observers.add(observer)
+    //     observer.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
+    // }
 
-    func removeObserver(_ observer: ToolObserver) {
-        observers.remove(observer)
-    }
+    // func removeObserver(_ observer: ToolObserver) {
+    //     observers.remove(observer)
+    // }
 
-    private func notifyToolChange() {
-        let style = toolStyles[currentTool]
-        for observer in observers.allObjects {
-            (observer as? ToolObserver)?.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
-        }
-    }
+    // private func notifyToolChange() {
+    //     let style = toolStyles[currentTool]
+    //     for observer in observers.allObjects {
+    //         (observer as? ToolObserver)?.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
+    //     }
+    // }
 
     func style(for tool: Tool) -> ToolStyle? {
         return toolStyles[tool]
     }
 
+    // 更新样式时，务必通过“读->改->写回”的方式触发 @Published 的变更
     func setStyle(for tool: Tool, color: UIColor? = nil, width: CGFloat? = nil, opacity: CGFloat? = nil) {
         var style = toolStyles[tool] ?? ToolStyle(color: nil, width: nil, opacity: nil)
         if let color = color { style.color = color }
         if let width = width { style.width = width }
         if let opacity = opacity { style.opacity = opacity }
         toolStyles[tool] = style
+    }
 
-        // 如果是当前工具，主动刷新 UI
-        if tool == currentTool {
-            notifyToolChange()
-        }
+    func selectTool(_ tool: Tool) { 
+        currentTool = tool 
     }
 }

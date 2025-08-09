@@ -14,6 +14,7 @@ let iconSpacing = ToolbarConstants.iconSpacing
 @available(iOS 16.0, *)
 struct ContentView: View {
     private let notebookSpreadViewController = NotebookSpreadViewController()
+    @StateObject private var toolManager = ToolManager.shared
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -22,6 +23,7 @@ struct ContentView: View {
             VStack {
                 Spacer()
                 DrawingToolBar(notebookSpreadViewController: notebookSpreadViewController)
+                    .environmentObject(toolManager)
                     .padding(.leading, leadingPadding)
                 Spacer()
             }
@@ -85,6 +87,7 @@ struct ContentView: View {
         let style: ToolStyle?
         let action: () -> Void
 
+        @EnvironmentObject private var toolManager: ToolManager
         @State private var isPressed = false
         @State private var startLocation: CGPoint?
 
@@ -92,7 +95,7 @@ struct ContentView: View {
             ZStack {
                 // 手势监听包裹图层
                 Group {
-                    if tool == .monoline || tool == .pen, let style = style {
+                    if tool == .monoline || tool == .pen, let style {
                         FancyBrushPreview(tool: tool, style: style)
                     } else {
                         Image(systemName: tool.iconName)
@@ -158,6 +161,7 @@ struct ContentView: View {
         
         struct ToolSelectionView: View {
             @Binding var selectedTool: Tool
+            @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -179,6 +183,7 @@ struct ContentView: View {
 
         struct StylePresetView: View {
             let selectedTool: Tool
+            @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -195,6 +200,8 @@ struct ContentView: View {
                                     width: style.width,
                                     opacity: style.opacity
                                 )
+                                // 如果需要，顺便把当前工具切到这个工具
+                                // toolManager.selectTool(selectedTool)
                             }
                         }
                     }

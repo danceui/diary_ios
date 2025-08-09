@@ -1,8 +1,9 @@
 import UIKit
 import PencilKit
+import Combine
 
 @available(iOS 16.0, *)
-class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
+class NotebookPageView: UIView, PKCanvasViewDelegate {
     private let pageRole: PageRole
     private let isLeft: Bool
     var pageIndex: Int
@@ -24,6 +25,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     private var lassoStickerInfo: LayerSticker? // 记录套索选中的贴纸信息
 
     private var isObservingTool: Bool = false
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - 初始化
     init(role: PageRole = .normal, isLeft: Bool = true, leftPageIndex: Int = 0, initialData: Data? = nil) {
@@ -113,14 +115,27 @@ class NotebookPageView: UIView, PKCanvasViewDelegate, ToolObserver {
     // MARK: - 监听工具
     func activateToolListener() {
         guard !isObservingTool else { return }
-        ToolManager.shared.addObserver(self)
+
+        let manager = ToolManager.shared
+        // 初始同步一次
+        self.toolDidChange(tool: manager.currentTool, style: manager.style(for: manager.currentTool))
+
+        // 订阅 currentTool + toolStyles，任何一方变化都回调
+        manager.$currentTool
+            .combineLatest(manager.$toolStyles)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] tool, styles in
+                self?.toolDidChange(tool: tool, style: styles[tool])
+            }
+            .store(in: &cancellables)
+
         isObservingTool = true
         print("[P\(pageIndex)] 👂 Tool listener activated.")
     }
 
     func deactivateToolListener() {
         guard isObservingTool else { return }
-        ToolManager.shared.removeObserver(self)
+        cancellables.removeAll()
         isObservingTool = false
         print("[P\(pageIndex)] ❌ Tool listener deactivated.")
     }
