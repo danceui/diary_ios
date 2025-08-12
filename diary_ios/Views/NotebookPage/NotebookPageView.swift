@@ -122,11 +122,11 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
         // 订阅 currentTool + toolStyles，任何一方变化都回调
         manager.$currentTool
-            .combineLatest(manager.$toolStyles)
-            .receive(on: RunLoop.main)
+            .combineLatest(manager.$toolStyles) // 无论是切换工具还是修改样式，都能触发更新
+            .receive(on: RunLoop.main) // 在主线程（UI 线程）执行订阅回调
             .sink { [weak self] tool, styles in
                 self?.toolDidChange(tool: tool, style: styles[tool])
-            }
+            } // sink 是 Combine 订阅的终点，这里是事件到达后执行的闭包
             .store(in: &cancellables)
 
         isObservingTool = true
