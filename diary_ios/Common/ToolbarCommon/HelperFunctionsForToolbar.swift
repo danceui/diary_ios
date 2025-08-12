@@ -40,7 +40,7 @@ func drawPenPreview(
     }
 }
 
-func ç(
+func drawMonolinePreview(
     context: GraphicsContext,
     start: CGPoint,
     ctrl1: CGPoint,
