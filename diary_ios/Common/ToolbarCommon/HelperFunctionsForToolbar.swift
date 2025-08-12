@@ -28,7 +28,7 @@ func drawPenPreview(
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
-    
+
     for i in 0..<steps {
         let t = CGFloat(i) / CGFloat(steps - 1)
         let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end) // 计算第 i 点的位置
@@ -40,7 +40,7 @@ func drawPenPreview(
     }
 }
 
-func drawMonolinePreview(
+func ç(
     context: GraphicsContext,
     start: CGPoint,
     ctrl1: CGPoint,
@@ -50,35 +50,16 @@ func drawMonolinePreview(
     segmentIndex: Int,
     totalSegments: Int
 ) {
+    let steps = PreviewConstants.steps // 每个段的采样点数
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
-    // 估算当前曲线的长度
-    let roughSamples = PreviewConstants.samples
-    var length: CGFloat = 0
-    var prev = cubicBezier(t: 0, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-    for i in 1...roughSamples {
-        let t = CGFloat(i) / CGFloat(roughSamples)
-        let p = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-        length += hypot(p.x - prev.x, p.y - prev.y) 
-        prev = p
-    }
-
-    // 用笔宽控制点间距, 使点略有重叠
-    let baseSteps = PreviewConstants.steps
-    let spacing = max(0.3, width * 0.45) // 点间距 ≈ 0.45 * width, 基本不会露缝
-    let dynSteps = max(baseSteps, Int(ceil(length / spacing))) // 动态步数, 保证足够密
-
-    // 画点阵
-    let radius = width / 2
-    for i in 0..<dynSteps {
-        let t = CGFloat(i) / CGFloat(max(dynSteps - 1, 1))
-        let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-        let dot = Path(ellipseIn: CGRect(
-            x: point.x - radius, y: point.y - radius,
-            width: radius * 2, height: radius * 2
-        ))
+    for i in 0..<steps {
+        let t = CGFloat(i) / CGFloat(steps - 1) // 将 i 归一化到[0, 1]
+        let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end) // 计算第 i 点的位置
+        let radius = width / 2 // 该处圆的半径
+        let dot = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
         context.fill(dot, with: .color(color.opacity(opacity)))
     }
 }
