@@ -24,87 +24,19 @@ func drawPenPreview(
     segmentIndex: Int,
     totalSegments: Int
 ) {
+    let steps = PreviewConstants.steps // 每个段的采样点数
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
-
-    // 估算当前曲线的长度
-    let roughSamples = PreviewConstants.samples
-    var length: CGFloat = 0
-    var prev = cubicBezier(t: 0, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-
-    // 估计本段的 globalT 起止
-    let denom = max(1, totalSegments - 1)
-    let segT0 = CGFloat(segmentIndex) / CGFloat(denom)
-    let segT1 = CGFloat(segmentIndex + 1) / CGFloat(denom)
-
-    var pressureSum: CGFloat = 0
-    for i in 1...roughSamples {
-        let t = CGFloat(i) / CGFloat(roughSamples)
-        let p = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-        length += hypot(p.x - prev.x, p.y - prev.y)
-        prev = p
-
-        // 估平均压力
-        let globalT = segT0 + (segT1 - segT0) * t
-        pressureSum += bellPressure(t: globalT)
-    }
-    let avgPressure = pressureSum / CGFloat(roughSamples)
-    let effectivePressure = max(0.35, min(1.0, avgPressure)) // 给个下限，避免端点极细导致步数过大
-
-    // 用有效笔宽控制点间距, 保证重叠不露缝
-    let baseSteps = PreviewConstants.steps
-    let effectiveWidth = width * effectivePressure
-    let spacing = max(0.3, effectiveWidth * 0.45) // ≈0.45×有效笔宽
-    let dynSteps = max(baseSteps, Int(ceil(length / spacing)))
-
-    // 先画点阵
-    for i in 0..<dynSteps {
-        let t = CGFloat(i) / CGFloat(max(dynSteps - 1, 1))
-        let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-
-        // 注意 globalT 要与该点在“整条笔画”的相对位置一致
-        let globalT = (CGFloat(segmentIndex) + t) / CGFloat(denom)
+    
+    for i in 0..<steps {
+        let t = CGFloat(i) / CGFloat(steps - 1)
+        let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end) // 计算第 i 点的位置
+        let globalT = (CGFloat(segmentIndex) + t) / CGFloat(totalSegments - 1)
         let pressure = bellPressure(t: globalT)
-
-        let radius = (width * pressure) / 2
-        let dot = Path(ellipseIn: CGRect(
-            x: point.x - radius, y: point.y - radius,
-            width: radius * 2, height: radius * 2
-        ))
-        // 点阵略降透明度，给后面的“收边描线”留空间，避免叠色过深
-        context.fill(dot, with: .color(color.opacity(opacity * 0.75)))
-    }
-
-    // 短线段 + 圆头, 每段线宽随压力变化
-    for i in 0..<(max(dynSteps, 2) - 1) {
-        let t0 = CGFloat(i) / CGFloat(max(dynSteps - 1, 1))
-        let t1 = CGFloat(i + 1) / CGFloat(max(dynSteps - 1, 1))
-
-        let p0 = cubicBezier(t: t0, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-        let p1 = cubicBezier(t: t1, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-
-        let g0 = (CGFloat(segmentIndex) + t0) / CGFloat(denom)
-        let g1 = (CGFloat(segmentIndex) + t1) / CGFloat(denom)
-
-        let pr0 = bellPressure(t: g0)
-        let pr1 = bellPressure(t: g1)
-
-        let w0 = max(0.1, width * pr0)
-        let w1 = max(0.1, width * pr1)
-        let segW = max(0.1, (w0 + w1) * 0.5) * 1.02   // 轻微放大避免缝隙
-
-        var segPath = Path()
-        segPath.move(to: p0)
-        segPath.addLine(to: p1)
-
-        let strokeStyle = StrokeStyle(
-            lineWidth: segW,
-            lineCap: .round,
-            lineJoin: .round,
-            miterLimit: 2
-        )
-        context.stroke(segPath, with: .color(color.opacity(opacity)), style: strokeStyle)
+        let radius = width * pressure / 2 // 该处圆的半径
+        let dot = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
+        context.fill(dot, with: .color(color.opacity(opacity)))
     }
 }
 
@@ -138,25 +70,17 @@ func drawMonolinePreview(
     let spacing = max(0.3, width * 0.45) // 点间距 ≈ 0.45 * width, 基本不会露缝
     let dynSteps = max(baseSteps, Int(ceil(length / spacing))) // 动态步数, 保证足够密
 
-    // 先画点阵
+    // 画点阵
+    let radius = width / 2
     for i in 0..<dynSteps {
         let t = CGFloat(i) / CGFloat(max(dynSteps - 1, 1))
         let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
-        let radius = width / 2
         let dot = Path(ellipseIn: CGRect(
             x: point.x - radius, y: point.y - radius,
             width: radius * 2, height: radius * 2
         ))
-        // 点阵略低一点透明度，避免与描边叠加过深
-        context.fill(dot, with: .color(color.opacity(opacity * 0.75)))
+        context.fill(dot, with: .color(color.opacity(opacity)))
     }
-
-    // 叠一条略细的圆头曲线做收边, 更清晰
-    var path = Path()
-    path.move(to: start)
-    path.addCurve(to: end, control1: ctrl1, control2: ctrl2)
-    let strokeStyle = StrokeStyle(lineWidth: width * 0.86, lineCap: .round, lineJoin: .round, miterLimit: 2)
-    context.stroke(path, with: .color(color.opacity(opacity)), style: strokeStyle)
 }
 
 func generatePathSegments(inset: CGFloat, drawingSize: CGSize) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
