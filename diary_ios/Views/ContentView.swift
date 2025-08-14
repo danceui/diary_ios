@@ -1,15 +1,17 @@
 import SwiftUI
 import UIKit
 
-let toolSelectionHeight = ToolbarConstants.toolSelectionHeight
-let stylePresetHeight = ToolbarConstants.stylePresetHeight
-let leadingPadding = ToolbarConstants.leadingPadding
-let trailingPadding = ToolbarConstants.trailingPadding
-let topPadding = ToolbarConstants.topPadding
+private let toolSelectionHeight = ToolbarConstants.toolSelectionHeight
+private let stylePresetHeight = ToolbarConstants.stylePresetHeight
+private let leadingPadding = ToolbarConstants.leadingPadding
+private let trailingPadding = ToolbarConstants.trailingPadding
+private let topPadding = ToolbarConstants.topPadding
 
-let iconSize = ToolbarConstants.iconSize
-let iconPadding = ToolbarConstants.iconPadding
-let iconSpacing = ToolbarConstants.iconSpacing
+private let iconSize = ToolbarConstants.iconSize
+private let iconPadding = ToolbarConstants.iconPadding
+private let iconSpacing = ToolbarConstants.iconSpacing
+private let popoverMaxHeight: CGFloat = stylePresetHeight
+private let popoverGap = ToolbarConstants.popoverGap
 
 @available(iOS 16.0, *)
 struct ContentView: View {
@@ -137,30 +139,42 @@ struct ContentView: View {
     struct DrawingToolBar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
+        @State private var showStylePresets: Bool = false
 
         var body: some View {
-            VStack(spacing: iconSpacing) {
-                // 工具选择区
-                ToolSelectionView(selectedTool: $selectedTool)
+            HStack(alignment: .top, spacing: popoverGap) {
+                // 左侧：工具选择区
+                VStack(spacing: iconSpacing) {
+                    ToolSelectionView(
+                        selectedTool: $selectedTool,
+                        showStylePresets: $showStylePresets
+                    )
                     .frame(height: toolSelectionHeight)
-                // 分割线
-                Divider()
-                    .frame(width: iconSize)
-                    .padding(.top, iconSpacing)
-                // 样式预设区
-                if selectedTool.supportColor || selectedTool.supportWidth {
-                    StylePresetView(selectedTool: selectedTool)
-                        .frame(height: stylePresetHeight)
+                }
+                .padding(6)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                // 右侧：样式预设竖条（仅在需要时显示）
+                if showStylePresets {
+                    VStack(spacing: iconSpacing) {
+                        StylePresetView(selectedTool: selectedTool)
+                    }
+                    .frame(height: stylePresetHeight)
+                    .padding(6)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
-            .padding(6)
-            .background(.ultraThinMaterial) // 半透明磨砂效果
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+            // .animation(.spring(response: 0.25, dampingFraction: 0.9), value: showStylePresets)
+            // .animation(.spring(response: 0.25, dampingFraction: 0.9), value: selectedTool)
         }
         
         struct ToolSelectionView: View {
             @Binding var selectedTool: Tool
+            @Binding var showStylePresets: Bool
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -172,8 +186,20 @@ struct ContentView: View {
                                 isSelected: selectedTool == tool,
                                 style: ToolManager.shared.style(for: tool)
                             ) {
-                                selectedTool = tool
-                                ToolManager.shared.currentTool = tool
+                                if selectedTool == tool {
+                                    // 再次点击当前工具 -> 切换样式区
+                                    if selectedTool.supportColor || selectedTool.supportWidth {
+                                        showStylePresets.toggle()
+                                    } else {
+                                        // 不支持样式则保持收起
+                                        showStylePresets = false
+                                    }
+                                } else {
+                                    // 选择了新工具 -> 切换工具并收起样式区
+                                    selectedTool = tool
+                                    ToolManager.shared.currentTool = tool
+                                    showStylePresets = false
+                                }
                             }
                         }
                     }
@@ -200,8 +226,6 @@ struct ContentView: View {
                                     width: style.width,
                                     opacity: style.opacity
                                 )
-                                // 如果需要，顺便把当前工具切到这个工具
-                                // toolManager.selectTool(selectedTool)
                             }
                         }
                     }
