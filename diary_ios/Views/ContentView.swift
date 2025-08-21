@@ -74,6 +74,17 @@ struct ContentView: View {
                             segmentIndex: index,
                             totalSegments: segments.count
                         )
+                    } else if tool == .highlighter {
+                        drawHighlighterPreview(
+                            context: context,
+                            start: segment.0,
+                            ctrl1: segment.1,
+                            ctrl2: segment.2,
+                            end: segment.3,
+                            style: style,
+                            segmentIndex: index,
+                            totalSegments: segments.count
+                        )
                     } else {
                         // context.stroke(path, with: .color(PreviewConstants.previewColors[index]), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     }
@@ -97,7 +108,7 @@ struct ContentView: View {
             ZStack {
                 // 手势监听包裹图层
                 Group {
-                    if tool == .monoline || tool == .pen, let style {
+                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
                         FancyBrushPreview(tool: tool, style: style)
                     } else {
                         Image(systemName: tool.iconName)

@@ -42,7 +42,7 @@ enum Tool {
             ]
         case .highlighter:
             return [
-                ToolStyle(color: UIColor.yellow, width: 4, opacity: 0.5),
+                ToolStyle(color: UIColor.black, width: 4, opacity: 0.5),
                 ToolStyle(color: UIColor.green, width: 6, opacity: 0.4),
                 ToolStyle(color: UIColor.orange, width: 8, opacity: 0.6)
             ]
@@ -84,25 +84,6 @@ class ToolManager: ObservableObject {
             return (tool, defaultStyle)
         })
     }
-    // var currentTool: Tool = .pen { didSet { notifyToolChange() } }
-    // private var observers = NSHashTable<AnyObject>.weakObjects()
-    // private var toolStyles: [Tool: ToolStyle] = [:]
-
-    // func addObserver(_ observer: ToolObserver) {
-    //     observers.add(observer)
-    //     observer.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
-    // }
-
-    // func removeObserver(_ observer: ToolObserver) {
-    //     observers.remove(observer)
-    // }
-
-    // private func notifyToolChange() {
-    //     let style = toolStyles[currentTool]
-    //     for observer in observers.allObjects {
-    //         (observer as? ToolObserver)?.toolDidChange(tool: currentTool, style: toolStyles[currentTool])
-    //     }
-    // }
 
     func style(for tool: Tool) -> ToolStyle? {
         return toolStyles[tool]

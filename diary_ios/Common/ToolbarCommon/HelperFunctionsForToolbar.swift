@@ -1,7 +1,6 @@
 import UIKit
 import SwiftUI
 
-// 按照 t 计算贝塞尔曲线上的点
 func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint) -> CGPoint {
     let oneMinusT = 1 - t
     let a = oneMinusT * oneMinusT * oneMinusT
@@ -12,6 +11,13 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
     let x = a * p0.x + b * p1.x + c * p2.x + d * p3.x
     let y = a * p0.y + b * p1.y + c * p2.y + d * p3.y
     return CGPoint(x: x, y: y)
+}
+
+// MARK: - Pen Preview
+func bellPressure(t: CGFloat) -> CGFloat {
+    let clampedT = max(0.0, min(1.0, t))
+    let base = 1.0 - pow((clampedT - 0.5) * 2, 2)
+    return ToolConstants.penMinPressure + base * (ToolConstants.penMaxPressure - ToolConstants.penMinPressure)
 }
 
 func drawPenPreview(
@@ -40,6 +46,50 @@ func drawPenPreview(
     }
 }
 
+// MARK: - Highlighter Preview
+
+let highlighterOpacities: [CGFloat] = [
+    0.30, // segment 0 - 起点最淡
+    0.45, // segment 1
+    0.65, // segment 2
+    0.85, // segment 3
+    1.00, // segment 4 - 中心最实
+    0.85, // segment 5
+    0.55, // segment 6
+    0.35  // segment 7 - 终点收尾
+]
+
+func drawHighlighterPreview(
+    context: GraphicsContext,
+    start: CGPoint,
+    ctrl1: CGPoint,
+    ctrl2: CGPoint,
+    end: CGPoint,
+    style: ToolStyle,
+    segmentIndex: Int,
+    totalSegments: Int
+) {
+    let steps = PreviewConstants.steps
+    let baseColor = style.color?.toColor() ?? .yellow
+    let width = style.width ?? 12.0
+    let radius = width / 2
+    let segmentOpacity = highlighterOpacities[segmentIndex % highlighterOpacities.count] // 用 % highlighterOpacities.count 保证不会越界
+
+    for i in 0..<steps {
+        let t = CGFloat(i) / CGFloat(steps - 1)
+        let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end)
+
+        let dot = Path(ellipseIn: CGRect(
+            x: point.x - radius,
+            y: point.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        ))
+        context.fill(dot, with: .color(baseColor.opacity(Double(segmentOpacity))))
+    }
+}
+
+// MARK: - Monoline Preview
 func drawMonolinePreview(
     context: GraphicsContext,
     start: CGPoint,
@@ -83,10 +133,4 @@ func generatePathSegments(inset: CGFloat, drawingSize: CGSize) -> [(CGPoint, CGP
         (convert(x: 22.366480, y: 17.372298), convert(x: 23.412848, y: 17.497058), convert(x: 24.159403, y: 16.672955), convert(x: 24.955118, y: 16.138709))
     ]
     return bezierSegments
-}
-
-func bellPressure(t: CGFloat) -> CGFloat {
-    let clampedT = max(0.0, min(1.0, t))
-    let base = 1.0 - pow((clampedT - 0.5) * 2, 2)
-    return ToolConstants.penMinPressure + base * (ToolConstants.penMaxPressure - ToolConstants.penMinPressure)
 }
