@@ -168,8 +168,6 @@ struct ContentView: View {
                     .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
-            // .animation(.spring(response: 0.25, dampingFraction: 0.9), value: showStylePresets)
-            // .animation(.spring(response: 0.25, dampingFraction: 0.9), value: selectedTool)
         }
         
         struct ToolSelectionView: View {
