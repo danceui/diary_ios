@@ -58,18 +58,11 @@ struct ContentView: View {
                         segments: segments
                     )
                 case .pen:
-                    for (index, segment) in segments.enumerated() {
-                        drawPenPreview(
-                            context: context,
-                            start: segment.0,
-                            ctrl1: segment.1,
-                            ctrl2: segment.2,
-                            end: segment.3,
-                            style: style,
-                            segmentIndex: index,
-                            totalSegments: segments.count
-                        )
-                    }
+                    drawPenPreview(
+                        context: context,
+                        style: style,
+                        segments: segments
+                    )
                 case .highlighter:
                         drawHighlighterPreview(
                             context: context,
