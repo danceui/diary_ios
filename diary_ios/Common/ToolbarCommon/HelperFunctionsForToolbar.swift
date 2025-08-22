@@ -35,15 +35,16 @@ func drawPenPreview(
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
+    var path = Path()
     for i in 0..<steps {
         let t = CGFloat(i) / CGFloat(steps - 1)
         let point = cubicBezier(t: t, p0: start, p1: ctrl1, p2: ctrl2, p3: end) // 计算第 i 点的位置
         let globalT = (CGFloat(segmentIndex) + t) / CGFloat(totalSegments - 1)
         let pressure = bellPressure(t: globalT)
         let radius = width * pressure / 2 // 该处圆的半径
-        let dot = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-        context.fill(dot, with: .color(color.opacity(opacity)))
+        path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
     }
+    context.fill(path, with: .color(color.opacity(opacity)))
 }
 
 // MARK: - Highlighter Preview
@@ -76,13 +77,8 @@ func drawHighlighterPreview(
     for seg in segments {
         path.addCurve(to: seg.3, control1: seg.1, control2: seg.2)
     }
-    let outline = path.strokedPath(.init(
-        lineWidth: width,
-        lineCap: .butt,    // 扁头
-        lineJoin: .round
-    ))
+    let outline = path.strokedPath(.init(lineWidth: width, lineCap: .butt, lineJoin: .round))
     context.fill(outline, with: .color(color.opacity(baseOpacity)))
-
 }
 
 // MARK: - Monoline Preview
@@ -100,14 +96,11 @@ func drawMonolinePreview(
     for seg in segments {
         path.addCurve(to: seg.3, control1: seg.1, control2: seg.2)
     }
-    let outline = path.strokedPath(.init(
-        lineWidth: width,
-        lineCap: .round,    // 扁头
-        lineJoin: .round
-    ))
+    let outline = path.strokedPath(.init(lineWidth: width, lineCap: .round, lineJoin: .round))
     context.fill(outline, with: .color(color.opacity(baseOpacity)))
 
 }
+
 func generatePathSegments(inset: CGFloat, drawingSize: CGSize) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
     let scaleX = drawingSize.width / 26.458333
     let scaleY = drawingSize.height / 26.458333
