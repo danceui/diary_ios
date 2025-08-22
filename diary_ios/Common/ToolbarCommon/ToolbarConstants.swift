@@ -3,7 +3,7 @@ import SwiftUI
 
 struct ToolConstants {
     static let penMinPressure: CGFloat = 0.5
-    static let penMaxPressure: CGFloat = 0.8
+    static let penMaxPressure: CGFloat = 1.0
 }
 
 struct ToolbarConstants {

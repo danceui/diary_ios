@@ -20,6 +20,18 @@ func bellPressure(t: CGFloat) -> CGFloat {
     return ToolConstants.penMinPressure + base * (ToolConstants.penMaxPressure - ToolConstants.penMinPressure)
 }
 
+func segmentLength(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint, samples: Int = 20) -> CGFloat {
+    var len: CGFloat = 0
+    var prev = p0
+    for i in 1...samples {
+        let t = CGFloat(i)/CGFloat(samples)
+        let p = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3)
+        len += hypot(p.x - prev.x, p.y - prev.y)
+        prev = p
+    }
+    return len
+}
+
 func drawPenPreview(
     context: GraphicsContext,
     style: ToolStyle,
@@ -30,15 +42,23 @@ func drawPenPreview(
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
+    // 长度归一化
+    let segLens = segments.map { segmentLength(p0: $0.0, c1: $0.1, c2: $0.2, p3: $0.3) }
+    let totalLen = max(segLens.reduce(0, +), 1e-6)
+    var cumLenBefore: [CGFloat] = [0]
+    for i in 0..<segLens.count { cumLenBefore.append(cumLenBefore[i] + segLens[i]) }
+
     var path = Path()
     for (index, seg) in segments.enumerated() {
         let (p0, c1, c2, p3) = seg
+        let L0 = cumLenBefore[index]
+        let Ls = segLens[index]
         for i in 0..<steps {
             let t = CGFloat(i) / CGFloat(steps - 1)
             let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3) // 计算第 i 点的位置
-            let globalT = (CGFloat(index) + t) / CGFloat(segments.count - 1)
+            let globalT = (L0 + t * Ls) / totalLen
             let pressure = bellPressure(t: globalT)
-            let radius = width * pressure / 2 // 该处圆的半径
+            let radius = width * pressure / 2
             path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
         }
     }
