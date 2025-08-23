@@ -14,10 +14,12 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
 }
 
 // MARK: - Pen Preview
-func bellPressure(t: CGFloat) -> CGFloat {
+func pressureWidth(t: CGFloat, baseWidth: CGFloat) -> CGFloat {
     let clampedT = max(0.0, min(1.0, t))
-    let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
-    return ToolConstants.penMinPressure + base * (ToolConstants.penMaxPressure - ToolConstants.penMinPressure)
+    let pos = exp(-pow((clampedT - 0.5) * 2, 2))
+    let minW = max(log(baseWidth) * PreviewConstants.penMinWidthRatio, PreviewConstants.penMinWidth)
+    let maxW = baseWidth * PreviewConstants.penMaxWidthRatio
+    return minW + pos * (maxW - minW)
 }
 
 func segmentLength(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint, samples: Int = 20) -> CGFloat {
@@ -42,23 +44,14 @@ func drawPenPreview(
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
-    // 长度归一化
-    let segLens = segments.map { segmentLength(p0: $0.0, c1: $0.1, c2: $0.2, p3: $0.3) }
-    let totalLen = max(segLens.reduce(0, +), 1e-6)
-    var cumLenBefore: [CGFloat] = [0]
-    for i in 0..<segLens.count { cumLenBefore.append(cumLenBefore[i] + segLens[i]) }
-
     var path = Path()
     for (index, seg) in segments.enumerated() {
         let (p0, c1, c2, p3) = seg
-        let L0 = cumLenBefore[index]
-        let Ls = segLens[index]
         for i in 0..<steps {
             let t = CGFloat(i) / CGFloat(steps - 1)
             let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3) // 计算第 i 点的位置
-            let globalT = (L0 + t * Ls) / totalLen
-            let pressure = bellPressure(t: globalT)
-            let radius = width * pressure / 2
+            let globalT = (CGFloat(index) + t) / CGFloat(segments.count - 1)
+            let radius = pressureWidth(t: globalT, baseWidth: width) / 2.0
             path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
         }
     }

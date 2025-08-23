@@ -2,8 +2,6 @@ import UIKit
 import SwiftUI
 
 struct ToolConstants {
-    static let penMinPressure: CGFloat = 0.5
-    static let penMaxPressure: CGFloat = 1.0
 }
 
 struct ToolbarConstants {
@@ -22,6 +20,9 @@ struct ToolbarConstants {
 }
 
 struct PreviewConstants {
+    static let penMinWidth: CGFloat = 0.8
+    static let penMinWidthRatio: CGFloat = 0.35
+    static let penMaxWidthRatio: CGFloat = 0.55
     static let steps: Int = 10
     static let segmentCount = 8
     static let previewColors: [Color] = [
@@ -34,8 +35,4 @@ struct PreviewConstants {
         .yellow.opacity(0.5),
         .pink.opacity(0.9)
     ]
-    static let previewPressures: [CGFloat] = (0..<segmentCount).map { i in
-        let t = CGFloat(i) / CGFloat(segmentCount - 1)  // t ∈ [0, 1]
-        return bellPressure(t: t)
-    }
 }
