@@ -46,10 +46,9 @@ struct ContentView: View {
         let tool: Tool
         let style: ToolStyle
         var body: some View {
-            let width = style.width ?? 2.0
-            let inset: CGFloat = max(width / 2, 1)
+            let margin: CGFloat = 3 // 边距，避免笔画太粗时绘制到边缘
             Canvas { context, size in
-                let segments = generatePathSegments(inset: inset, drawingSize: CGSize(width: size.width - inset * 2, height: size.height - inset * 2))
+                let segments = generatePathSegments(in: CGRect(x: margin, y: margin, width: size.width - margin * 2, height: size.height - margin * 2))
                 switch tool {
                 case .monoline:
                     drawMonolinePreview(

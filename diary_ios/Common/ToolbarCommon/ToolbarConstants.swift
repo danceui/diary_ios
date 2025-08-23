@@ -21,8 +21,8 @@ struct ToolbarConstants {
 
 struct PreviewConstants {
     static let penMinWidth: CGFloat = 0.8
-    static let penMinWidthRatio: CGFloat = 0.35
-    static let penMaxWidthRatio: CGFloat = 0.55
+    static let penMinWidthRatio: CGFloat = 0.5
+    static let penMaxWidthRatio: CGFloat = 0.8
     static let steps: Int = 10
     static let segmentCount = 8
     static let previewColors: [Color] = [

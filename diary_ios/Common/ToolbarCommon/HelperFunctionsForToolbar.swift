@@ -112,12 +112,17 @@ func drawMonolinePreview(
 
 }
 
-func generatePathSegments(inset: CGFloat, drawingSize: CGSize) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
-    let scaleX = drawingSize.width / 26.458333
-    let scaleY = drawingSize.height / 26.458333
+func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
+    let base = 26.458333
+    let sx = rect.width  / base
+    let sy = rect.height / base
+    let s = min(sx, sy)
+    // 居中（把多余轴向的空间平均分到两边）
+    let dx = rect.minX + (rect.width  - base * s) * 0.5
+    let dy = rect.minY + (rect.height - base * s) * 0.5
 
     func convert(x: CGFloat, y: CGFloat) -> CGPoint {
-        CGPoint(x: x * scaleX + inset, y: y * scaleY + inset)
+        CGPoint(x: x * sx + dx, y: y * sy + dy)
     }
     
     let bezierSegments: [(CGPoint, CGPoint, CGPoint, CGPoint)] = [
