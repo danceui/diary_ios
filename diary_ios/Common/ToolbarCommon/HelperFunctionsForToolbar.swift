@@ -14,12 +14,19 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
 }
 
 // MARK: - Pen Preview
-func pressureWidth(t: CGFloat, baseWidth: CGFloat) -> CGFloat {
+func bellPressure(t: CGFloat) -> CGFloat {
     let clampedT = max(0.0, min(1.0, t))
-    let pos = exp(-pow((clampedT - 0.5) * 2, 2))
-    let minW = max(log(baseWidth) * PreviewConstants.penMinWidthRatio, PreviewConstants.penMinWidth)
-    let maxW = baseWidth * PreviewConstants.penMaxWidthRatio
-    return minW + pos * (maxW - minW)
+    let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
+    return PreviewConstants.penMinPressure + base * (PreviewConstants.penMaxPressure - PreviewConstants.penMinPressure)
+}
+
+func taper(_ u: CGFloat) -> CGFloat {
+    let x = max(0, min(1, u))
+    let power = 3.0
+    let minScale = 0.6
+    // sin 需要 Double，完了再转回 CGFloat
+    let s = CGFloat(sin(Double(x * .pi)))
+    return minScale + (1 - minScale) * pow(max(0, s), power)
 }
 
 func segmentLength(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint, samples: Int = 20) -> CGFloat {
@@ -39,19 +46,21 @@ func drawPenPreview(
     style: ToolStyle,
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
-    let steps = PreviewConstants.steps // 每个段的采样点数
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
     var path = Path()
     for (index, seg) in segments.enumerated() {
+        let steps = segmentSteps[index]
         let (p0, c1, c2, p3) = seg
         for i in 0..<steps {
+            // 全局归一化位置 globalT ∈ [0,1]
+            let globalT = (CGFloat(segmentStepSums[index] - steps + i)) / CGFloat(totalSteps - 1)
             let t = CGFloat(i) / CGFloat(steps - 1)
             let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3) // 计算第 i 点的位置
-            let globalT = (CGFloat(index) + t) / CGFloat(segments.count - 1)
-            let radius = pressureWidth(t: globalT, baseWidth: width) / 2.0
+            let pressure = bellPressure(t: globalT)
+            let radius = max(PreviewConstants.penMinPx, width * taper(globalT) * pressure / 2) // 该处圆的半径
             path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
         }
     }
@@ -59,7 +68,6 @@ func drawPenPreview(
 }
 
 // MARK: - Highlighter Preview
-
 let highlighterOpacities: [CGFloat] = [
     0.8, // 0 起笔最深
     0.8, // 1
@@ -137,3 +145,7 @@ func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoi
     ]
     return bezierSegments
 }
+
+let segmentSteps = [12, 14, 10, 12, 12, 14, 10, 12]
+let segmentStepSums = [12, 26, 36, 48, 60, 74, 84, 96]
+let totalSteps = 96
