@@ -29,31 +29,19 @@ func taper(_ u: CGFloat) -> CGFloat {
     return minScale + (1 - minScale) * pow(max(0, s), power)
 }
 
-func segmentLength(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint, samples: Int = 20) -> CGFloat {
-    var len: CGFloat = 0
-    var prev = p0
-    for i in 1...samples {
-        let t = CGFloat(i)/CGFloat(samples)
-        let p = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3)
-        len += hypot(p.x - prev.x, p.y - prev.y)
-        prev = p
-    }
-    return len
-}
 
 func drawPenPreview(
     context: GraphicsContext,
     style: ToolStyle,
-    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
+    segments: [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)]
 ) {
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
     var path = Path()
-    for (index, seg) in segments.enumerated() {
+    for (index, (p0, c1, c2, p3, _)) in segments.enumerated() {
         let steps = segmentSteps[index]
-        let (p0, c1, c2, p3) = seg
         for i in 0..<steps {
             // 全局归一化位置 globalT ∈ [0,1]
             let globalT = (CGFloat(segmentStepSums[index] - steps + i)) / CGFloat(totalSteps - 1)
@@ -71,7 +59,7 @@ func drawPenPreview(
 func drawHighlighterPreview(
     context: GraphicsContext,
     style: ToolStyle,
-    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
+    segments: [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)]
 ) {
     let color = style.color?.toColor() ?? .yellow
     let width = style.width ?? 12.0
@@ -90,7 +78,7 @@ func drawHighlighterPreview(
 func drawMonolinePreview(
     context: GraphicsContext,
     style: ToolStyle,
-    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
+    segments: [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)]
 ) {
     let color = style.color?.toColor() ?? .yellow
     let width = style.width ?? 12.0
@@ -106,30 +94,21 @@ func drawMonolinePreview(
 
 }
 
-func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
+func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)] {
     let base = 26.458333
-    let sx = rect.width  / base
+    let sx = rect.width / base
     let sy = rect.height / base
     let s = min(sx, sy)
-    // 居中（把多余轴向的空间平均分到两边）
     let dx = rect.minX + (rect.width  - base * s) * 0.5
     let dy = rect.minY + (rect.height - base * s) * 0.5
 
-    func convert(x: CGFloat, y: CGFloat) -> CGPoint {
-        CGPoint(x: x * sx + dx, y: y * sy + dy)
+    func convert(_ p: CGPoint) -> CGPoint {
+        CGPoint(x: p.x * s + dx, y: p.y * s + dy)
     }
-    
-    let bezierSegments: [(CGPoint, CGPoint, CGPoint, CGPoint)] = [
-        (convert(x: 1.850687, y: 17.570022), convert(x: 0.932941, y: 15.069087), convert(x: 2.005763, y: 12.310653), convert(x: 3.595063, y: 10.347862)), // 第一个转弯前
-        (convert(x: 3.595063, y: 10.347862), convert(x: 4.369668, y: 9.059063), convert(x: 6.114127, y: 8.652024), convert(x: 7.413834, y: 9.341245)), // 第一个转弯
-        (convert(x: 7.413834, y: 9.341245), convert(x: 9.210874, y: 10.161493), convert(x: 10.110526, y: 12.176224), convert(x: 10.264806, y: 14.073580)), // 第一、二个转弯之间
-        (convert(x: 10.264806, y: 14.073580), convert(x: 10.483572, y: 15.465286), convert(x: 10.861685, y: 17.156747), convert(x: 12.273829, y: 17.778131)), // 第二个转弯前半段
-        (convert(x: 12.273829, y: 17.778131), convert(x: 13.613956, y: 18.174263), convert(x: 14.812265, y: 17.042496), convert(x: 15.463040, y: 15.976733)), // 第二个转弯后半段
-        (convert(x: 15.463040, y: 15.976733), convert(x: 16.207361, y: 14.831670), convert(x: 17.789632, y: 13.946173), convert(x: 19.090702, y: 14.688075)), // 第三个转弯
-        (convert(x: 19.090702, y: 14.688075), convert(x: 20.187863, y: 15.560343), convert(x: 20.831390, y: 17.184842), convert(x: 22.366480, y: 17.372298)), // 第三、四个转弯之间
-        (convert(x: 22.366480, y: 17.372298), convert(x: 23.412848, y: 17.497058), convert(x: 24.159403, y: 16.672955), convert(x: 24.955118, y: 16.138709)) // 第四个转弯
-    ]
-    return bezierSegments
+
+    return baseSegments.map { seg in
+        (convert(seg.p0), convert(seg.c1), convert(seg.c2), convert(seg.p3), seg.baseLength * s)
+    }
 }
 
 let segmentSteps = [12, 14, 10, 12, 12, 14, 10, 12]
