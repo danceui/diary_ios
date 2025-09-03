@@ -68,17 +68,6 @@ func drawPenPreview(
 }
 
 // MARK: - Highlighter Preview
-let highlighterOpacities: [CGFloat] = [
-    0.8, // 0 起笔最深
-    0.8, // 1
-    0.8, // 2
-    0.8, // 3 第一次转弯更实
-    0.8, // 4
-    0.8, // 5
-    0.8, // 6 第二次转弯更实
-    0.8  // 7 收尾最淡
-]
-
 func drawHighlighterPreview(
     context: GraphicsContext,
     style: ToolStyle,
@@ -87,9 +76,6 @@ func drawHighlighterPreview(
     let color = style.color?.toColor() ?? .yellow
     let width = style.width ?? 12.0
     let baseOpacity = style.opacity ?? 0.35
-
-    // 每段的固定透明度（你之前定义的数组）
-    // let segmentOpacity = highlighterOpacities[segmentIndex % highlighterOpacities.count]
 
     var path = Path()
     path.move(to: segments[0].0)

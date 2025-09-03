@@ -22,7 +22,7 @@ struct ToolbarConstants {
 struct PreviewConstants {
     static let penMinPressure: CGFloat = 0.55
     static let penMaxPressure: CGFloat = 0.75
-    static let penMinPx: CGFloat = 0.65
+    static let penMinPx: CGFloat = 0.5
     static let previewColors: [Color] = [
         .red.opacity(1.0),
         .blue.opacity(0.7),
