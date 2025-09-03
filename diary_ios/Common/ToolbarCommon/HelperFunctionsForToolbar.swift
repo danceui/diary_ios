@@ -17,7 +17,7 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
 func bellPressure(t: CGFloat) -> CGFloat {
     let clampedT = max(0.0, min(1.0, t))
     let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
-    return PreviewConstants.penMinPressure + base * (PreviewConstants.penMaxPressure - PreviewConstants.penMinPressure)
+    return PenPreviewConstants.minPressure + base * (PenPreviewConstants.maxPressure - PenPreviewConstants.minPressure)
 }
 
 func taper(_ u: CGFloat) -> CGFloat {
@@ -33,22 +33,22 @@ func taper(_ u: CGFloat) -> CGFloat {
 func drawPenPreview(
     context: GraphicsContext,
     style: ToolStyle,
-    segments: [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)]
+    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
 
     var path = Path()
-    for (index, (p0, c1, c2, p3, _)) in segments.enumerated() {
-        let steps = segmentSteps[index]
+    for (index, (p0, c1, c2, p3)) in segments.enumerated() {
+        let steps = PenPreviewConstants.segmentSteps[index]
         for i in 0..<steps {
             // 全局归一化位置 globalT ∈ [0,1]
-            let globalT = (CGFloat(segmentStepSums[index] - steps + i)) / CGFloat(totalSteps - 1)
+            let globalT = (CGFloat(PenPreviewConstants.segmentStepSums[index] - steps + i)) / CGFloat(PenPreviewConstants.totalSteps - 1)
             let t = CGFloat(i) / CGFloat(steps - 1)
             let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3) // 计算第 i 点的位置
             let pressure = bellPressure(t: globalT)
-            let radius = max(PreviewConstants.penMinPx, width * taper(globalT) * pressure / 2) // 该处圆的半径
+            let radius = max(PenPreviewConstants.minPx, width * taper(globalT) * pressure / 2) // 该处圆的半径
             path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
         }
     }
@@ -59,7 +59,7 @@ func drawPenPreview(
 func drawHighlighterPreview(
     context: GraphicsContext,
     style: ToolStyle,
-    segments: [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)]
+    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
     let color = style.color?.toColor() ?? .yellow
     let width = style.width ?? 12.0
@@ -78,7 +78,7 @@ func drawHighlighterPreview(
 func drawMonolinePreview(
     context: GraphicsContext,
     style: ToolStyle,
-    segments: [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)]
+    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
     let color = style.color?.toColor() ?? .yellow
     let width = style.width ?? 12.0
@@ -94,7 +94,7 @@ func drawMonolinePreview(
 
 }
 
-func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint, CGFloat)] {
+func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
     let base = 26.458333
     let sx = rect.width / base
     let sy = rect.height / base
@@ -107,10 +107,7 @@ func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoi
     }
 
     return baseSegments.map { seg in
-        (convert(seg.p0), convert(seg.c1), convert(seg.c2), convert(seg.p3), seg.baseLength * s)
+        (convert(seg.p0), convert(seg.c1), convert(seg.c2), convert(seg.p3))
     }
 }
 
-let segmentSteps = [12, 14, 10, 12, 12, 14, 10, 12]
-let segmentStepSums = [12, 26, 36, 48, 60, 74, 84, 96]
-let totalSteps = 96

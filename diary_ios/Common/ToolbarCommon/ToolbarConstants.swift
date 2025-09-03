@@ -3,19 +3,6 @@ import SwiftUI
 
 struct BezierSegment {
     let p0, c1, c2, p3: CGPoint
-    let baseLength: CGFloat
-}
-
-func segmentLength(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint, samples: Int = 20) -> CGFloat {
-    var len: CGFloat = 0
-    var prev = p0
-    for i in 1...samples {
-        let t = CGFloat(i)/CGFloat(samples)
-        let p = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3)
-        len += hypot(p.x - prev.x, p.y - prev.y)
-        prev = p
-    }
-    return len
 }
 
 let baseSegments: [BezierSegment] = {
@@ -29,13 +16,8 @@ let baseSegments: [BezierSegment] = {
         (CGPoint(x: 19.090702, y: 14.688075), CGPoint(x: 20.187863, y: 15.560343), CGPoint(x: 20.831390, y: 17.184842), CGPoint(x: 22.366480, y: 17.372298)), // 第三、四个转弯之间
         (CGPoint(x: 22.366480, y: 17.372298), CGPoint(x: 23.412848, y: 17.497058), CGPoint(x: 24.159403, y: 16.672955), CGPoint(x: 24.955118, y: 16.138709)) // 第四个转弯
     ]
-    return rawPoints.map { (p0, c1, c2, p3) in
-        return BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3, baseLength: segmentLength(p0: p0, c1: c1, c2: c2, p3: p3))
-    }
+    return rawPoints.map { (p0, c1, c2, p3) in BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3) }
 }()
-
-struct ToolConstants {
-}
 
 struct ToolbarConstants {
     static let toolSelectionHeight: CGFloat = 160.0
@@ -52,10 +34,17 @@ struct ToolbarConstants {
     static let toolbarButtonSelectedColor: UIColor = .systemGreen
 }
 
+
+struct PenPreviewConstants {
+    static let minPressure: CGFloat = 0.55
+    static let maxPressure: CGFloat = 0.75
+    static let minPx: CGFloat = 0.5
+    static let segmentSteps = [12, 14, 10, 12, 12, 14, 10, 12]
+    static let segmentStepSums = [12, 26, 36, 48, 60, 74, 84, 96]
+    static let totalSteps = 96
+}  
+
 struct PreviewConstants {
-    static let penMinPressure: CGFloat = 0.55
-    static let penMaxPressure: CGFloat = 0.75
-    static let penMinPx: CGFloat = 0.5
     static let previewColors: [Color] = [
         .red.opacity(1.0),
         .blue.opacity(0.7),
