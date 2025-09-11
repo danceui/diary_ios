@@ -29,7 +29,6 @@ func taper(_ u: CGFloat) -> CGFloat {
     return minScale + (1 - minScale) * pow(max(0, s), power)
 }
 
-
 func drawPenPreview(
     context: GraphicsContext,
     style: ToolStyle,
@@ -56,6 +55,12 @@ func drawPenPreview(
 }
 
 // MARK: - Highlighter Preview
+func highlighterAlpha(t: CGFloat) -> CGFloat {
+    let clampedT = max(0.0, min(1.0, t))
+    let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
+    return 0.2 + base * (1.0 - 0.2)
+}
+
 func drawHighlighterPreview(
     context: GraphicsContext,
     style: ToolStyle,
@@ -70,8 +75,23 @@ func drawHighlighterPreview(
     for seg in segments {
         path.addCurve(to: seg.3, control1: seg.1, control2: seg.2)
     }
-    let outline = path.strokedPath(.init(lineWidth: width, lineCap: .butt, lineJoin: .round))
+    let outline = path.strokedPath(.init(lineWidth: width, lineCap: .square, lineJoin: .miter))
     context.fill(outline, with: .color(color.opacity(baseOpacity)))
+
+    // for (index, (p0, c1, c2, p3)) in segments.enumerated() {
+    //     let steps = PenPreviewConstants.segmentSteps[index]
+    //     for i in 0..<steps {
+    //         let globalT = (CGFloat(PenPreviewConstants.segmentStepSums[index] - steps + i)) / CGFloat(PenPreviewConstants.totalSteps - 1)
+    //         let t = CGFloat(i) / CGFloat(steps - 1)
+    //         let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3)
+
+    //         let radius = width / 2
+    //         let alpha = highlighterAlpha(t: globalT) * baseOpacity
+    //         path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
+    //         context.fill(Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)),
+    //                      with: .color(color.opacity(alpha)))
+    //     }
+    // }
 }
 
 // MARK: - Monoline Preview
