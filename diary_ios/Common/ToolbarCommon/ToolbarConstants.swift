@@ -37,7 +37,7 @@ struct ToolbarConstants {
     static let toolbarButtonSelectedColor: UIColor = .systemGreen
 }
 
-
+// MARK: - Pen Preview Constants
 struct PenPreviewConstants {
     static let minPressure: CGFloat = 0.45
     static let maxPressure: CGFloat = 0.75
@@ -47,25 +47,10 @@ struct PenPreviewConstants {
     static let totalSteps = 90
 }  
 
-struct PreviewConstants {
-    static let previewColors: [Color] = [
-        .red.opacity(1.0),
-        .blue.opacity(0.7),
-        .green.opacity(0.5),
-        .orange.opacity(0.8),
-        .purple.opacity(0.6),
-        .pink.opacity(1.0),
-        .yellow.opacity(0.5),
-        .pink.opacity(0.9)
-    ]
-}
-
-// 只把“会影响形状的参数”放进 Key
 struct PenPreviewPathKey: Hashable {
     let width: CGFloat
 }
 
-// PenPreview用带状多边形（ribbon），更顺滑也能缓存为矢量路径
 final class PenPreviewPathCache {
     static let shared = PenPreviewPathCache()
     private var map: [PenPreviewPathKey: CGPath] = [:]
