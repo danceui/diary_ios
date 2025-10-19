@@ -1,5 +1,6 @@
 import UIKit
 import SwiftUI
+import CoreGraphics
 
 struct BezierSegment {
     let p0, c1, c2, p3: CGPoint
@@ -32,11 +33,11 @@ let baseSegments: [BezierSegment] = {
         c2: CGPoint(x: 11.1, y: 17.1),
         p3: CGPoint(x: 12.5, y: 17.6)),
 
-        // C 13.7 18.0, 15.8 17.1, 16.4 14.3
+        // C 13.7 18.0, 15.8 17.1, 16.5 14.0
         (p0: CGPoint(x: 12.5, y: 17.6),
         c1: CGPoint(x: 13.7, y: 18.0),
         c2: CGPoint(x: 15.8, y: 17.1),
-        p3: CGPoint(x: 16.4, y: 14.3)),
+        p3: CGPoint(x: 16.6, y: 14.0)),
      ]
     return rawPoints.map { (p0, c1, c2, p3) in BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3) }
 }()
@@ -77,4 +78,20 @@ struct PreviewConstants {
         .yellow.opacity(0.5),
         .pink.opacity(0.9)
     ]
+}
+
+// 只把“会影响形状的参数”放进 Key；颜色/透明度不放！
+struct PenPreviewPathKey: Hashable {
+    let width: CGFloat
+}
+
+final class PenPreviewPathCache {
+    static let shared = PenPreviewPathCache()
+    private var map: [PenPreviewPathKey: CGPath] = [:]
+    func path(for key: PenPreviewPathKey, build: () -> CGPath) -> CGPath {
+        if let p = map[key] { return p }
+        let p = build()
+        map[key] = p
+        return p
+    }
 }

@@ -29,6 +29,79 @@ func taper(_ u: CGFloat) -> CGFloat {
     return minScale + (1 - minScale) * pow(max(0, s), power)
 }
 
+// PenPreview用带状多边形（ribbon），更顺滑也能缓存为矢量路径
+private func buildRibbonCGPath(
+    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)],
+    width: CGFloat
+) -> CGPath {
+    let stepsPerSeg = PenPreviewConstants.segmentSteps
+    let totalSteps  = PenPreviewConstants.totalSteps
+    precondition(stepsPerSeg.count == segments.count)
+
+    var leftPts: [CGPoint] = []; leftPts.reserveCapacity(totalSteps)
+    var rightPts: [CGPoint] = []; rightPts.reserveCapacity(totalSteps)
+
+    for (segIndex, (p0, c1, c2, p3)) in segments.enumerated() {
+        let steps = stepsPerSeg[segIndex]
+        for i in 0..<steps {
+            let t = CGFloat(i) / CGFloat(max(1, steps - 1))
+            let P  = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3)
+
+            // 数值导数 → 切线 → 法线
+            let e: CGFloat = 1e-3
+            let P1 = cubicBezier(t: max(0, t - e), p0: p0, p1: c1, p2: c2, p3: p3)
+            let P2 = cubicBezier(t: min(1, t + e), p0: p0, p1: c1, p2: c2, p3: p3)
+            let dx = P2.x - P1.x, dy = P2.y - P1.y
+            let L  = max(1e-6, hypot(dx, dy))
+            let nx = -dy / L, ny = dx / L
+
+            // 全局进度（用于你的 taper/pressure）
+            let gStep = PenPreviewConstants.segmentStepSums[segIndex] - steps + i
+            let gT    = CGFloat(gStep) / CGFloat(max(1, totalSteps - 1))
+
+            // 半径：唯一受 width 影响
+            let r = max(PenPreviewConstants.minPx, (width * taper(gT) * bellPressure(t: gT)) / 2)
+
+            leftPts.append(.init(x: P.x + nx * r, y: P.y + ny * r))
+            rightPts.append(.init(x: P.x - nx * r, y: P.y - ny * r))
+        }
+    }
+
+    let path = CGMutablePath()
+    if let first = leftPts.first {
+        path.move(to: first)
+        for p in leftPts.dropFirst() { path.addLine(to: p) }
+        for p in rightPts.reversed() { path.addLine(to: p) }
+        path.closeSubpath()
+    }
+    return path
+}
+
+// func drawPenPreview(
+//     context: GraphicsContext,
+//     style: ToolStyle,
+//     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
+// ) {
+//     let color = style.color?.toColor() ?? .black
+//     let width = style.width ?? 2.0
+//     let opacity = style.opacity ?? 1.0
+
+//     var path = Path()
+//     for (index, (p0, c1, c2, p3)) in segments.enumerated() {
+//         let steps = PenPreviewConstants.segmentSteps[index]
+//         for i in 0..<steps {
+//             // 全局归一化位置 globalT ∈ [0,1]
+//             let globalT = (CGFloat(PenPreviewConstants.segmentStepSums[index] - steps + i)) / CGFloat(PenPreviewConstants.totalSteps - 1)
+//             let t = CGFloat(i) / CGFloat(steps - 1)
+//             let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3) // 计算第 i 点的位置
+//             let pressure = bellPressure(t: globalT)
+//             let radius = max(PenPreviewConstants.minPx, width * taper(globalT) * pressure / 2) // 该处圆的半径
+//             path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
+//         }
+//     }
+//     context.fill(path, with: .color(color.opacity(opacity)))
+// }
+
 func drawPenPreview(
     context: GraphicsContext,
     style: ToolStyle,
@@ -37,21 +110,15 @@ func drawPenPreview(
     let color = style.color?.toColor() ?? .black
     let width = style.width ?? 2.0
     let opacity = style.opacity ?? 1.0
+    let key = PenPreviewPathKey(width: width)
 
-    var path = Path()
-    for (index, (p0, c1, c2, p3)) in segments.enumerated() {
-        let steps = PenPreviewConstants.segmentSteps[index]
-        for i in 0..<steps {
-            // 全局归一化位置 globalT ∈ [0,1]
-            let globalT = (CGFloat(PenPreviewConstants.segmentStepSums[index] - steps + i)) / CGFloat(PenPreviewConstants.totalSteps - 1)
-            let t = CGFloat(i) / CGFloat(steps - 1)
-            let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3) // 计算第 i 点的位置
-            let pressure = bellPressure(t: globalT)
-            let radius = max(PenPreviewConstants.minPx, width * taper(globalT) * pressure / 2) // 该处圆的半径
-            path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-        }
+    // 命中缓存就直接用；未命中则构建一次带状路径
+    let cgPath = PenPreviewPathCache.shared.path(for: key) {
+        buildRibbonCGPath(segments: segments, width: width)
     }
-    context.fill(path, with: .color(color.opacity(opacity)))
+
+    // 颜色/透明度不会改变几何，直接复用同一条路径
+    context.fill(Path(cgPath), with: .color(color.opacity(opacity)))
 }
 
 // MARK: - Highlighter Preview
