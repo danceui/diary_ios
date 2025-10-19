@@ -6,18 +6,21 @@ struct BezierSegment {
     let p0, c1, c2, p3: CGPoint
 }
 
-let baseSegments: [BezierSegment] = {
-    let rawPoints: [(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint)] = [
-        (p0: CGPoint(x: 2.82, y: 13.6), c1: CGPoint(x: 2.52, y: 11.5), c2: CGPoint(x: 3.62, y: 8.7), p3: CGPoint(x: 5.32, y: 6.8)),
-        (p0: CGPoint(x: 5.32, y: 6.8), c1: CGPoint(x: 6.22, y: 5.7), c2: CGPoint(x: 7.72, y: 5.3), p3: CGPoint(x: 9.12, y: 5.9)),
-        (p0: CGPoint(x: 9.12, y: 5.9), c1: CGPoint(x: 10.62, y: 6.5), c2: CGPoint(x: 11.32, y: 8.5), p3: CGPoint(x: 11.78, y: 10.4)),
-        (p0: CGPoint(x: 11.78, y: 10.4), c1: CGPoint(x: 12.02, y: 11.8), c2: CGPoint(x: 12.42, y: 13.7), p3: CGPoint(x: 13.82, y: 14.2)),
-        (p0: CGPoint(x: 13.82, y: 14.2), c1: CGPoint(x: 15.02, y: 14.6), c2: CGPoint(x: 17.12, y: 13.7), p3: CGPoint(x: 17.82, y: 10.6))
-    ]
-    return rawPoints.map { (p0, c1, c2, p3) in BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3) }
-}()
-
-let baseLine: (start: CGPoint, end: CGPoint) = (start: CGPoint(x: 3.5, y: 13.0), end: CGPoint(x: 17.0, y: 6.0))
+struct PreviewSVGConstants {
+    static let canvasSize = CGSize(width: 200, height: 200)
+    static let baseSize = 24.0
+    static let baseSegments: [BezierSegment] = {
+        let rawPoints: [(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint)] = [
+            (p0: CGPoint(x: 4.82, y: 15.6), c1: CGPoint(x: 4.52, y: 13.5), c2: CGPoint(x: 5.62, y: 10.7), p3: CGPoint(x: 7.32, y: 8.8)),
+            (p0: CGPoint(x: 7.32, y: 8.8), c1: CGPoint(x: 8.22, y: 7.7), c2: CGPoint(x: 9.72, y: 7.3), p3: CGPoint(x: 11.12, y: 7.9)),
+            (p0: CGPoint(x: 11.12, y: 7.9), c1: CGPoint(x: 12.62, y: 8.5), c2: CGPoint(x: 13.32, y: 10.5), p3: CGPoint(x: 13.78, y: 12.4)),
+            (p0: CGPoint(x: 13.78, y: 12.4), c1: CGPoint(x: 14.02, y: 13.8), c2: CGPoint(x: 14.42, y: 15.7), p3: CGPoint(x: 15.82, y: 16.2)),
+            (p0: CGPoint(x: 15.82, y: 16.2), c1: CGPoint(x: 17.02, y: 16.6), c2: CGPoint(x: 19.12, y: 15.7), p3: CGPoint(x: 19.82, y: 12.6))
+        ]
+        return rawPoints.map { (p0, c1, c2, p3) in BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3) }
+    }()
+    static let baseLine: (start: CGPoint, end: CGPoint) = (start: CGPoint(x: 5.5, y: 15.0), end: CGPoint(x: 19.0, y: 8.0))
+}
 
 struct ToolbarConstants {
     static let toolSelectionHeight: CGFloat = 160.0

@@ -47,10 +47,8 @@ struct ContentView: View {
         let style: ToolStyle
         var body: some View {
             Canvas { context, size in
-                let w = style.width ?? 12
-                let margin = previewSafeMargin(for: tool, width: w)
-                let segments = generatePathSegments(in: CGRect(x: margin, y: margin, width: size.width - margin * 2, height: size.height - margin * 2))
-                let line = generatePathLine(in: CGRect(origin: .zero, size: size))
+                let segments = generatePathSegments(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
+                let line = generatePathLine(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
                 switch tool {
                 case .monoline:
                     drawMonolinePreview(
@@ -76,7 +74,7 @@ struct ContentView: View {
                 } 
             }
             .frame(width: iconSize, height: iconSize)
-            // .border(.red, width: 1)
+            .border(.red, width: 1)
         }
     }
 

@@ -151,8 +151,7 @@ func drawHighlighterPreview(
 }
 
 
-func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
-    let base = 20.0
+func generatePathSegments(in rect: CGRect, base: CGFloat) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
     let sx = rect.width / base
     let sy = rect.height / base
     let s = min(sx, sy)
@@ -162,21 +161,20 @@ func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoi
     func convert(_ p: CGPoint) -> CGPoint {
         CGPoint(x: p.x * s + dx, y: p.y * s + dy)
     }
-    return baseSegments.map { seg in
+    return PreviewSVGConstants.baseSegments.map { seg in
         (convert(seg.p0), convert(seg.c1), convert(seg.c2), convert(seg.p3))
     }
 }
 
-func generatePathLine(in rect: CGRect) -> (start: CGPoint, end: CGPoint) {
-    let base = 20.0
+func generatePathLine(in rect: CGRect, base: CGFloat) -> (start: CGPoint, end: CGPoint) {
     let sx = rect.width / base
     let sy = rect.height / base
     let s = min(sx, sy)
     let dx = rect.minX + (rect.width  - base * s) * 0.5
     let dy = rect.minY + (rect.height - base * s) * 0.5
 
-    let start = CGPoint(x: baseLine.start.x * s + dx, y: baseLine.start.y * s + dy)
-    let end = CGPoint(x: baseLine.end.x * s + dx, y: baseLine.end.y * s + dy)
+    let start = CGPoint(x: PreviewSVGConstants.baseLine.start.x * s + dx, y: PreviewSVGConstants.baseLine.start.y * s + dy)
+    let end = CGPoint(x: PreviewSVGConstants.baseLine.end.x * s + dx, y: PreviewSVGConstants.baseLine.end.y * s + dy)
     return (start: start, end: end)
 }
 
