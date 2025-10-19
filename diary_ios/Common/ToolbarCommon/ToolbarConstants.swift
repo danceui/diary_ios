@@ -8,37 +8,12 @@ struct BezierSegment {
 
 let baseSegments: [BezierSegment] = {
     let rawPoints: [(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint)] = [
-        // M 1.5 17.0
-        // C 1.2 14.9, 2.3 12.1, 4.0 10.2
-        (p0: CGPoint(x: 1.5,  y: 17.0),
-        c1: CGPoint(x: 1.2,  y: 14.9),
-        c2: CGPoint(x: 2.3,  y: 12.1),
-        p3: CGPoint(x: 4.0,  y: 10.2)),
-
-        // C 4.9 9.1, 6.4 8.7, 7.8 9.3
-        (p0: CGPoint(x: 4.0,  y: 10.2),
-        c1: CGPoint(x: 4.9,  y: 9.1),
-        c2: CGPoint(x: 6.4,  y: 8.7),
-        p3: CGPoint(x: 7.8,  y: 9.3)),
-
-        // C 9.3 9.9, 10.3 11.9, 10.5 13.8
-        (p0: CGPoint(x: 7.8,  y: 9.3),
-        c1: CGPoint(x: 9.3,  y: 9.9),
-        c2: CGPoint(x: 10.3, y: 11.9),
-        p3: CGPoint(x: 10.5, y: 13.8)),
-
-        // C 10.7 15.2, 11.1 17.1, 12.5 17.6
-        (p0: CGPoint(x: 10.5, y: 13.8),
-        c1: CGPoint(x: 10.7, y: 15.2),
-        c2: CGPoint(x: 11.1, y: 17.1),
-        p3: CGPoint(x: 12.5, y: 17.6)),
-
-        // C 13.7 18.0, 15.8 17.1, 16.5 14.0
-        (p0: CGPoint(x: 12.5, y: 17.6),
-        c1: CGPoint(x: 13.7, y: 18.0),
-        c2: CGPoint(x: 15.8, y: 17.1),
-        p3: CGPoint(x: 16.6, y: 14.0)),
-     ]
+        (p0: CGPoint(x: 2.82, y: 13.6), c1: CGPoint(x: 2.52, y: 11.5), c2: CGPoint(x: 3.62, y: 8.7), p3: CGPoint(x: 5.32, y: 6.8)),
+        (p0: CGPoint(x: 5.32, y: 6.8), c1: CGPoint(x: 6.22, y: 5.7), c2: CGPoint(x: 7.72, y: 5.3), p3: CGPoint(x: 9.12, y: 5.9)),
+        (p0: CGPoint(x: 9.12, y: 5.9), c1: CGPoint(x: 10.62, y: 6.5), c2: CGPoint(x: 11.32, y: 8.5), p3: CGPoint(x: 11.78, y: 10.4)),
+        (p0: CGPoint(x: 11.78, y: 10.4), c1: CGPoint(x: 12.02, y: 11.8), c2: CGPoint(x: 12.42, y: 13.7), p3: CGPoint(x: 13.82, y: 14.2)),
+        (p0: CGPoint(x: 13.82, y: 14.2), c1: CGPoint(x: 15.02, y: 14.6), c2: CGPoint(x: 17.12, y: 13.7), p3: CGPoint(x: 17.82, y: 10.6))
+    ]
     return rawPoints.map { (p0, c1, c2, p3) in BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3) }
 }()
 

@@ -168,8 +168,6 @@ func drawMonolinePreview(
 
 func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
     let base = 20.0
-    // let tx: CGFloat = 1.32
-    // let ty: CGFloat = -3.4
     let sx = rect.width / base
     let sy = rect.height / base
     let s = min(sx, sy)
@@ -178,7 +176,6 @@ func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoi
 
     func convert(_ p: CGPoint) -> CGPoint {
         CGPoint(x: p.x * s + dx, y: p.y * s + dy)
-        // CGPoint(x: (p.x + tx) * s + dx, y: (p.y + ty) * s + dy)
     }
 
     return baseSegments.map { seg in

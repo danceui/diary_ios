@@ -46,9 +46,9 @@ struct ContentView: View {
         let tool: Tool
         let style: ToolStyle
         var body: some View {
-            let margin: CGFloat = 3 // 边距，避免笔画太粗时绘制到边缘
+            // let margin: CGFloat = 2.0
             Canvas { context, size in
-                let segments = generatePathSegments(in: CGRect(x: margin, y: margin, width: size.width - margin * 2, height: size.height - margin * 2))
+                let segments = generatePathSegments(in: CGRect(origin: .zero, size: size))
                 switch tool {
                 case .monoline:
                     drawMonolinePreview(
@@ -73,7 +73,7 @@ struct ContentView: View {
                 case .lasso: break
                 } 
             }
-            .frame(width: iconSize, height: iconSize)
+            .frame(width: iconSize, height: iconSize).border(.red, width: 1)
         }
     }
 
