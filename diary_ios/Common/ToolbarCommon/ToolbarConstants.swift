@@ -61,3 +61,10 @@ final class PenPreviewPathCache {
         return p
     }
 }
+
+struct ToolItemFrameKey: PreferenceKey {
+    static var defaultValue: [Tool: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [Tool: Anchor<CGRect>], nextValue: () -> [Tool: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}

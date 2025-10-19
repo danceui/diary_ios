@@ -13,6 +13,16 @@ private let iconSpacing = ToolbarConstants.iconSpacing
 private let popoverMaxHeight: CGFloat = stylePresetHeight
 private let popoverGap = ToolbarConstants.popoverGap
 
+// 一个独立的“玻璃贴片”视图，复用形状 + 光泽
+@available(iOS 26.0, *)
+private struct GlassHighlight: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .glassEffect() // 真实液态玻璃（含折射/高光/厚度）
+            .shadow(radius: 5)     // 轻微阴影，增强层次
+    }
+}
+
 @available(iOS 26.0, *)
 struct ContentView: View {
     private let notebookSpreadViewController = NotebookSpreadViewController()
@@ -48,9 +58,6 @@ struct ContentView: View {
         func makeBody(configuration: Configuration) -> some View {
             configuration.label
                 .scaleEffect(configuration.isPressed ? 1.1 : 1.0)
-                // ① 为按钮本体启用液态玻璃（前景 + 轮廓折射）
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                // ② 选中态描边（建议用 .tint 以适配玻璃下的动态配色）
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: isSelected ? 2 : 0)
@@ -102,21 +109,14 @@ struct ContentView: View {
         let isSelected: Bool
         let style: ToolStyle?
         let action: () -> Void
-        var namespace: Namespace.ID? = nil   // ✅ 新增
 
+        // @EnvironmentObject private var toolManager: ToolManager
         @State private var isPressed = false
 
         @available(iOS 26.0, *)
         var body: some View {
             Button(action: action) {
                 ZStack {
-                    // ✅ 选中项的“液态玻璃”背景（在不同按钮之间移动）
-                    if isSelected, let ns = namespace {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .glassEffect(.regular) // 玻璃材质本体
-                            .matchedGeometryEffect(id: "toolGlassSelection", in: ns)
-                            .padding(2) // 让玻璃块比内容略大一些
-                    }
                     // 手势监听包裹图层
                     Group {
                         if tool == .monoline || tool == .pen || tool == .highlighter, let style {
@@ -131,9 +131,17 @@ struct ContentView: View {
                     .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                     .padding(iconPadding)
                 }
-                .contentShape(Rectangle()) // 保证整个区域可点击
+                .contentShape(Rectangle())
             }
             .buttonStyle(PressableCardStyle(isSelected: isSelected))
+            .background(
+                GeometryReader { _ in
+                    Color.clear
+                        .anchorPreference(key: ToolItemFrameKey.self, value: .bounds) { anchor in
+                            [tool: anchor]
+                        }
+                }
+            )
         }
     }
 
@@ -143,7 +151,6 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
-        @Namespace private var glassNS   // ✅ 用于选中玻璃块的匹配动画
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
@@ -178,7 +185,7 @@ struct ContentView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @EnvironmentObject private var toolManager: ToolManager
-            @Namespace var internalNS // 可直接用父级传递下来的，也可从父 View 传参
+            private let glassSpring = Animation.spring(response: 0.32, dampingFraction: 0.85)
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -204,6 +211,28 @@ struct ContentView: View {
                                     showStylePresets = false
                                 }
                             }
+                        }
+                    }
+                    .overlay(alignment: .topLeading) {
+                        if #available(iOS 26.0, *) {
+                            GeometryReader { proxy in
+                                // 读取之前通过 anchorPreference 上报的所有按钮 frame
+                                Color.clear
+                                    .backgroundPreferenceValue(ToolItemFrameKey.self) { anchors in
+                                        // 找到当前选中工具的 anchor
+                                        if let anchor = anchors[selectedTool] {
+                                            // 将 anchor 转换为当前 GeometryReader（也即 VStack 叠层）的坐标空间 rect
+                                            let rect = proxy[anchor]
+                                            GlassHighlight()
+                                                .frame(width: rect.width, height: rect.height)
+                                                .position(x: rect.midX, y: rect.midY)
+                                                .animation(glassSpring, value: rect.origin)
+                                                .animation(glassSpring, value: rect.size)
+                                        }
+                                    }
+                            }
+                        } else {
+                            EmptyView() // 旧系统不显示玻璃贴片
                         }
                     }
                 }
