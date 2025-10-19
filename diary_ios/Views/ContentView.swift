@@ -17,15 +17,15 @@ private let popoverGap = ToolbarConstants.popoverGap
 @available(iOS 26.0, *)
 private struct GlassHighlight: View {
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 34, style: .continuous)
         shape
             .glassEffect() // 真实液态玻璃（含折射/高光/厚度）
             // 高光描边：让贴片边缘更亮，与背板区分开
-            .overlay(
-                shape
-                    .stroke(.white.opacity(0.25), lineWidth: 1.5)
-                    .blendMode(.plusLighter)
-            )
+            // .overlay(
+            //     shape
+            //         .stroke(.white.opacity(0.25), lineWidth: 1.5)
+            //         .blendMode(.plusLighter)
+            // )
     }
 }
 
@@ -56,20 +56,6 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
-    }
-
-    // MARK: - Pressable Card Style
-    struct PressableCardStyle: ButtonStyle {
-        var isSelected: Bool
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .scaleEffect(configuration.isPressed ? 1.1 : 1.0)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: isSelected ? 2 : 0)
-                )
-                .animation(.spring(response: 0.22, dampingFraction: 0.7), value: configuration.isPressed)
-        }
     }
 
     // MARK: - Fancy Brush Preview
@@ -134,12 +120,11 @@ struct ContentView: View {
                         }
                     }
                     .frame(width: iconSize, height: iconSize)
-                    // .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
+                    .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                     .padding(iconPadding)
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(PressableCardStyle(isSelected: isSelected))
             .background(
                 GeometryReader { _ in
                     Color.clear
