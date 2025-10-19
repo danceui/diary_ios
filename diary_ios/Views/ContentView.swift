@@ -13,7 +13,7 @@ private let iconSpacing = ToolbarConstants.iconSpacing
 private let popoverMaxHeight: CGFloat = stylePresetHeight
 private let popoverGap = ToolbarConstants.popoverGap
 
-@available(iOS 16.0, *)
+@available(iOS 26.0, *)
 struct ContentView: View {
     private let notebookSpreadViewController = NotebookSpreadViewController()
     @StateObject private var toolManager = ToolManager.shared
@@ -48,21 +48,21 @@ struct ContentView: View {
         func makeBody(configuration: Configuration) -> some View {
             configuration.label
                 .scaleEffect(configuration.isPressed ? 1.1 : 1.0)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(isSelected ? Color.primary.opacity(0.06) : .clear)
-                )
+                // ① 为按钮本体启用液态玻璃（前景 + 轮廓折射）
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                // ② 选中态描边（建议用 .tint 以适配玻璃下的动态配色）
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: isSelected ? 2 : 0)
                 )
-                .shadow(color: isSelected ? .accentColor.opacity(0.25) : .clear,
-                        radius: configuration.isPressed ? 7 : 5, x: 0, y: 0)
-                // .animation(.spring(response: 0.2, dampingFraction: 0.5), value: configuration.isPressed)
+                // ③ 轻柔阴影（液态玻璃自身有体积感，这里别太重）
+                // .shadow(radius: configuration.isPressed ? 7 : 5)
+                .animation(.spring(response: 0.22, dampingFraction: 0.7), value: configuration.isPressed)
         }
     }
 
     // MARK: - Fancy Brush Preview
+    @available(iOS 26.0, *)
     struct FancyBrushPreview: View {
         let tool: Tool
         let style: ToolStyle
@@ -108,6 +108,7 @@ struct ContentView: View {
         // @EnvironmentObject private var toolManager: ToolManager
         @State private var isPressed = false
 
+        @available(iOS 26.0, *)
         var body: some View {
             Button(action: action) {
                 // 手势监听包裹图层
@@ -147,9 +148,10 @@ struct ContentView: View {
                     .frame(height: toolSelectionHeight)
                 }
                 .padding(6)
-                .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                // 背板改为液态玻璃
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                // 玻璃已自带圆角边界，无需再 clip
+                .shadow(radius: 5)
                 // 右侧：样式预设竖条（仅在需要时显示）
                 if showStylePresets {
                     VStack(spacing: iconSpacing) {
