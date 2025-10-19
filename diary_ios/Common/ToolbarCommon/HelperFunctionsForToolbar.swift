@@ -30,7 +30,7 @@ func taper(_ u: CGFloat) -> CGFloat {
 }
 
 // PenPreview用带状多边形（ribbon），更顺滑也能缓存为矢量路径
-private func buildRibbonCGPath(
+private func buildPenRibbonCGPath(
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)],
     width: CGFloat
 ) -> CGPath {
@@ -77,31 +77,6 @@ private func buildRibbonCGPath(
     return path
 }
 
-// func drawPenPreview(
-//     context: GraphicsContext,
-//     style: ToolStyle,
-//     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
-// ) {
-//     let color = style.color?.toColor() ?? .black
-//     let width = style.width ?? 2.0
-//     let opacity = style.opacity ?? 1.0
-
-//     var path = Path()
-//     for (index, (p0, c1, c2, p3)) in segments.enumerated() {
-//         let steps = PenPreviewConstants.segmentSteps[index]
-//         for i in 0..<steps {
-//             // 全局归一化位置 globalT ∈ [0,1]
-//             let globalT = (CGFloat(PenPreviewConstants.segmentStepSums[index] - steps + i)) / CGFloat(PenPreviewConstants.totalSteps - 1)
-//             let t = CGFloat(i) / CGFloat(steps - 1)
-//             let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3) // 计算第 i 点的位置
-//             let pressure = bellPressure(t: globalT)
-//             let radius = max(PenPreviewConstants.minPx, width * taper(globalT) * pressure / 2) // 该处圆的半径
-//             path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-//         }
-//     }
-//     context.fill(path, with: .color(color.opacity(opacity)))
-// }
-
 func drawPenPreview(
     context: GraphicsContext,
     style: ToolStyle,
@@ -114,36 +89,10 @@ func drawPenPreview(
 
     // 命中缓存就直接用；未命中则构建一次带状路径
     let cgPath = PenPreviewPathCache.shared.path(for: key) {
-        buildRibbonCGPath(segments: segments, width: width)
+        buildPenRibbonCGPath(segments: segments, width: width)
     }
-
-    // 颜色/透明度不会改变几何，直接复用同一条路径
+    // 颜色/透明度不会改变几何形状，直接复用同一条路径
     context.fill(Path(cgPath), with: .color(color.opacity(opacity)))
-}
-
-// MARK: - Highlighter Preview
-func highlighterAlpha(t: CGFloat) -> CGFloat {
-    let clampedT = max(0.0, min(1.0, t))
-    let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
-    return 0.2 + base * (1.0 - 0.2)
-}
-
-func drawHighlighterPreview(
-    context: GraphicsContext,
-    style: ToolStyle,
-    segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
-) {
-    let color = style.color?.toColor() ?? .yellow
-    let width = style.width ?? 12.0
-    let baseOpacity = style.opacity ?? 0.35
-
-    var path = Path()
-    path.move(to: segments[0].0)
-    for seg in segments {
-        path.addCurve(to: seg.3, control1: seg.1, control2: seg.2)
-    }
-    let outline = path.strokedPath(.init(lineWidth: width, lineCap: .square, lineJoin: .miter))
-    context.fill(outline, with: .color(color.opacity(baseOpacity)))
 }
 
 // MARK: - Monoline Preview
@@ -165,6 +114,43 @@ func drawMonolinePreview(
     context.fill(outline, with: .color(color.opacity(baseOpacity)))
 
 }
+// MARK: - Highlighter Preview
+func highlighterAlpha(t: CGFloat) -> CGFloat {
+    let clampedT = max(0.0, min(1.0, t))
+    let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
+    return 0.2 + base * (1.0 - 0.2)
+}
+
+func drawHighlighterPreview(
+    context: GraphicsContext,
+    style: ToolStyle,
+    line: (CGPoint, CGPoint)
+) {
+    let color = style.color?.toColor() ?? .yellow
+    let width = style.width ?? 12.0
+    let baseOpacity = style.opacity ?? 0.35
+
+    var path = Path()
+    path.move(to: line.0)
+    path.addLine(to: line.1)
+    let outline = path.strokedPath(.init(lineWidth: width, lineCap: .round, lineJoin: .miter))
+    let shading = GraphicsContext.Shading.linearGradient(
+        .init(stops: [
+            .init(color: color.opacity(baseOpacity * 0.65), location: 0.00),
+            .init(color: color.opacity(baseOpacity * 1.00), location: 0.50),
+            .init(color: color.opacity(baseOpacity * 0.65), location: 1.00),
+        ]),
+        startPoint: line.0,
+        endPoint: line.1
+    )
+    context.drawLayer { layer in
+        layer.blendMode = .multiply
+        // 模糊半径可随宽度微调，数值越大边缘越柔和
+        layer.addFilter(.blur(radius: max(0.25, width * 0.08)))
+        layer.fill(outline, with: shading)
+    }
+}
+
 
 func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
     let base = 20.0
@@ -177,9 +163,21 @@ func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoi
     func convert(_ p: CGPoint) -> CGPoint {
         CGPoint(x: p.x * s + dx, y: p.y * s + dy)
     }
-
     return baseSegments.map { seg in
         (convert(seg.p0), convert(seg.c1), convert(seg.c2), convert(seg.p3))
     }
+}
+
+func generatePathLine(in rect: CGRect) -> (start: CGPoint, end: CGPoint) {
+    let base = 20.0
+    let sx = rect.width / base
+    let sy = rect.height / base
+    let s = min(sx, sy)
+    let dx = rect.minX + (rect.width  - base * s) * 0.5
+    let dy = rect.minY + (rect.height - base * s) * 0.5
+
+    let start = CGPoint(x: baseLine.start.x * s + dx, y: baseLine.start.y * s + dy)
+    let end = CGPoint(x: baseLine.end.x * s + dx, y: baseLine.end.y * s + dy)
+    return (start: start, end: end)
 }
 

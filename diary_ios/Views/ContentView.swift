@@ -46,9 +46,10 @@ struct ContentView: View {
         let tool: Tool
         let style: ToolStyle
         var body: some View {
-            // let margin: CGFloat = 2.0
+            // let margin: CGFloat = 4.0
             Canvas { context, size in
                 let segments = generatePathSegments(in: CGRect(origin: .zero, size: size))
+                let line = generatePathLine(in: CGRect(origin: .zero, size: size))
                 switch tool {
                 case .monoline:
                     drawMonolinePreview(
@@ -66,14 +67,15 @@ struct ContentView: View {
                         drawHighlighterPreview(
                             context: context,
                             style: style,
-                            segments: segments
+                            line: line
                         )
                 case .eraser: break
                 case .sticker: break
                 case .lasso: break
                 } 
             }
-            .frame(width: iconSize, height: iconSize).border(.red, width: 1)
+            .frame(width: iconSize, height: iconSize)
+            .border(.red, width: 1)
         }
     }
 

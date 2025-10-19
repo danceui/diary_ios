@@ -17,6 +17,8 @@ let baseSegments: [BezierSegment] = {
     return rawPoints.map { (p0, c1, c2, p3) in BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3) }
 }()
 
+let baseLine: (start: CGPoint, end: CGPoint) = (start: CGPoint(x: 3.5, y: 13.0), end: CGPoint(x: 17.0, y: 6.0))
+
 struct ToolbarConstants {
     static let toolSelectionHeight: CGFloat = 160.0
     static let stylePresetHeight: CGFloat = 160.0
@@ -25,7 +27,7 @@ struct ToolbarConstants {
     static let topPadding: CGFloat = 10.0
     static let popoverGap: CGFloat = 12
     static let iconSize: CGFloat = 30.0
-    static let iconPadding: CGFloat = 7.0
+    static let iconPadding: CGFloat = 3.0
     static let iconSpacing: CGFloat = 4.0
     static let toolbarBackgroundColor: UIColor = .systemBackground
     static let toolbarButtonColor: UIColor = .systemBlue
