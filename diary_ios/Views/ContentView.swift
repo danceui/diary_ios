@@ -84,11 +84,11 @@ struct ContentView: View {
         let style: ToolStyle?
         let action: () -> Void
 
-        @EnvironmentObject private var toolManager: ToolManager
+        // @EnvironmentObject private var toolManager: ToolManager
         @State private var isPressed = false
 
         var body: some View {
-            ZStack {
+            Button(action: action) {
                 // 手势监听包裹图层
                 Group {
                     if tool == .monoline || tool == .pen || tool == .highlighter, let style {
@@ -104,32 +104,28 @@ struct ContentView: View {
                 .padding(iconPadding)
                 .contentShape(Rectangle()) // 保证整个区域可点击
             }
-            // 选中态的圆角背景 + 描边 + 轻微发光
-            .padding(2) // 给描边和阴影留一点空间
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(isSelected ? Color.primary.opacity(0.06) : .clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(isSelected ? Color.accentColor : .clear,
-                                lineWidth: isSelected ? 2 : 0)
-            )
-            .shadow(color: isSelected ? Color.accentColor.opacity(0.25) : .clear,
-            radius: isPressed ? 7 : 5, x: 0, y: 0)
-            .scaleEffect(isPressed ? 1.1 : 1.0)
-            .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
-            .onTapGesture {
-                action()
-            }
-            .onLongPressGesture(minimumDuration: 0, maximumDistance: 30, pressing: { pressing in
-                withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
-                    isPressed = pressing
-                }
-            }, perform: {})
+            .buttonStyle(PressableCardStyle(isSelected: isSelected))
         }
     }
 
+    struct PressableCardStyle: ButtonStyle {
+        var isSelected: Bool
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .scaleEffect(configuration.isPressed ? 1.1 : 1.0)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(isSelected ? Color.primary.opacity(0.06) : .clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: isSelected ? 2 : 0)
+                )
+                .shadow(color: isSelected ? .accentColor.opacity(0.25) : .clear,
+                        radius: configuration.isPressed ? 7 : 5, x: 0, y: 0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.5), value: configuration.isPressed)
+        }
+    }
 
     // MARK: - DrawingToolBar
     struct DrawingToolBar: View {
