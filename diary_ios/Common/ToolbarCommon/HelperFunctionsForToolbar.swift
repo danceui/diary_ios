@@ -53,9 +53,6 @@ private func buildPenRibbonCGPath(
             // 全局进度（用于你的 taper/pressure）
             let gStep = PenPreviewConstants.segmentStepSums[segIndex] - steps + i
             let gT = CGFloat(gStep) / CGFloat(max(1, totalSteps - 1))
-
-            // 半径：唯一受 width 影响
-            // let r = max(PenPreviewConstants.minPx, (width * taper(gT) * bellPressure(t: gT)) / 2)
             let r = max(PenPreviewConstants.minPx, (width * bellPressure(t: gT)) / 2)
 
             leftPts.append(.init(x: P.x + nx * r, y: P.y + ny * r))
@@ -73,27 +70,19 @@ private func buildPenRibbonCGPath(
     }
 
     let path = CGMutablePath()
-    // 1. 走左边界
     path.move(to: leftPts[0])
     for p in leftPts.dropFirst() { path.addLine(to: p) }
-
-    // 2. 尾部半圆（圆头）
     do {
         let a0 = atan2(leftPts.last!.y - endCenter.y, leftPts.last!.x - endCenter.x)
         let a1 = atan2(rightPts.last!.y - endCenter.y, rightPts.last!.x - endCenter.x)
         path.addArc(center: endCenter, radius: endRadius, startAngle: a0, endAngle: a1, clockwise: true)
     }
-
-    // 3. 右边界反向
     for p in rightPts.dropLast().reversed() { path.addLine(to: p) }
-
-    // 4. 首部半圆（圆头）
     do {
         let a0 = atan2(rightPts.first!.y - startCenter.y, rightPts.first!.x - startCenter.x)
         let a1 = atan2(leftPts.first!.y - startCenter.y, leftPts.first!.x - startCenter.x)
         path.addArc(center: startCenter, radius: startRadius, startAngle: a0, endAngle: a1, clockwise: true)
     }
-
     path.closeSubpath()
     return path
 }
@@ -112,7 +101,6 @@ func drawPenPreview(
     let cgPath = PenPreviewPathCache.shared.path(for: key) {
         buildPenRibbonCGPath(segments: segments, width: width)
     }
-    // 颜色/透明度不会改变几何形状，直接复用同一条路径
     context.fill(Path(cgPath), with: .color(color.opacity(opacity)))
 }
 
@@ -135,13 +123,8 @@ func drawMonolinePreview(
     context.fill(outline, with: .color(color.opacity(baseOpacity)))
 
 }
-// MARK: - Highlighter Preview
-func highlighterAlpha(t: CGFloat) -> CGFloat {
-    let clampedT = max(0.0, min(1.0, t))
-    let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
-    return 0.2 + base * (1.0 - 0.2)
-}
 
+// MARK: - Highlighter Preview
 func drawHighlighterPreview(
     context: GraphicsContext,
     style: ToolStyle,
@@ -197,13 +180,4 @@ func generatePathLine(in rect: CGRect, base: CGFloat) -> (start: CGPoint, end: C
     let start = CGPoint(x: PreviewSVGConstants.baseLine.start.x * s + dx, y: PreviewSVGConstants.baseLine.start.y * s + dy)
     let end = CGPoint(x: PreviewSVGConstants.baseLine.end.x * s + dx, y: PreviewSVGConstants.baseLine.end.y * s + dy)
     return (start: start, end: end)
-}
-
-/// 计算与工具相关的“安全内边距”
-func previewSafeMargin(for tool: Tool, width: CGFloat) -> CGFloat {
-    var inset = width * 0.5
-    if tool == .highlighter {
-        inset += max(0.25, width * 0.10) // 跟你 layer.blur(radius: width*0.1) 保持一致
-    }
-    return ceil(inset)
 }
