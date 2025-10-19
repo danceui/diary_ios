@@ -17,9 +17,15 @@ private let popoverGap = ToolbarConstants.popoverGap
 @available(iOS 26.0, *)
 private struct GlassHighlight: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        shape
             .glassEffect() // 真实液态玻璃（含折射/高光/厚度）
-            .shadow(radius: 5)     // 轻微阴影，增强层次
+            // 高光描边：让贴片边缘更亮，与背板区分开
+            .overlay(
+                shape
+                    .stroke(.white.opacity(0.25), lineWidth: 1.5)
+                    .blendMode(.plusLighter)
+            )
     }
 }
 
@@ -128,7 +134,7 @@ struct ContentView: View {
                         }
                     }
                     .frame(width: iconSize, height: iconSize)
-                    .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
+                    // .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                     .padding(iconPadding)
                 }
                 .contentShape(Rectangle())
@@ -213,26 +219,21 @@ struct ContentView: View {
                             }
                         }
                     }
-                    .overlay(alignment: .topLeading) {
+                    .padding(6)
+                    .overlayPreferenceValue(ToolItemFrameKey.self) { anchors in
                         if #available(iOS 26.0, *) {
                             GeometryReader { proxy in
-                                // 读取之前通过 anchorPreference 上报的所有按钮 frame
-                                Color.clear
-                                    .backgroundPreferenceValue(ToolItemFrameKey.self) { anchors in
-                                        // 找到当前选中工具的 anchor
-                                        if let anchor = anchors[selectedTool] {
-                                            // 将 anchor 转换为当前 GeometryReader（也即 VStack 叠层）的坐标空间 rect
-                                            let rect = proxy[anchor]
-                                            GlassHighlight()
-                                                .frame(width: rect.width, height: rect.height)
-                                                .position(x: rect.midX, y: rect.midY)
-                                                .animation(glassSpring, value: rect.origin)
-                                                .animation(glassSpring, value: rect.size)
-                                        }
-                                    }
+                                if let anchor = anchors[selectedTool] {
+                                    let r = proxy[anchor]
+                                    GlassHighlight()
+                                        .frame(width: r.width, height: r.height)
+                                        .position(x: r.midX, y: r.midY)
+                                        .zIndex(100)                 // ⬅️ 始终在最上层
+                                        .allowsHitTesting(false)     // ⬅️ 不挡按钮点击
+                                        .animation(.spring(response: 0.32, dampingFraction: 0.85),
+                                                value: selectedTool) // ⬅️ 绑定到选中项变化
+                                }
                             }
-                        } else {
-                            EmptyView() // 旧系统不显示玻璃贴片
                         }
                     }
                 }
