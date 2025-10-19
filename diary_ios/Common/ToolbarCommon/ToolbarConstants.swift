@@ -39,7 +39,7 @@ struct ToolbarConstants {
 
 
 struct PenPreviewConstants {
-    static let minPressure: CGFloat = 0.55
+    static let minPressure: CGFloat = 0.45
     static let maxPressure: CGFloat = 0.75
     static let minPx: CGFloat = 0.5
     static let segmentSteps = [18, 16, 16, 18, 22]

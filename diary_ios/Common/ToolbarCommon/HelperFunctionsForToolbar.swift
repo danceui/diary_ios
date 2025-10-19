@@ -17,7 +17,7 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
 private func bellPressure(t: CGFloat) -> CGFloat {
     let clampedT = max(0.0, min(1.0, t))
     let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
-    return PenPreviewConstants.minPressure + base * (PenPreviewConstants.maxPressure - PenPreviewConstants.minPressure)
+    return max(PenPreviewConstants.minPressure + base * (PenPreviewConstants.maxPressure - PenPreviewConstants.minPressure), PenPreviewConstants.minPx)
 }
 
 private func buildPenRibbonCGPath(
