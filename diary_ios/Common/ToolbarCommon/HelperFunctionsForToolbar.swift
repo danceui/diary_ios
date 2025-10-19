@@ -181,3 +181,8 @@ func generatePathLine(in rect: CGRect, base: CGFloat) -> (start: CGPoint, end: C
     let end = CGPoint(x: PreviewSVGConstants.baseLine.end.x * s + dx, y: PreviewSVGConstants.baseLine.end.y * s + dy)
     return (start: start, end: end)
 }
+
+func styleEquals(_ a: ToolStyle?, _ b: ToolStyle) -> Bool {
+    guard let a = a else { return false }
+    return a.color == b.color && a.width == b.width && abs((a.opacity ?? 1) - (b.opacity ?? 1) ?? 1) < 0.001
+}

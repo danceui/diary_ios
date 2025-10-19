@@ -24,7 +24,7 @@ struct ContentView: View {
             // 左侧工具栏
             VStack {
                 Spacer()
-                DrawingToolBar(notebookSpreadViewController: notebookSpreadViewController)
+                DrawingToolbar(notebookSpreadViewController: notebookSpreadViewController)
                     .environmentObject(toolManager)
                     .padding(.leading, leadingPadding)
                 Spacer()
@@ -32,7 +32,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading) 
             // 右上角功能按钮栏
             VStack {
-                FunctionToolBar(notebookSpreadViewController: notebookSpreadViewController)
+                FunctionToolbar(notebookSpreadViewController: notebookSpreadViewController)
                     .padding(.top, topPadding)
                     .padding(.trailing, trailingPadding)
                 Spacer()
@@ -42,6 +42,27 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
 
+    // MARK: - Pressable Card Style
+    struct PressableCardStyle: ButtonStyle {
+        var isSelected: Bool
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .scaleEffect(configuration.isPressed ? 1.1 : 1.0)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(isSelected ? Color.primary.opacity(0.06) : .clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: isSelected ? 2 : 0)
+                )
+                .shadow(color: isSelected ? .accentColor.opacity(0.25) : .clear,
+                        radius: configuration.isPressed ? 7 : 5, x: 0, y: 0)
+                // .animation(.spring(response: 0.2, dampingFraction: 0.5), value: configuration.isPressed)
+        }
+    }
+
+    // MARK: - Fancy Brush Preview
     struct FancyBrushPreview: View {
         let tool: Tool
         let style: ToolStyle
@@ -108,27 +129,9 @@ struct ContentView: View {
         }
     }
 
-    struct PressableCardStyle: ButtonStyle {
-        var isSelected: Bool
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .scaleEffect(configuration.isPressed ? 1.1 : 1.0)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(isSelected ? Color.primary.opacity(0.06) : .clear)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: isSelected ? 2 : 0)
-                )
-                .shadow(color: isSelected ? .accentColor.opacity(0.25) : .clear,
-                        radius: configuration.isPressed ? 7 : 5, x: 0, y: 0)
-                .animation(.spring(response: 0.2, dampingFraction: 0.5), value: configuration.isPressed)
-        }
-    }
 
-    // MARK: - DrawingToolBar
-    struct DrawingToolBar: View {
+    // MARK: - Drawing Toolbar
+    struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
@@ -202,12 +205,13 @@ struct ContentView: View {
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
+                let currentStyle = toolManager.style(for: selectedTool)
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(selectedTool.presetStyles, id: \.self) { style in
                             ToolButtonView(
                                 tool: selectedTool,
-                                isSelected: false,
+                                isSelected: currentStyle == style,
                                 style: style
                             ) {
                                 ToolManager.shared.setStyle(
@@ -223,7 +227,9 @@ struct ContentView: View {
             }
         }
     }
-    struct FunctionToolBar: View {
+
+    // MARK: - Function Toolbar
+    struct FunctionToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
 
         var body: some View {
