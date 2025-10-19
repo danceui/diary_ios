@@ -13,22 +13,6 @@ private let iconSpacing = ToolbarConstants.iconSpacing
 private let popoverMaxHeight: CGFloat = stylePresetHeight
 private let popoverGap = ToolbarConstants.popoverGap
 
-// 一个独立的“玻璃贴片”视图，复用形状 + 光泽
-@available(iOS 26.0, *)
-private struct GlassHighlight: View {
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 34, style: .continuous)
-        shape
-            .glassEffect() // 真实液态玻璃（含折射/高光/厚度）
-            // 高光描边：让贴片边缘更亮，与背板区分开
-            // .overlay(
-            //     shape
-            //         .stroke(.white.opacity(0.25), lineWidth: 1.5)
-            //         .blendMode(.plusLighter)
-            // )
-    }
-}
-
 @available(iOS 26.0, *)
 struct ContentView: View {
     private let notebookSpreadViewController = NotebookSpreadViewController()
@@ -125,17 +109,9 @@ struct ContentView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .background(
-                GeometryReader { _ in
-                    Color.clear
-                        .anchorPreference(key: ToolItemFrameKey.self, value: .bounds) { anchor in
-                            [tool: anchor]
-                        }
-                }
-            )
+            .buttonStyle(.glass)
         }
     }
-
 
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
@@ -154,9 +130,7 @@ struct ContentView: View {
                     .frame(height: toolSelectionHeight)
                 }
                 .padding(6)
-                // 背板改为液态玻璃
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                // 玻璃已自带圆角边界，无需再 clip
                 .shadow(radius: 5)
                 // 右侧：样式预设竖条（仅在需要时显示）
                 if showStylePresets {
@@ -200,23 +174,6 @@ struct ContentView: View {
                                     selectedTool = tool
                                     ToolManager.shared.currentTool = tool
                                     showStylePresets = false
-                                }
-                            }
-                        }
-                    }
-                    .padding(6)
-                    .overlayPreferenceValue(ToolItemFrameKey.self) { anchors in
-                        if #available(iOS 26.0, *) {
-                            GeometryReader { proxy in
-                                if let anchor = anchors[selectedTool] {
-                                    let r = proxy[anchor]
-                                    GlassHighlight()
-                                        .frame(width: r.width, height: r.height)
-                                        .position(x: r.midX, y: r.midY)
-                                        .zIndex(100)                 // ⬅️ 始终在最上层
-                                        .allowsHitTesting(false)     // ⬅️ 不挡按钮点击
-                                        .animation(.spring(response: 0.32, dampingFraction: 0.85),
-                                                value: selectedTool) // ⬅️ 绑定到选中项变化
                                 }
                             }
                         }
