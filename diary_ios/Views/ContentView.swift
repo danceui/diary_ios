@@ -55,8 +55,6 @@ struct ContentView: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: isSelected ? 2 : 0)
                 )
-                // ③ 轻柔阴影（液态玻璃自身有体积感，这里别太重）
-                // .shadow(radius: configuration.isPressed ? 7 : 5)
                 .animation(.spring(response: 0.22, dampingFraction: 0.7), value: configuration.isPressed)
         }
     }
@@ -159,9 +157,8 @@ struct ContentView: View {
                     }
                     .frame(height: stylePresetHeight)
                     .padding(6)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .shadow(radius: 5)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
