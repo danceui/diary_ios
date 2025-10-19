@@ -88,7 +88,6 @@ struct ContentView: View {
 
         @EnvironmentObject private var toolManager: ToolManager
         @State private var isPressed = false
-        @State private var startLocation: CGPoint?
 
         var body: some View {
             ZStack {
@@ -105,11 +104,8 @@ struct ContentView: View {
                 .frame(width: iconSize, height: iconSize)
                 .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .padding(iconPadding)
-                .scaleEffect(isPressed ? 1.2 : 1.0)
-                .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
+                .contentShape(Rectangle()) // 保证整个区域可点击
             }
-            .contentShape(Rectangle()) // 保证整个区域可点击
-
             // 选中态的圆角背景 + 描边 + 轻微发光
             .padding(2) // 给描边和阴影留一点空间
             .background(
@@ -119,34 +115,20 @@ struct ContentView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .strokeBorder(isSelected ? Color.accentColor : .clear,
-                                lineWidth: isSelected ? (isPressed ? 3 : 2) : 0)
-                    // .animation(.easeInOut(duration: 0.15), value: isSelected)
-                    // .animation(.easeInOut(duration: 0.15), value: isPressed)
+                                lineWidth: isSelected ? 2 : 0)
             )
             .shadow(color: isSelected ? Color.accentColor.opacity(0.25) : .clear,
             radius: isPressed ? 7 : 5, x: 0, y: 0)
-
-            .simultaneousGesture( // 不会阻止 ScrollView 的滚动手势
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        if startLocation == nil {
-                            startLocation = value.startLocation
-                            isPressed = true
-                        }
-                    }
-                    .onEnded { value in
-                        isPressed = false
-                        if let start = startLocation {
-                            let dx = value.location.x - start.x
-                            let dy = value.location.y - start.y
-                            let distance = dx * dx + dy * dy
-                            if distance < 100 { // 判定为点击
-                                action()
-                            }
-                        }
-                        startLocation = nil
-                    }
-            )
+            .scaleEffect(isPressed ? 1.1 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
+            .onTapGesture {
+                action()
+            }
+            .onLongPressGesture(minimumDuration: 0, maximumDistance: 30, pressing: { pressing in
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+                    isPressed = pressing
+                }
+            }, perform: {})
         }
     }
 
