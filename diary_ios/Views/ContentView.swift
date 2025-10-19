@@ -76,7 +76,7 @@ struct ContentView: View {
                 } 
             }
             .frame(width: iconSize, height: iconSize)
-            .border(.red, width: 1)
+            // .border(.red, width: 1)
         }
     }
 
@@ -109,6 +109,23 @@ struct ContentView: View {
                 .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
             }
             .contentShape(Rectangle()) // 保证整个区域可点击
+
+            // 选中态的圆角背景 + 描边 + 轻微发光
+            .padding(2) // 给描边和阴影留一点空间
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(isSelected ? Color.primary.opacity(0.06) : .clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(isSelected ? Color.accentColor : .clear,
+                                lineWidth: isSelected ? (isPressed ? 3 : 2) : 0)
+                    // .animation(.easeInOut(duration: 0.15), value: isSelected)
+                    // .animation(.easeInOut(duration: 0.15), value: isPressed)
+            )
+            .shadow(color: isSelected ? Color.accentColor.opacity(0.25) : .clear,
+            radius: isPressed ? 7 : 5, x: 0, y: 0)
+
             .simultaneousGesture( // 不会阻止 ScrollView 的滚动手势
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -133,6 +150,8 @@ struct ContentView: View {
         }
     }
 
+
+    // MARK: - DrawingToolBar
     struct DrawingToolBar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
