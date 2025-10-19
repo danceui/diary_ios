@@ -180,3 +180,11 @@ func generatePathLine(in rect: CGRect) -> (start: CGPoint, end: CGPoint) {
     return (start: start, end: end)
 }
 
+/// 计算与工具相关的“安全内边距”
+func previewSafeMargin(for tool: Tool, width: CGFloat) -> CGFloat {
+    var inset = width * 0.5
+    if tool == .highlighter {
+        inset += max(0.25, width * 0.10) // 跟你 layer.blur(radius: width*0.1) 保持一致
+    }
+    return ceil(inset)
+}
