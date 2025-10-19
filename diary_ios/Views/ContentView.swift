@@ -102,26 +102,35 @@ struct ContentView: View {
         let isSelected: Bool
         let style: ToolStyle?
         let action: () -> Void
+        var namespace: Namespace.ID? = nil   // ✅ 新增
 
-        // @EnvironmentObject private var toolManager: ToolManager
         @State private var isPressed = false
 
         @available(iOS 26.0, *)
         var body: some View {
             Button(action: action) {
-                // 手势监听包裹图层
-                Group {
-                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
-                        FancyBrushPreview(tool: tool, style: style)
-                    } else {
-                        Image(systemName: tool.iconName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
+                ZStack {
+                    // ✅ 选中项的“液态玻璃”背景（在不同按钮之间移动）
+                    if isSelected, let ns = namespace {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .glassEffect(.regular) // 玻璃材质本体
+                            .matchedGeometryEffect(id: "toolGlassSelection", in: ns)
+                            .padding(2) // 让玻璃块比内容略大一些
                     }
+                    // 手势监听包裹图层
+                    Group {
+                        if tool == .monoline || tool == .pen || tool == .highlighter, let style {
+                            FancyBrushPreview(tool: tool, style: style)
+                        } else {
+                            Image(systemName: tool.iconName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        }
+                    }
+                    .frame(width: iconSize, height: iconSize)
+                    .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
+                    .padding(iconPadding)
                 }
-                .frame(width: iconSize, height: iconSize)
-                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
-                .padding(iconPadding)
                 .contentShape(Rectangle()) // 保证整个区域可点击
             }
             .buttonStyle(PressableCardStyle(isSelected: isSelected))
@@ -134,6 +143,7 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
+        @Namespace private var glassNS   // ✅ 用于选中玻璃块的匹配动画
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
@@ -168,6 +178,7 @@ struct ContentView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @EnvironmentObject private var toolManager: ToolManager
+            @Namespace var internalNS // 可直接用父级传递下来的，也可从父 View 传参
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
