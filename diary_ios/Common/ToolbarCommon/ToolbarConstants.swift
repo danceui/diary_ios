@@ -61,9 +61,9 @@ struct PenPreviewConstants {
     static let minPressure: CGFloat = 0.55
     static let maxPressure: CGFloat = 0.75
     static let minPx: CGFloat = 0.5
-    static let segmentSteps = [12, 14, 10, 12, 12, 14, 10, 12]
-    static let segmentStepSums = [12, 26, 36, 48, 60, 74, 84, 96]
-    static let totalSteps = 96
+    static let segmentSteps = [18, 16, 16, 18, 22]
+    static let segmentStepSums = [18, 34, 50, 68, 90]
+    static let totalSteps = 90
 }  
 
 struct PreviewConstants {
