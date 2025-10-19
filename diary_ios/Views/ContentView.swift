@@ -75,7 +75,7 @@ struct ContentView: View {
                 } 
             }
             .frame(width: iconSize, height: iconSize)
-            .border(.red, width: 1)
+            // .border(.red, width: 1)
         }
     }
 

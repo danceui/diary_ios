@@ -133,19 +133,19 @@ func drawHighlighterPreview(
     var path = Path()
     path.move(to: line.0)
     path.addLine(to: line.1)
-    let outline = path.strokedPath(.init(lineWidth: width * 1.1, lineCap: .round, lineJoin: .miter))
+    let outline = path.strokedPath(.init(lineWidth: width, lineCap: .square, lineJoin: .miter))
     let shading = GraphicsContext.Shading.linearGradient(
         .init(stops: [
             .init(color: color.opacity(baseOpacity * 0.75), location: 0.00),
             .init(color: color.opacity(baseOpacity * 0.85), location: 0.50),
-            .init(color: color.opacity(baseOpacity * 0.75), location: 1.00),
+            .init(color: color.opacity(baseOpacity * 0.65), location: 1.00),
         ]),
         startPoint: line.0,
         endPoint: line.1
     )
     context.drawLayer { layer in
         layer.blendMode = .multiply
-        layer.addFilter(.blur(radius: max(0.2, width * 0.05))) // blur radius relative to width
+        layer.addFilter(.blur(radius: 0.3))
         layer.fill(outline, with: shading)
     }
 }
