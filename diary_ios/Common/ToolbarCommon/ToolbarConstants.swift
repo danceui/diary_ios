@@ -6,16 +6,38 @@ struct BezierSegment {
 }
 
 let baseSegments: [BezierSegment] = {
-    let rawPoints: [(CGPoint, CGPoint, CGPoint, CGPoint)] = [
-        (CGPoint(x: 1.850687, y: 17.570022), CGPoint(x: 0.932941, y: 15.069087), CGPoint(x: 2.005763, y: 12.310653), CGPoint(x: 3.595063, y: 10.347862)), // 第一个转弯前
-        (CGPoint(x: 3.595063, y: 10.347862), CGPoint(x: 4.369668, y: 9.059063), CGPoint(x: 6.114127, y: 8.652024), CGPoint(x: 7.413834, y: 9.341245)), // 第一个转弯
-        (CGPoint(x: 7.413834, y: 9.341245), CGPoint(x: 9.210874, y: 10.161493), CGPoint(x: 10.110526, y: 12.176224), CGPoint(x: 10.264806, y: 14.073580)), // 第一、二个转弯之间
-        (CGPoint(x: 10.264806, y: 14.073580), CGPoint(x: 10.483572, y: 15.465286), CGPoint(x: 10.861685, y: 17.156747), CGPoint(x: 12.273829, y: 17.778131)), // 第二个转弯前半段
-        (CGPoint(x: 12.273829, y: 17.778131), CGPoint(x: 13.613956, y: 18.174263), CGPoint(x: 14.812265, y: 17.042496), CGPoint(x: 15.463040, y: 15.976733)), // 第二个转弯后半段
-        (CGPoint(x: 15.463040, y: 15.976733), CGPoint(x: 16.207361, y: 14.831670), CGPoint(x: 17.789632, y: 13.946173), CGPoint(x: 19.090702, y: 14.688075)), // 第三个转弯
-        (CGPoint(x: 19.090702, y: 14.688075), CGPoint(x: 20.187863, y: 15.560343), CGPoint(x: 20.831390, y: 17.184842), CGPoint(x: 22.366480, y: 17.372298)), // 第三、四个转弯之间
-        (CGPoint(x: 22.366480, y: 17.372298), CGPoint(x: 23.412848, y: 17.497058), CGPoint(x: 24.159403, y: 16.672955), CGPoint(x: 24.955118, y: 16.138709)) // 第四个转弯
-    ]
+    let rawPoints: [(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint)] = [
+        // M 2 17.5
+        // C 1.2 14.9, 2.3 12.1, 4.0 10.2
+        (p0: CGPoint(x: 2.0,  y: 17.5),
+        c1: CGPoint(x: 1.2,  y: 14.9),
+        c2: CGPoint(x: 2.3,  y: 12.1),
+        p3: CGPoint(x: 4.0,  y: 10.2)),
+
+        // C 4.9 9.1, 6.4 8.7, 7.8 9.3
+        (p0: CGPoint(x: 4.0,  y: 10.2),
+        c1: CGPoint(x: 4.9,  y: 9.1),
+        c2: CGPoint(x: 6.4,  y: 8.7),
+        p3: CGPoint(x: 7.8,  y: 9.3)),
+
+        // C 9.3 9.9, 10.3 11.9, 10.5 13.8
+        (p0: CGPoint(x: 7.8,  y: 9.3),
+        c1: CGPoint(x: 9.3,  y: 9.9),
+        c2: CGPoint(x: 10.3, y: 11.9),
+        p3: CGPoint(x: 10.5, y: 13.8)),
+
+        // C 10.7 15.2, 11.1 17.1, 12.5 17.6
+        (p0: CGPoint(x: 10.5, y: 13.8),
+        c1: CGPoint(x: 10.7, y: 15.2),
+        c2: CGPoint(x: 11.1, y: 17.1),
+        p3: CGPoint(x: 12.5, y: 17.6)),
+
+        // C 13.7 18.0, 15.8 17.1, 16.4 14.3
+        (p0: CGPoint(x: 12.5, y: 17.6),
+        c1: CGPoint(x: 13.7, y: 18.0),
+        c2: CGPoint(x: 15.8, y: 17.1),
+        p3: CGPoint(x: 16.4, y: 14.3)),
+     ]
     return rawPoints.map { (p0, c1, c2, p3) in BezierSegment(p0: p0, c1: c1, c2: c2, p3: p3) }
 }()
 

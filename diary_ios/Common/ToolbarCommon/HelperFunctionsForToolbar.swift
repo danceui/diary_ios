@@ -77,21 +77,6 @@ func drawHighlighterPreview(
     }
     let outline = path.strokedPath(.init(lineWidth: width, lineCap: .square, lineJoin: .miter))
     context.fill(outline, with: .color(color.opacity(baseOpacity)))
-
-    // for (index, (p0, c1, c2, p3)) in segments.enumerated() {
-    //     let steps = PenPreviewConstants.segmentSteps[index]
-    //     for i in 0..<steps {
-    //         let globalT = (CGFloat(PenPreviewConstants.segmentStepSums[index] - steps + i)) / CGFloat(PenPreviewConstants.totalSteps - 1)
-    //         let t = CGFloat(i) / CGFloat(steps - 1)
-    //         let point = cubicBezier(t: t, p0: p0, p1: c1, p2: c2, p3: p3)
-
-    //         let radius = width / 2
-    //         let alpha = highlighterAlpha(t: globalT) * baseOpacity
-    //         path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-    //         context.fill(Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)),
-    //                      with: .color(color.opacity(alpha)))
-    //     }
-    // }
 }
 
 // MARK: - Monoline Preview
@@ -115,7 +100,9 @@ func drawMonolinePreview(
 }
 
 func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
-    let base = 26.458333
+    let base = 20.0
+    // let tx: CGFloat = 1.32
+    // let ty: CGFloat = -3.4
     let sx = rect.width / base
     let sy = rect.height / base
     let s = min(sx, sy)
@@ -124,6 +111,7 @@ func generatePathSegments(in rect: CGRect) -> [(CGPoint, CGPoint, CGPoint, CGPoi
 
     func convert(_ p: CGPoint) -> CGPoint {
         CGPoint(x: p.x * s + dx, y: p.y * s + dy)
+        // CGPoint(x: (p.x + tx) * s + dx, y: (p.y + ty) * s + dy)
     }
 
     return baseSegments.map { seg in
