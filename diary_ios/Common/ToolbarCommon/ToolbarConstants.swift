@@ -7,9 +7,9 @@ struct BezierSegment {
 
 let baseSegments: [BezierSegment] = {
     let rawPoints: [(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint)] = [
-        // M 2 17.5
+        // M 1.5 17.0
         // C 1.2 14.9, 2.3 12.1, 4.0 10.2
-        (p0: CGPoint(x: 2.0,  y: 17.5),
+        (p0: CGPoint(x: 1.5,  y: 17.0),
         c1: CGPoint(x: 1.2,  y: 14.9),
         c2: CGPoint(x: 2.3,  y: 12.1),
         p3: CGPoint(x: 4.0,  y: 10.2)),
