@@ -60,11 +60,12 @@ struct PreviewConstants {
     ]
 }
 
-// 只把“会影响形状的参数”放进 Key；颜色/透明度不放！
+// 只把“会影响形状的参数”放进 Key
 struct PenPreviewPathKey: Hashable {
     let width: CGFloat
 }
 
+// PenPreview用带状多边形（ribbon），更顺滑也能缓存为矢量路径
 final class PenPreviewPathCache {
     static let shared = PenPreviewPathCache()
     private var map: [PenPreviewPathKey: CGPath] = [:]

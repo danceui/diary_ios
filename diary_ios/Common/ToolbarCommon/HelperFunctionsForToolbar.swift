@@ -14,22 +14,12 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
 }
 
 // MARK: - Pen Preview
-func bellPressure(t: CGFloat) -> CGFloat {
+private func bellPressure(t: CGFloat) -> CGFloat {
     let clampedT = max(0.0, min(1.0, t))
     let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
     return PenPreviewConstants.minPressure + base * (PenPreviewConstants.maxPressure - PenPreviewConstants.minPressure)
 }
 
-func taper(_ u: CGFloat) -> CGFloat {
-    let x = max(0, min(1, u))
-    let power = 3.0
-    let minScale = 0.6
-    // sin 需要 Double，完了再转回 CGFloat
-    let s = CGFloat(sin(Double(x * .pi)))
-    return minScale + (1 - minScale) * pow(max(0, s), power)
-}
-
-// PenPreview用带状多边形（ribbon），更顺滑也能缓存为矢量路径
 private func buildPenRibbonCGPath(
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)],
     width: CGFloat
@@ -41,6 +31,11 @@ private func buildPenRibbonCGPath(
     var leftPts: [CGPoint] = []; leftPts.reserveCapacity(totalSteps)
     var rightPts: [CGPoint] = []; rightPts.reserveCapacity(totalSteps)
 
+    var startCenter = CGPoint.zero
+    var endCenter   = CGPoint.zero
+    var startRadius: CGFloat = 0
+    var endRadius: CGFloat   = 0
+    var stepIndex = 0
     for (segIndex, (p0, c1, c2, p3)) in segments.enumerated() {
         let steps = stepsPerSeg[segIndex]
         for i in 0..<steps {
@@ -57,23 +52,49 @@ private func buildPenRibbonCGPath(
 
             // 全局进度（用于你的 taper/pressure）
             let gStep = PenPreviewConstants.segmentStepSums[segIndex] - steps + i
-            let gT    = CGFloat(gStep) / CGFloat(max(1, totalSteps - 1))
+            let gT = CGFloat(gStep) / CGFloat(max(1, totalSteps - 1))
 
             // 半径：唯一受 width 影响
-            let r = max(PenPreviewConstants.minPx, (width * taper(gT) * bellPressure(t: gT)) / 2)
+            // let r = max(PenPreviewConstants.minPx, (width * taper(gT) * bellPressure(t: gT)) / 2)
+            let r = max(PenPreviewConstants.minPx, (width * bellPressure(t: gT)) / 2)
 
             leftPts.append(.init(x: P.x + nx * r, y: P.y + ny * r))
             rightPts.append(.init(x: P.x - nx * r, y: P.y - ny * r))
+            // 记录首尾中心和半径
+            if stepIndex == 0 {
+                startCenter = P
+                startRadius = r
+            } else if stepIndex == totalSteps - 1 {
+                endCenter = P
+                endRadius = r
+            }
+            stepIndex += 1
         }
     }
 
     let path = CGMutablePath()
-    if let first = leftPts.first {
-        path.move(to: first)
-        for p in leftPts.dropFirst() { path.addLine(to: p) }
-        for p in rightPts.reversed() { path.addLine(to: p) }
-        path.closeSubpath()
+    // 1. 走左边界
+    path.move(to: leftPts[0])
+    for p in leftPts.dropFirst() { path.addLine(to: p) }
+
+    // 2. 尾部半圆（圆头）
+    do {
+        let a0 = atan2(leftPts.last!.y - endCenter.y, leftPts.last!.x - endCenter.x)
+        let a1 = atan2(rightPts.last!.y - endCenter.y, rightPts.last!.x - endCenter.x)
+        path.addArc(center: endCenter, radius: endRadius, startAngle: a0, endAngle: a1, clockwise: true)
     }
+
+    // 3. 右边界反向
+    for p in rightPts.dropLast().reversed() { path.addLine(to: p) }
+
+    // 4. 首部半圆（圆头）
+    do {
+        let a0 = atan2(rightPts.first!.y - startCenter.y, rightPts.first!.x - startCenter.x)
+        let a1 = atan2(leftPts.first!.y - startCenter.y, leftPts.first!.x - startCenter.x)
+        path.addArc(center: startCenter, radius: startRadius, startAngle: a0, endAngle: a1, clockwise: true)
+    }
+
+    path.closeSubpath()
     return path
 }
 
