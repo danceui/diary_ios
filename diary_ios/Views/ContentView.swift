@@ -7,7 +7,7 @@ private let panelWidth = ToolbarConstants.panelWidth
 private let leadingPadding = ToolbarConstants.leadingPadding
 private let trailingPadding = ToolbarConstants.trailingPadding
 private let topPadding = ToolbarConstants.topPadding
-
+private let toolbarCornerRadius = ToolbarConstants.toolbarCornerRadius
 private let iconSize = ToolbarConstants.iconSize
 private let iconPadding = ToolbarConstants.iconPadding
 private let iconSpacing = ToolbarConstants.iconSpacing
@@ -51,7 +51,6 @@ struct ContentView: View {
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
-                // first column: tool panel
                 GlassEffectContainer(spacing: iconSpacing) {
                     ToolSelectionView(
                         selectedTool: $selectedTool,
@@ -59,9 +58,7 @@ struct ContentView: View {
                     )
                 }
                 .frame(width: panelWidth, height: toolPanelHeight)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-
-                // second column: style presets panel
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 if showStylePresets {
                     GlassEffectContainer(spacing: 10) {
                         StylePresetView(
@@ -69,7 +66,7 @@ struct ContentView: View {
                         )
                     }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
             }
         }
@@ -78,7 +75,6 @@ struct ContentView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @EnvironmentObject private var toolManager: ToolManager
-            private let glassSpring = Animation.spring(response: 0.32, dampingFraction: 0.85)
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -104,7 +100,10 @@ struct ContentView: View {
                             .padding(iconPadding)
                         }
                     }
+                    .padding(.top, topPadding / 2)
+                    .padding(.bottom, topPadding / 2)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
 
@@ -129,10 +128,12 @@ struct ContentView: View {
                                     opacity: style.opacity
                                 )
                             }
-                            .padding(iconPadding)
                         }
                     }
+                    .padding(.top, topPadding / 2)
+                    .padding(.bottom, topPadding / 2)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
     }
@@ -160,7 +161,7 @@ struct ContentView: View {
                 .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .padding(iconPadding)
                 .background(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous) // ?
                     .fill(isSelected ? Color.black.opacity(0.12) : Color.black.opacity(0.04))
                     .blur(radius: isSelected ? 0.5 : 0) // 选中更实一点
                 )
