@@ -183,7 +183,7 @@ struct ContentView: View {
 
             return configuration.label
                 .scaleEffect(scale)
-                .animation(.easeOut(duration: 0.05), value: configuration.isPressed)
+                .animation(.easeOut(duration: 0.04), value: configuration.isPressed)
         }
     }
 
