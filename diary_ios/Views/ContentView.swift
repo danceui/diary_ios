@@ -51,8 +51,8 @@ struct ContentView: View {
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
-                GlassEffectContainer(spacing: iconSpacing) {
-                    ToolSelectionView(
+                GlassEffectContainer {
+                    ToolPanelView(
                         selectedTool: $selectedTool,
                         showStylePresets: $showStylePresets
                     )
@@ -60,8 +60,8 @@ struct ContentView: View {
                 .frame(width: panelWidth, height: toolPanelHeight)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 if showStylePresets {
-                    GlassEffectContainer(spacing: 10) {
-                        StylePresetView(
+                    GlassEffectContainer {
+                        StylePresetPanelView(
                             selectedTool: selectedTool
                         )
                     }
@@ -71,7 +71,7 @@ struct ContentView: View {
             }
         }
         
-        struct ToolSelectionView: View {
+        struct ToolPanelView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @EnvironmentObject private var toolManager: ToolManager
@@ -107,7 +107,7 @@ struct ContentView: View {
             }
         }
 
-        struct StylePresetView: View {
+        struct StylePresetPanelView: View {
             let selectedTool: Tool
             @EnvironmentObject private var toolManager: ToolManager
 
@@ -128,6 +128,7 @@ struct ContentView: View {
                                     opacity: style.opacity
                                 )
                             }
+                            .padding(iconPadding)
                         }
                     }
                     .padding(.top, topPadding / 2)
@@ -139,13 +140,13 @@ struct ContentView: View {
     }
 
     // MARK: - Tool Button View
+    @available(iOS 26.0, *)
     struct ToolButtonView: View {
         let tool: Tool
         let isSelected: Bool
         let style: ToolStyle?
         let action: () -> Void
 
-        @available(iOS 26.0, *)
         var body: some View {
             Button(action: action) {
                 Group {
@@ -158,12 +159,12 @@ struct ContentView: View {
                     }
                 }
                 .frame(width: iconSize, height: iconSize)
-                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .padding(iconPadding)
+                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .background(
                     RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous) // ?
-                    .fill(isSelected ? Color.black.opacity(0.12) : Color.black.opacity(0.04))
-                    .blur(radius: isSelected ? 0.5 : 0) // 选中更实一点
+                    .fill(isSelected ? Color.black.opacity(0.18) : Color.black.opacity(0.06))
+                    .blur(radius: isSelected ? 0.6 : 0.2)
                 )
             }
         }
