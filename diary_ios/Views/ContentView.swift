@@ -53,10 +53,9 @@ struct ContentView: View {
         @Namespace private var presetsNS
 
         var body: some View {
-            GlassEffectContainer(spacing: 10.0) {
-                HStack(alignment: .top, spacing: popoverGap) {
-
-                    // first column: tool panel
+            HStack(alignment: .top, spacing: popoverGap) {
+                // first column: tool panel
+                GlassEffectContainer(spacing: 10.0) {
                     VStack(spacing: iconSpacing) {
                         ToolSelectionView(
                             selectedTool: $selectedTool,
@@ -67,8 +66,11 @@ struct ContentView: View {
                         .padding(1)
                         // .frame(height: toolSelectionHeight)
                     }
-                    // second column: style presets panel
-                    if showStylePresets {
+                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                }
+                // second column: style presets panel
+                if showStylePresets {
+                    GlassEffectContainer(spacing: 10) {
                         VStack(spacing: iconSpacing) {
                             StylePresetView(
                                 selectedTool: selectedTool,
@@ -79,6 +81,7 @@ struct ContentView: View {
                             .padding(1)
                         }
                     }
+                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
             }
         }
@@ -113,6 +116,9 @@ struct ContentView: View {
                                     showStylePresets = false
                                 }
                             }
+                            .glassEffect()
+                            // .glassEffectID(toolID(selectedTool), in: presetsNS)
+                            .glassEffectUnion(id: "tools", namespace: toolNS)
                         }
                     }
                 }
@@ -144,6 +150,11 @@ struct ContentView: View {
                                     opacity: style.opacity
                                 )
                             }
+                            .glassEffect()
+                            // .glassEffectID(toolID(selectedTool), in: presetsNS)
+                            .glassEffectUnion(id: toolID(selectedTool), namespace: presetsNS)
+                            // 只有选中的按钮与 presets 面板“合并”
+                            // .modifier(UnionIfSelected(isSelected: isSelected, toolID: toolID(tool), presetsNS: presetsNS))
                         }
                     }
                 }
@@ -274,22 +285,6 @@ struct ContentView: View {
                 .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .padding(iconPadding)
             }
-            .glassEffect()
-            // .glassEffectID(toolID(tool), in: presetsNS)
-            // 只有选中的按钮与 presets 面板“合并”
-            // .modifier(UnionIfSelected(isSelected: isSelected, toolID: toolID(tool), presetsNS: presetsNS))
-        }
-
-        private func toolID(_ tool: Tool) -> String {
-            switch tool {
-            case .pen: return "pen"
-            case .eraser: return "eraser"
-            case .highlighter: return "highlighter"
-            case .monoline: return "monoline"
-            case .sticker: return "sticker"
-            case .lasso: return "lasso"
-            default: return String(describing: tool)
-            }
         }
     }
     
@@ -370,5 +365,18 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
+    }
+}
+
+
+func toolID(_ tool: Tool) -> String {
+    switch tool {
+    case .pen: return "pen"
+    case .eraser: return "eraser"
+    case .highlighter: return "highlighter"
+    case .monoline: return "monoline"
+    case .sticker: return "sticker"
+    case .lasso: return "lasso"
+    default: return String(describing: tool)
     }
 }
