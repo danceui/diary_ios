@@ -183,7 +183,7 @@ struct ContentView: View {
 
             return configuration.label
                 .scaleEffect(scale)
-                .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
+                .animation(.easeOut(duration: 0.05), value: configuration.isPressed)
         }
     }
 
@@ -226,31 +226,42 @@ struct ContentView: View {
     // MARK: - Function Toolbar
     struct FunctionToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
+        
+        var body: some View {
+            GlassEffectContainer {
+                HStack(spacing: iconSpacing) {
+                    FunctionButtonView(iconName: "arrow.uturn.backward") {
+                    notebookSpreadViewController.undo()
+                    }
+                    FunctionButtonView(iconName: "arrow.uturn.forward") {
+                        notebookSpreadViewController.redo()
+                    }
+                    FunctionButtonView(iconName: "plus.square.on.square") {
+                        notebookSpreadViewController.addNewPagePair()
+                    }
+                }
+                .padding(.leading, topPadding / 2)
+                .padding(.trailing, topPadding / 2)
+            }
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+        }
+    }
+
+    @available(iOS 26.0, *)
+    struct FunctionButtonView: View {
+        let iconName: String
+        let action: () -> Void
 
         var body: some View {
-            HStack(spacing: iconSpacing) {
-                Button(action: {
-                    notebookSpreadViewController.undo()
-                }) {
-                    Image(systemName: "arrow.uturn.backward")
-                }
-
-                Button(action: {
-                    notebookSpreadViewController.redo()
-                }) {
-                    Image(systemName: "arrow.uturn.forward")
-                }
-
-                Button(action: {
-                    notebookSpreadViewController.addNewPagePair()
-                }) {
-                    Image(systemName: "plus.square.on.square")
-                }
+            Button(action: action) {
+                Image(systemName: iconName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: iconSize, height: iconSize)
+                .scaleEffect(0.7)
+                .padding(iconPadding)
             }
-            .padding(12)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        }
+            .padding(iconPadding)
+        } 
     }
 }
