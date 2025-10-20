@@ -24,10 +24,7 @@ struct ContentView: View {
             // 左侧工具栏
             VStack {
                 Spacer()
-                // DrawingToolbar(notebookSpreadViewController: notebookSpreadViewController)
-                //     .environmentObject(toolManager)
-                //     .padding(.leading, leadingPadding)
-                DrawingToolbarTest(notebookSpreadViewController: notebookSpreadViewController)
+                DrawingToolbar(notebookSpreadViewController: notebookSpreadViewController)
                     .environmentObject(toolManager)
                     .padding(.leading, leadingPadding)
                 Spacer()
@@ -45,51 +42,44 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
 
-    struct DrawingToolbarTest: View {
+    // MARK: - Drawing Toolbar
+    struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
-        @Namespace private var toolNS
-        @Namespace private var presetsNS
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
                 // first column: tool panel
-                GlassEffectContainer(spacing: 10.0) {
+                GlassEffectContainer(spacing: iconSpacing) {
                     VStack(spacing: iconSpacing) {
                         ToolSelectionView(
                             selectedTool: $selectedTool,
-                            showStylePresets: $showStylePresets,
-                            toolNS: toolNS,
-                            presetsNS: presetsNS
+                            showStylePresets: $showStylePresets
                         )
-                        .padding(1)
-                        // .frame(height: toolSelectionHeight)
+                        .frame(height: toolSelectionHeight)
                     }
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
+
                 // second column: style presets panel
                 if showStylePresets {
                     GlassEffectContainer(spacing: 10) {
                         VStack(spacing: iconSpacing) {
-                            StylePresetView(
-                                selectedTool: selectedTool,
-                                toolNS: toolNS,
-                                presetsNS: presetsNS
-                            )
-                            // .frame(height: stylePresetHeight)
-                            .padding(1)
+                            StylePresetView(selectedTool: selectedTool)
+                            .frame(height: stylePresetHeight)
                         }
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                     }
                 }
             }
         }
-
-
+        
         struct ToolSelectionView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
-            let toolNS: Namespace.ID
-            let presetsNS: Namespace.ID
+            @EnvironmentObject private var toolManager: ToolManager
+            private let glassSpring = Animation.spring(response: 0.32, dampingFraction: 0.85)
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -98,9 +88,7 @@ struct ContentView: View {
                             ToolButtonView(
                                 tool: tool,
                                 isSelected: selectedTool == tool,
-                                style: ToolManager.shared.style(for: tool),
-                                toolNS: toolNS,
-                                presetsNS: presetsNS
+                                style: ToolManager.shared.style(for: tool)
                             ) {
                                 if selectedTool == tool {
                                     if selectedTool.supportColor || selectedTool.supportWidth {
@@ -114,11 +102,6 @@ struct ContentView: View {
                                     showStylePresets = false
                                 }
                             }
-                            .glassEffect()
-                            // .glassEffectID(toolID(selectedTool), in: presetsNS)
-                            .glassEffectUnion(id: "tools", namespace: toolNS)
-                            // 只有选中的按钮与 presets 面板“合并”
-                            .modifier(UnionIfSelected(isSelected: selectedTool == tool, toolID: toolID(selectedTool), presetsNS: presetsNS))
                         }
                     }
                 }
@@ -127,8 +110,6 @@ struct ContentView: View {
 
         struct StylePresetView: View {
             let selectedTool: Tool
-            let toolNS: Namespace.ID
-            let presetsNS: Namespace.ID
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -139,9 +120,7 @@ struct ContentView: View {
                             ToolButtonView(
                                 tool: selectedTool,
                                 isSelected: currentStyle == style,
-                                style: style,
-                                toolNS: toolNS,
-                                presetsNS: presetsNS
+                                style: style
                             ) {
                                 ToolManager.shared.setStyle(
                                     for: selectedTool,
@@ -150,27 +129,21 @@ struct ContentView: View {
                                     opacity: style.opacity
                                 )
                             }
-                            .glassEffect()
-                            .glassEffectID(toolID(selectedTool), in: presetsNS)
-                            .glassEffectUnion(id: toolID(selectedTool), namespace: presetsNS)
                         }
                     }
                 }
             }
         }
-
     }
 
     // MARK: - Tool Button View
-    @available(iOS 26.0, *)
     struct ToolButtonView: View {
         let tool: Tool
         let isSelected: Bool
         let style: ToolStyle?
-        let toolNS: Namespace.ID
-        let presetsNS: Namespace.ID
         let action: () -> Void
 
+        @available(iOS 26.0, *)
         var body: some View {
             Button(action: action) {
                 Group {
@@ -186,22 +159,20 @@ struct ContentView: View {
                 .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .padding(iconPadding)
             }
+            // 按钮仅做“浮起感”与边界
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(.separator.opacity(isSelected ? 0.55 : 0.28), lineWidth: 1)
+            )
+            .shadow(radius: isSelected ? 8 : 3, y: isSelected ? 2 : 1)
+            // .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
     
-    private struct UnionIfSelected: ViewModifier {
-        let isSelected: Bool
-        let toolID: String
-        let presetsNS: Namespace.ID
-        func body(content: Content) -> some View {
-            if isSelected {
-                content.glassEffectID(toolID, in: presetsNS)
-            } else {
-                content
-            }
-        }
-    }
-
     struct FancyBrushPreview: View {
         let tool: Tool
         let style: ToolStyle
@@ -237,6 +208,7 @@ struct ContentView: View {
             // .border(.red, width: 1)
         }
     }
+
     // MARK: - Function Toolbar
     struct FunctionToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
@@ -268,114 +240,3 @@ struct ContentView: View {
         }
     }
 }
-
-
-func toolID(_ tool: Tool) -> String {
-    switch tool {
-    case .pen: return "pen"
-    case .eraser: return "eraser"
-    case .highlighter: return "highlighter"
-    case .monoline: return "monoline"
-    case .sticker: return "sticker"
-    case .lasso: return "lasso"
-    default: return String(describing: tool)
-    }
-}
-
-
-    // MARK: - Drawing Toolbar
-    // struct DrawingToolbar: View {
-    //     let notebookSpreadViewController: NotebookSpreadViewController
-    //     @State private var selectedTool: Tool = ToolManager.shared.currentTool
-    //     @State private var showStylePresets: Bool = false
-
-    //     var body: some View {
-    //         HStack(alignment: .top, spacing: popoverGap) {
-    //             // 左侧：工具选择区
-    //             VStack(spacing: iconSpacing) {
-    //                 ToolSelectionView(
-    //                     selectedTool: $selectedTool,
-    //                     showStylePresets: $showStylePresets
-    //                 )
-    //                 .frame(height: toolSelectionHeight)
-    //             }
-    //             .padding(6)
-    //             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-    //             .shadow(radius: 5)
-    //             // 右侧：样式预设竖条（仅在需要时显示）
-    //             if showStylePresets {
-    //                 VStack(spacing: iconSpacing) {
-    //                     StylePresetView(selectedTool: selectedTool)
-    //                 }
-    //                 .frame(height: stylePresetHeight)
-    //                 .padding(6)
-    //                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-    //                 .shadow(radius: 5)
-    //                 .transition(.move(edge: .trailing).combined(with: .opacity))
-    //             }
-    //         }
-    //     }
-        
-    //     struct ToolSelectionView: View {
-    //         @Binding var selectedTool: Tool
-    //         @Binding var showStylePresets: Bool
-    //         @EnvironmentObject private var toolManager: ToolManager
-    //         private let glassSpring = Animation.spring(response: 0.32, dampingFraction: 0.85)
-
-    //         var body: some View {
-    //             ScrollView(.vertical, showsIndicators: false) {
-    //                 VStack(spacing: iconSpacing) {
-    //                     ForEach(allTools, id: \.self) { tool in
-    //                         ToolButtonView(
-    //                             tool: tool,
-    //                             isSelected: selectedTool == tool,
-    //                             style: ToolManager.shared.style(for: tool)
-    //                         ) {
-    //                             if selectedTool == tool {
-    //                                 // 再次点击当前工具 -> 切换样式区
-    //                                 if selectedTool.supportColor || selectedTool.supportWidth {
-    //                                     showStylePresets.toggle()
-    //                                 } else {
-    //                                     // 不支持样式则保持收起
-    //                                     showStylePresets = false
-    //                                 }
-    //                             } else {
-    //                                 // 选择了新工具 -> 切换工具并收起样式区
-    //                                 selectedTool = tool
-    //                                 ToolManager.shared.currentTool = tool
-    //                                 showStylePresets = false
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     struct StylePresetView: View {
-    //         let selectedTool: Tool
-    //         @EnvironmentObject private var toolManager: ToolManager
-
-    //         var body: some View {
-    //             let currentStyle = toolManager.style(for: selectedTool)
-    //             ScrollView(.vertical, showsIndicators: false) {
-    //                 VStack(spacing: iconSpacing) {
-    //                     ForEach(selectedTool.presetStyles, id: \.self) { style in
-    //                         ToolButtonView(
-    //                             tool: selectedTool,
-    //                             isSelected: currentStyle == style,
-    //                             style: style
-    //                         ) {
-    //                             ToolManager.shared.setStyle(
-    //                                 for: selectedTool,
-    //                                 color: style.color,
-    //                                 width: style.width,
-    //                                 opacity: style.opacity
-    //                             )
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
