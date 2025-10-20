@@ -24,7 +24,10 @@ struct ContentView: View {
             // 左侧工具栏
             VStack {
                 Spacer()
-                DrawingToolbar(notebookSpreadViewController: notebookSpreadViewController)
+                // DrawingToolbar(notebookSpreadViewController: notebookSpreadViewController)
+                //     .environmentObject(toolManager)
+                //     .padding(.leading, leadingPadding)
+                DrawingToolbarTest(notebookSpreadViewController: notebookSpreadViewController)
                     .environmentObject(toolManager)
                     .padding(.leading, leadingPadding)
                 Spacer()
@@ -42,70 +45,91 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
 
-    // MARK: - Tool Button View
-    struct ToolButtonView: View {
-        let tool: Tool
-        let isSelected: Bool
-        let style: ToolStyle?
-        let action: () -> Void
+    struct DrawingToolbarTest: View {
+        let notebookSpreadViewController: NotebookSpreadViewController
+        @State private var selectedTool: Tool = ToolManager.shared.currentTool
+        @State private var showStylePresets: Bool = false
 
-        @available(iOS 26.0, *)
-        var body: some View {
-            Button(action: action) {
-                // 手势监听包裹图层
-                Group {
-                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
-                        FancyBrushPreview(tool: tool, style: style)
-                    } else {
-                        Image(systemName: tool.iconName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
+        var body: some View{
+            GlassEffectContainer(spacing: 20.0) {
+                ToolSelectionView(
+                    selectedTool: $selectedTool,
+                    showStylePresets: $showStylePresets
+                )
+                .frame(height: toolSelectionHeight)
+                if showStylePresets {
+                    StylePresetView(selectedTool: selectedTool)
+                        .frame(height: stylePresetHeight)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
+            }
+        }
+        
+        struct ToolSelectionView: View {
+            @Binding var selectedTool: Tool
+            @Binding var showStylePresets: Bool
+            @EnvironmentObject private var toolManager: ToolManager
+            private let glassSpring = Animation.spring(response: 0.32, dampingFraction: 0.85)
+
+            var body: some View {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: iconSpacing) {
+                        ForEach(allTools, id: \.self) { tool in
+                            ToolButtonView(
+                                tool: tool,
+                                isSelected: selectedTool == tool,
+                                style: ToolManager.shared.style(for: tool)
+                            ) {
+                                if selectedTool == tool {
+                                    // 再次点击当前工具 -> 切换样式区
+                                    if selectedTool.supportColor || selectedTool.supportWidth {
+                                        showStylePresets.toggle()
+                                    } else {
+                                        // 不支持样式则保持收起
+                                        showStylePresets = false
+                                    }
+                                } else {
+                                    // 选择了新工具 -> 切换工具并收起样式区
+                                    selectedTool = tool
+                                    ToolManager.shared.currentTool = tool
+                                    showStylePresets = false
+                                }
+                            }
+                        }
                     }
                 }
-                .frame(width: iconSize, height: iconSize)
-                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
-                .padding(iconPadding)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.glass)
         }
-    }
-    
-    struct FancyBrushPreview: View {
-        let tool: Tool
-        let style: ToolStyle
-        var body: some View {
-            Canvas { context, size in
-                let segments = generatePathSegments(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
-                let line = generatePathLine(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
-                switch tool {
-                case .monoline:
-                    drawMonolinePreview(
-                        context: context,
-                        style: style,
-                        segments: segments
-                    )
-                case .pen:
-                    drawPenPreview(
-                        context: context,
-                        style: style,
-                        segments: segments
-                    )
-                case .highlighter:
-                        drawHighlighterPreview(
-                            context: context,
-                            style: style,
-                            line: line
-                        )
-                case .eraser: break
-                case .sticker: break
-                case .lasso: break
-                } 
+
+        struct StylePresetView: View {
+            let selectedTool: Tool
+            @EnvironmentObject private var toolManager: ToolManager
+
+            var body: some View {
+                let currentStyle = toolManager.style(for: selectedTool)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: iconSpacing) {
+                        ForEach(selectedTool.presetStyles, id: \.self) { style in
+                            ToolButtonView(
+                                tool: selectedTool,
+                                isSelected: currentStyle == style,
+                                style: style
+                            ) {
+                                ToolManager.shared.setStyle(
+                                    for: selectedTool,
+                                    color: style.color,
+                                    width: style.width,
+                                    opacity: style.opacity
+                                )
+                            }
+                        }
+                    }
+                }
             }
-            .frame(width: iconSize, height: iconSize)
-            // .border(.red, width: 1)
         }
+
     }
+
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
@@ -203,6 +227,70 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Tool Button View
+    struct ToolButtonView: View {
+        let tool: Tool
+        let isSelected: Bool
+        let style: ToolStyle?
+        let action: () -> Void
+
+        @available(iOS 26.0, *)
+        var body: some View {
+            Button(action: action) {
+                // 手势监听包裹图层
+                Group {
+                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
+                        FancyBrushPreview(tool: tool, style: style)
+                    } else {
+                        Image(systemName: tool.iconName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    }
+                }
+                .frame(width: iconSize, height: iconSize)
+                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
+                .padding(iconPadding)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.glass)
+        }
+    }
+    
+    struct FancyBrushPreview: View {
+        let tool: Tool
+        let style: ToolStyle
+        var body: some View {
+            Canvas { context, size in
+                let segments = generatePathSegments(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
+                let line = generatePathLine(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
+                switch tool {
+                case .monoline:
+                    drawMonolinePreview(
+                        context: context,
+                        style: style,
+                        segments: segments
+                    )
+                case .pen:
+                    drawPenPreview(
+                        context: context,
+                        style: style,
+                        segments: segments
+                    )
+                case .highlighter:
+                        drawHighlighterPreview(
+                            context: context,
+                            style: style,
+                            line: line
+                        )
+                case .eraser: break
+                case .sticker: break
+                case .lasso: break
+                } 
+            }
+            .frame(width: iconSize, height: iconSize)
+            // .border(.red, width: 1)
+        }
+    }
     // MARK: - Function Toolbar
     struct FunctionToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
