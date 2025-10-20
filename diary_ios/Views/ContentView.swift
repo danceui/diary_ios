@@ -1,8 +1,9 @@
 import SwiftUI
 import UIKit
 
-private let toolSelectionHeight = ToolbarConstants.toolSelectionHeight
-private let stylePresetHeight = ToolbarConstants.stylePresetHeight
+private let toolPanelHeight = ToolbarConstants.toolPanelHeight
+private let stylePresetPanelHeight = ToolbarConstants.stylePresetPanelHeight
+private let panelWidth = ToolbarConstants.panelWidth
 private let leadingPadding = ToolbarConstants.leadingPadding
 private let trailingPadding = ToolbarConstants.trailingPadding
 private let topPadding = ToolbarConstants.topPadding
@@ -10,7 +11,7 @@ private let topPadding = ToolbarConstants.topPadding
 private let iconSize = ToolbarConstants.iconSize
 private let iconPadding = ToolbarConstants.iconPadding
 private let iconSpacing = ToolbarConstants.iconSpacing
-private let popoverMaxHeight: CGFloat = stylePresetHeight
+private let popoverMaxHeight: CGFloat = stylePresetPanelHeight
 private let popoverGap = ToolbarConstants.popoverGap
 
 @available(iOS 26.0, *)
@@ -52,25 +53,23 @@ struct ContentView: View {
             HStack(alignment: .top, spacing: popoverGap) {
                 // first column: tool panel
                 GlassEffectContainer(spacing: iconSpacing) {
-                    VStack(spacing: iconSpacing) {
-                        ToolSelectionView(
-                            selectedTool: $selectedTool,
-                            showStylePresets: $showStylePresets
-                        )
-                        .frame(height: toolSelectionHeight)
-                    }
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    ToolSelectionView(
+                        selectedTool: $selectedTool,
+                        showStylePresets: $showStylePresets
+                    )
                 }
+                .frame(width: panelWidth, height: toolPanelHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 // second column: style presets panel
                 if showStylePresets {
                     GlassEffectContainer(spacing: 10) {
-                        VStack(spacing: iconSpacing) {
-                            StylePresetView(selectedTool: selectedTool)
-                            .frame(height: stylePresetHeight)
-                        }
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        StylePresetView(
+                            selectedTool: selectedTool
+                        )
                     }
+                    .frame(width: panelWidth, height: stylePresetPanelHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
             }
         }
@@ -102,6 +101,7 @@ struct ContentView: View {
                                     showStylePresets = false
                                 }
                             }
+                            .padding(iconPadding)
                         }
                     }
                 }
@@ -129,6 +129,7 @@ struct ContentView: View {
                                     opacity: style.opacity
                                 )
                             }
+                            .padding(iconPadding)
                         }
                     }
                 }
