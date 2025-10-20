@@ -42,8 +42,35 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
 
-    // MARK: - Fancy Brush Preview
-    @available(iOS 26.0, *)
+    // MARK: - Tool Button View
+    struct ToolButtonView: View {
+        let tool: Tool
+        let isSelected: Bool
+        let style: ToolStyle?
+        let action: () -> Void
+
+        @available(iOS 26.0, *)
+        var body: some View {
+            Button(action: action) {
+                // 手势监听包裹图层
+                Group {
+                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
+                        FancyBrushPreview(tool: tool, style: style)
+                    } else {
+                        Image(systemName: tool.iconName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    }
+                }
+                .frame(width: iconSize, height: iconSize)
+                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
+                .padding(iconPadding)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.glass)
+        }
+    }
+    
     struct FancyBrushPreview: View {
         let tool: Tool
         let style: ToolStyle
@@ -79,40 +106,6 @@ struct ContentView: View {
             // .border(.red, width: 1)
         }
     }
-
-    struct ToolButtonView: View {
-        let tool: Tool
-        let isSelected: Bool
-        let style: ToolStyle?
-        let action: () -> Void
-
-        // @EnvironmentObject private var toolManager: ToolManager
-        @State private var isPressed = false
-
-        @available(iOS 26.0, *)
-        var body: some View {
-            Button(action: action) {
-                ZStack {
-                    // 手势监听包裹图层
-                    Group {
-                        if tool == .monoline || tool == .pen || tool == .highlighter, let style {
-                            FancyBrushPreview(tool: tool, style: style)
-                        } else {
-                            Image(systemName: tool.iconName)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        }
-                    }
-                    .frame(width: iconSize, height: iconSize)
-                    .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
-                    .padding(iconPadding)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.glass)
-        }
-    }
-
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
