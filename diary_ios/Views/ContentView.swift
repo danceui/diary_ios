@@ -158,18 +158,12 @@ struct ContentView: View {
                 .frame(width: iconSize, height: iconSize)
                 .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .padding(iconPadding)
+                .background(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(isSelected ? Color.black.opacity(0.12) : Color.black.opacity(0.04))
+                    .blur(radius: isSelected ? 0.5 : 0) // 选中更实一点
+                )
             }
-            // 按钮仅做“浮起感”与边界
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(.separator.opacity(isSelected ? 0.55 : 0.28), lineWidth: 1)
-            )
-            .shadow(radius: isSelected ? 8 : 3, y: isSelected ? 2 : 1)
-            // .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
     
