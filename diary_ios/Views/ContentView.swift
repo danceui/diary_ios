@@ -161,15 +161,55 @@ struct ContentView: View {
                 .frame(width: iconSize, height: iconSize)
                 .padding(iconPadding)
                 .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
-                .background(
-                    RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous) // ?
-                    .fill(isSelected ? Color.black.opacity(0.18) : Color.black.opacity(0.06))
-                    .blur(radius: isSelected ? 0.6 : 0.2)
-                )
+                // .background(
+                //     RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
+                //     .fill(isSelected ? Color.black.opacity(0.18) : Color.black.opacity(0.06))
+                //     .blur(radius: isSelected ? 0.6 : 0.2)
+                // )
             }
-        }
+            .buttonStyle(ToolButtonStyle(isSelected: isSelected))
+        } 
     }
     
+    @available(iOS 26.0, *)
+    struct ToolButtonStyle: ButtonStyle {
+        var isSelected: Bool
+        private let corner = toolbarCornerRadius
+
+        func makeBody(configuration: Configuration) -> some View {
+            // 一个连续的强度值：普通 < 按压 < 选中
+            let base: CGFloat = isSelected ? 0.55 : 0.18
+            let pressBoost: CGFloat = configuration.isPressed ? 0.12 : 0.0
+            let level = min(1.0, base + pressBoost) // 0…1
+
+            configuration.label
+                // 底板：稳态，不动画（避免亮度跳变）
+                .background(
+                    RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .fill(Color.black.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                                .strokeBorder(.separator.opacity(isSelected ? 0.55 : 0.28), lineWidth: 1)
+                        )
+                )
+                // 高亮层：只让它跟着 level 变化（包含 blur）
+                .overlay(
+                    RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .fill(.white.opacity(0.18 + 0.22 * level))
+                        .blur(radius: 10 * level)
+                        .compositingGroup()
+                        .allowsHitTesting(false)
+                )
+                // 轻微按压缩放与阴影（统一动画曲线）
+                .scaleEffect(configuration.isPressed ? 0.985 : 1)
+                .shadow(radius: 6 * level + (isSelected ? 2 : 0), y: 1 + 1.5 * level)
+                // 只对 level/pressed 做动画，其它禁用隐式动画
+                .animation(.interpolatingSpring(stiffness: 280, damping: 28), value: level)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+                .transaction { $0.animation = nil }
+        }
+    }
+
     struct FancyBrushPreview: View {
         let tool: Tool
         let style: ToolStyle
