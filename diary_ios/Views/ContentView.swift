@@ -49,22 +49,41 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
+        @Namespace private var glassNS
 
-        var body: some View{
-            GlassEffectContainer(spacing: 20.0) {
-                ToolSelectionView(
-                    selectedTool: $selectedTool,
-                    showStylePresets: $showStylePresets
-                )
-                .frame(height: toolSelectionHeight)
-                if showStylePresets {
-                    StylePresetView(selectedTool: selectedTool)
-                        .frame(height: stylePresetHeight)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
+        var body: some View {
+            GlassEffectContainer(spacing: 10.0) {
+                HStack(alignment: .top, spacing: popoverGap) {
+                    
+                    // first column: tool panel
+                    VStack(spacing: iconSpacing) {
+                        ToolSelectionView(
+                            selectedTool: $selectedTool,
+                            showStylePresets: $showStylePresets
+                        )
+                        .padding(6)
+                        .frame(height: toolSelectionHeight)
+                    }
+                    .glassEffect()
+                    .glassEffectID("toolbar", in: glassNS)
+                    // .glassEffectUnion(id: "toolbar", namespace: glassNS)
+                    
+                    // second column: style presets panel
+                    if showStylePresets {
+                        VStack(spacing: iconSpacing) {
+                            StylePresetView(selectedTool: selectedTool)
+                            .padding(6)
+                            .frame(height: stylePresetHeight)
+                        }
+                        .glassEffect()
+                        .glassEffectID("presets", in: glassNS)
+                        // .glassEffectUnion(id: "presets", namespace: glassNS)
+                    }
                 }
             }
         }
-        
+
+
         struct ToolSelectionView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
