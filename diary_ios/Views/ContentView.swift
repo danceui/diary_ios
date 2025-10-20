@@ -66,7 +66,6 @@ struct ContentView: View {
                         .padding(1)
                         // .frame(height: toolSelectionHeight)
                     }
-                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
                 // second column: style presets panel
                 if showStylePresets {
@@ -81,7 +80,6 @@ struct ContentView: View {
                             .padding(1)
                         }
                     }
-                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
             }
         }
@@ -119,6 +117,8 @@ struct ContentView: View {
                             .glassEffect()
                             // .glassEffectID(toolID(selectedTool), in: presetsNS)
                             .glassEffectUnion(id: "tools", namespace: toolNS)
+                            // 只有选中的按钮与 presets 面板“合并”
+                            .modifier(UnionIfSelected(isSelected: selectedTool == tool, toolID: toolID(selectedTool), presetsNS: presetsNS))
                         }
                     }
                 }
@@ -151,10 +151,8 @@ struct ContentView: View {
                                 )
                             }
                             .glassEffect()
-                            // .glassEffectID(toolID(selectedTool), in: presetsNS)
+                            .glassEffectID(toolID(selectedTool), in: presetsNS)
                             .glassEffectUnion(id: toolID(selectedTool), namespace: presetsNS)
-                            // 只有选中的按钮与 presets 面板“合并”
-                            // .modifier(UnionIfSelected(isSelected: isSelected, toolID: toolID(tool), presetsNS: presetsNS))
                         }
                     }
                 }
@@ -162,6 +160,128 @@ struct ContentView: View {
         }
 
     }
+
+    // MARK: - Tool Button View
+    @available(iOS 26.0, *)
+    struct ToolButtonView: View {
+        let tool: Tool
+        let isSelected: Bool
+        let style: ToolStyle?
+        let toolNS: Namespace.ID
+        let presetsNS: Namespace.ID
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                Group {
+                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
+                        FancyBrushPreview(tool: tool, style: style)
+                    } else {
+                        Image(systemName: tool.iconName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    }
+                }
+                .frame(width: iconSize, height: iconSize)
+                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
+                .padding(iconPadding)
+            }
+        }
+    }
+    
+    private struct UnionIfSelected: ViewModifier {
+        let isSelected: Bool
+        let toolID: String
+        let presetsNS: Namespace.ID
+        func body(content: Content) -> some View {
+            if isSelected {
+                content.glassEffectID(toolID, in: presetsNS)
+            } else {
+                content
+            }
+        }
+    }
+
+    struct FancyBrushPreview: View {
+        let tool: Tool
+        let style: ToolStyle
+        var body: some View {
+            Canvas { context, size in
+                let segments = generatePathSegments(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
+                let line = generatePathLine(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
+                switch tool {
+                case .monoline:
+                    drawMonolinePreview(
+                        context: context,
+                        style: style,
+                        segments: segments
+                    )
+                case .pen:
+                    drawPenPreview(
+                        context: context,
+                        style: style,
+                        segments: segments
+                    )
+                case .highlighter:
+                        drawHighlighterPreview(
+                            context: context,
+                            style: style,
+                            line: line
+                        )
+                case .eraser: break
+                case .sticker: break
+                case .lasso: break
+                } 
+            }
+            .frame(width: iconSize, height: iconSize)
+            // .border(.red, width: 1)
+        }
+    }
+    // MARK: - Function Toolbar
+    struct FunctionToolbar: View {
+        let notebookSpreadViewController: NotebookSpreadViewController
+
+        var body: some View {
+            HStack(spacing: iconSpacing) {
+                Button(action: {
+                    notebookSpreadViewController.undo()
+                }) {
+                    Image(systemName: "arrow.uturn.backward")
+                }
+
+                Button(action: {
+                    notebookSpreadViewController.redo()
+                }) {
+                    Image(systemName: "arrow.uturn.forward")
+                }
+
+                Button(action: {
+                    notebookSpreadViewController.addNewPagePair()
+                }) {
+                    Image(systemName: "plus.square.on.square")
+                }
+            }
+            .padding(12)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        }
+    }
+}
+
+
+func toolID(_ tool: Tool) -> String {
+    switch tool {
+    case .pen: return "pen"
+    case .eraser: return "eraser"
+    case .highlighter: return "highlighter"
+    case .monoline: return "monoline"
+    case .sticker: return "sticker"
+    case .lasso: return "lasso"
+    default: return String(describing: tool)
+    }
+}
+
 
     // MARK: - Drawing Toolbar
     // struct DrawingToolbar: View {
@@ -259,124 +379,3 @@ struct ContentView: View {
     //         }
     //     }
     // }
-
-    // MARK: - Tool Button View
-    @available(iOS 26.0, *)
-    struct ToolButtonView: View {
-        let tool: Tool
-        let isSelected: Bool
-        let style: ToolStyle?
-        let toolNS: Namespace.ID
-        let presetsNS: Namespace.ID
-        let action: () -> Void
-
-        var body: some View {
-            Button(action: action) {
-                Group {
-                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
-                        FancyBrushPreview(tool: tool, style: style)
-                    } else {
-                        Image(systemName: tool.iconName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                    }
-                }
-                .frame(width: iconSize, height: iconSize)
-                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
-                .padding(iconPadding)
-            }
-        }
-    }
-    
-    private struct UnionIfSelected: ViewModifier {
-        let isSelected: Bool
-        let toolID: String
-        let presetsNS: Namespace.ID
-        func body(content: Content) -> some View {
-            if isSelected {
-                content.glassEffectUnion(id: toolID, namespace: presetsNS)
-            } else {
-                content
-            }
-        }
-    }
-
-    struct FancyBrushPreview: View {
-        let tool: Tool
-        let style: ToolStyle
-        var body: some View {
-            Canvas { context, size in
-                let segments = generatePathSegments(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
-                let line = generatePathLine(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
-                switch tool {
-                case .monoline:
-                    drawMonolinePreview(
-                        context: context,
-                        style: style,
-                        segments: segments
-                    )
-                case .pen:
-                    drawPenPreview(
-                        context: context,
-                        style: style,
-                        segments: segments
-                    )
-                case .highlighter:
-                        drawHighlighterPreview(
-                            context: context,
-                            style: style,
-                            line: line
-                        )
-                case .eraser: break
-                case .sticker: break
-                case .lasso: break
-                } 
-            }
-            .frame(width: iconSize, height: iconSize)
-            // .border(.red, width: 1)
-        }
-    }
-    // MARK: - Function Toolbar
-    struct FunctionToolbar: View {
-        let notebookSpreadViewController: NotebookSpreadViewController
-
-        var body: some View {
-            HStack(spacing: iconSpacing) {
-                Button(action: {
-                    notebookSpreadViewController.undo()
-                }) {
-                    Image(systemName: "arrow.uturn.backward")
-                }
-
-                Button(action: {
-                    notebookSpreadViewController.redo()
-                }) {
-                    Image(systemName: "arrow.uturn.forward")
-                }
-
-                Button(action: {
-                    notebookSpreadViewController.addNewPagePair()
-                }) {
-                    Image(systemName: "plus.square.on.square")
-                }
-            }
-            .padding(12)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        }
-    }
-}
-
-
-func toolID(_ tool: Tool) -> String {
-    switch tool {
-    case .pen: return "pen"
-    case .eraser: return "eraser"
-    case .highlighter: return "highlighter"
-    case .monoline: return "monoline"
-    case .sticker: return "sticker"
-    case .lasso: return "lasso"
-    default: return String(describing: tool)
-    }
-}
