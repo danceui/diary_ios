@@ -4,6 +4,8 @@ import UIKit
 private let toolPanelHeight = ToolbarConstants.toolPanelHeight
 private let stylePresetPanelHeight = ToolbarConstants.stylePresetPanelHeight
 private let panelWidth = ToolbarConstants.panelWidth
+private let styleDetailPanelWidth = ToolbarConstants.styleDetailPanelWidth
+private let styleDetailPanelHeight = ToolbarConstants.styleDetailPanelHeight
 private let leadingPadding = ToolbarConstants.leadingPadding
 private let trailingPadding = ToolbarConstants.trailingPadding
 private let topPadding = ToolbarConstants.topPadding
@@ -47,14 +49,20 @@ struct ContentView: View {
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool: Tool = ToolManager.shared.currentTool
+        @State private var selectedPreset: ToolStyle? = nil
         @State private var showStylePresets: Bool = false
+        @State private var showStyleDetails: Bool = false
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
                 GlassEffectContainer {
                     ToolPanelView(
                         selectedTool: $selectedTool,
-                        showStylePresets: $showStylePresets
+                        showStylePresets: $showStylePresets,
+                        onWillSwitchTool: {
+                            selectedPreset = nil
+                            showStyleDetails = false
+                        }
                     )
                 }
                 .frame(width: panelWidth, height: toolPanelHeight)
@@ -62,11 +70,35 @@ struct ContentView: View {
                 if showStylePresets {
                     GlassEffectContainer {
                         StylePresetPanelView(
-                            selectedTool: selectedTool
+                            selectedTool: selectedTool,
+                            selectedPreset: selectedPreset,
+                            onTapPreset: handlePresetTap(_:)
                         )
                     }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                }
+                if showStyleDetails, let preset = selectedPreset {
+                    GlassEffectContainer {
+                        StyleDetailPanelView(
+                            tool: selectedTool,
+                            initial: preset,
+                            onChange: { updated in
+                                // live preview
+                                ToolManager.shared.setStyle(for: selectedTool,
+                                                            color: updated.color,
+                                                            width: updated.width,
+                                                            opacity: updated.opacity)
+                                selectedPreset = updated
+                            },
+                            onDone: {
+                                showStyleDetails = false
+                            }
+                        )
+                    }
+                    .frame(width: styleDetailPanelWidth, height: styleDetailPanelHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    // .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
         }
@@ -74,6 +106,8 @@ struct ContentView: View {
         struct ToolPanelView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
+            var onWillSwitchTool: () -> Void = {} // NEW default
+
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -92,6 +126,7 @@ struct ContentView: View {
                                         showStylePresets = false
                                     }
                                 } else {
+                                    onWillSwitchTool() 
                                     selectedTool = tool
                                     ToolManager.shared.currentTool = tool
                                     showStylePresets = false
@@ -109,13 +144,19 @@ struct ContentView: View {
 
         struct StylePresetPanelView: View {
             let selectedTool: Tool
+            let selectedPreset: ToolStyle?
+            let onTapPreset: (ToolStyle) -> Void
+
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 let currentStyle = toolManager.style(for: selectedTool)
+                let presets = selectedTool.presetStyles
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
-                        ForEach(selectedTool.presetStyles, id: \.self) { style in
+                        ForEach(presets, id: \.self) { style in
+                            let isCurrent = (currentStyle == style)
+                            let isSelected = (selectedPreset == style)
                             ToolButtonView(
                                 tool: selectedTool,
                                 isSelected: currentStyle == style,
@@ -127,6 +168,7 @@ struct ContentView: View {
                                     width: style.width,
                                     opacity: style.opacity
                                 )
+                                onTapPreset(style)
                             }
                             .padding(iconPadding)
                         }
@@ -136,6 +178,84 @@ struct ContentView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
+        }
+
+        private func handlePresetTap(_ style: ToolStyle) {
+            if selectedPreset == style, !showStyleDetails {
+                // second tap on the same preset → open details
+                showStyleDetails = true
+            } else {
+                // first tap or a different preset → apply & keep presets open
+                selectedPreset = style
+                showStyleDetails = false
+                ToolManager.shared.setStyle(for: selectedTool,
+                                            color: style.color,
+                                            width: style.width,
+                                            opacity: style.opacity)
+            }
+        }
+    }
+
+    struct StyleDetailPanelView: View {
+        let tool: Tool
+
+        // Working copy of the style
+        @State private var color: Color
+        @State private var width: Double
+        @State private var opacity: Double
+
+        let onChange: (ToolStyle) -> Void
+        let onDone: () -> Void
+
+        init(tool: Tool,
+            initial: ToolStyle,
+            onChange: @escaping (ToolStyle) -> Void,
+            onDone: @escaping () -> Void) {
+            self.tool = tool
+            _color   = State(initialValue: initial.color?.toColor() ?? .black)
+            _width   = State(initialValue: Double(initial.width ?? 4))
+            _opacity = State(initialValue: Double(initial.opacity ?? 1.0))
+            self.onChange = onChange
+            self.onDone   = onDone
+        }
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 14) {
+                // Color
+                ColorPicker("Color", selection: $color, supportsOpacity: false)
+                    .onChange(of: color) { _ in pushChange() }
+                // Width
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Width: \(Int(width))")
+                    Slider(value: $width, in: 1...30, step: 1) { _ in
+                        pushChange()
+                    }
+                }
+                // Opacity
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Opacity: \(Int(opacity * 100))%")
+                    Slider(value: $opacity, in: 0.1...1.0, step: 0.05) { _ in
+                        pushChange()
+                    }
+                }
+                HStack {
+                    Button("Reset") {
+                        // optional: define per-tool defaults if you like
+                        width = 4; opacity = 1.0; color = .black
+                        pushChange()
+                    }
+                    Spacer()
+                    Button("Done") { onDone() }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+            .padding(14)
+        }
+
+        private func pushChange() {
+            onChange(ToolStyle(color: UIColor(color),
+                            width: CGFloat(width),
+                            opacity: CGFloat(opacity)))
         }
     }
 
