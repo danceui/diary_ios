@@ -4,8 +4,8 @@ import UIKit
 private let toolPanelHeight = ToolbarConstants.toolPanelHeight
 private let stylePresetPanelHeight = ToolbarConstants.stylePresetPanelHeight
 private let panelWidth = ToolbarConstants.panelWidth
-private let styleDetailPanelWidth = ToolbarConstants.styleDetailPanelWidth
-private let styleDetailPanelHeight = ToolbarConstants.styleDetailPanelHeight
+private let styleDetailWidth = ToolbarConstants.styleDetailWidth
+private let styleDetailHeight = ToolbarConstants.styleDetailHeight
 private let leadingPadding = ToolbarConstants.leadingPadding
 private let trailingPadding = ToolbarConstants.trailingPadding
 private let topPadding = ToolbarConstants.topPadding
@@ -75,11 +75,11 @@ struct ContentView: View {
                 }
                 if showStyleDetails, selectedTool.supportsPresets {
                     GlassEffectContainer {
-                        StyleDetailPanelView(
+                        StyleDetailView(
                             tool: selectedTool
                         )
                     }
-                    .frame(width: styleDetailPanelWidth, height: styleDetailPanelHeight)
+                    .frame(width: styleDetailWidth, height: styleDetailHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     // .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
@@ -159,7 +159,7 @@ struct ContentView: View {
         }
     }
 
-    struct StyleDetailPanelView: View {
+    struct StyleDetailView: View {
         let tool: Tool
 
         @State private var color: Color = .black
@@ -169,27 +169,45 @@ struct ContentView: View {
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 14) {
-                // Color
-                if tool.supportColor {
-                    ColorPicker("Color", selection: $color, supportsOpacity: false)
+            VStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    // Color
+                    if tool.supportColor {
+                        ColorPicker("", selection: $color, supportsOpacity: false)
+                        .labelsHidden()
+                        .accessibilityLabel("Color")
+                    }
+                    if tool == .monoline || tool == .pen || tool == .highlighter {
+                        FancyBrushPreview(tool: tool, style: toolManager.styleForTool(for: tool) ?? ToolStyle())
+                            .frame(width: 20, height: 20)
+                    }
                 }
-                if tool.supportWidth {
-                    HStack {
-                        Text("Width")
-                        Slider(value: $width, in: 1...30, step: 1)
-                        Text("\(Int(width))").monospacedDigit().frame(width: 36, alignment: .trailing)
+                if tool.supportWidth {  
+                    HStack(spacing: 10) {
+                        Slider(value: $width, in: 1...10, step: 1)
+                            .frame(width: 50)
+                            .labelsHidden()
+                            .accessibilityLabel("Width")
+                        Text("\(Int(width))")
+                            .monospacedDigit()
+                            .frame(width: 42, alignment: .center)
+                            .multilineTextAlignment(.center)
                     }
                 }
                 if tool.supportOpacity {
-                    HStack {
-                        Text("Opacity")
-                        Slider(value: $opacity, in: 0...1)
-                        Text(String(format: "%.2f", opacity)).monospacedDigit().frame(width: 44, alignment: .trailing)
+                    HStack(spacing: 10) {
+                        Slider(value: $opacity, in: 0.1...1)
+                            .frame(width: 50)
+                            .labelsHidden()
+                            .accessibilityLabel("Opacity")
+                        Text("\(Int(round(opacity * 100)))%")
+                            .monospacedDigit()
+                            .frame(width: 48, alignment: .center)
+                            .multilineTextAlignment(.center)
                     }
                 }
             }
-            .padding(14)
+            .padding(10)
             .onAppear(perform: loadFromManager)
             .onChange(of: color)   { _ in pushChange() }
             .onChange(of: width)   { _ in pushChange() }
