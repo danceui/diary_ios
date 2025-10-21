@@ -25,7 +25,7 @@ struct PreviewSVGConstants {
 struct ToolbarConstants {
     static let toolPanelHeight: CGFloat = 260.0
     static let stylePresetPanelHeight: CGFloat = 160.0
-    static let panelWidth: CGFloat = 70.0
+    static let panelWidth: CGFloat = 50.0
     static let styleDetailWidth: CGFloat = 200.0
     static let styleDetailHeight: CGFloat = 230.0
     static let leadingPadding: CGFloat = 30.0

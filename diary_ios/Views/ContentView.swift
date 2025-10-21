@@ -55,7 +55,7 @@ struct ContentView: View {
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
                 GlassEffectContainer {
-                    ToolPanelView(
+                    ToolsPanel(
                         selectedTool: $selectedTool,
                         showStylePresets: $showStylePresets,
                         showStyleDetails: $showStyleDetails
@@ -65,7 +65,7 @@ struct ContentView: View {
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 if showStylePresets, selectedTool.supportsPresets {
                     GlassEffectContainer {
-                        StylePresetPanelView(
+                        StylePresetsPanel(
                             selectedTool: selectedTool,
                             showStyleDetails: $showStyleDetails
                         )
@@ -75,8 +75,9 @@ struct ContentView: View {
                 }
                 if showStyleDetails, selectedTool.supportsPresets {
                     GlassEffectContainer {
-                        StyleDetailView(
-                            tool: selectedTool
+                        StyleDetailsPanel(
+                            tool: selectedTool,
+                            showStyleDetails: $showStyleDetails
                         )
                     }
                     .frame(width: styleDetailWidth, height: styleDetailHeight)
@@ -86,12 +87,12 @@ struct ContentView: View {
             }
         }
         
-        struct ToolPanelView: View {
-            @EnvironmentObject private var toolManager: ToolManager
+        struct ToolsPanel: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @Binding var showStyleDetails: Bool
-            // var onWillSwitchTool: () -> Void = {} // NEW default
+            
+            @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -123,10 +124,11 @@ struct ContentView: View {
             }
         }
 
-        struct StylePresetPanelView: View {
-            @EnvironmentObject private var toolManager: ToolManager
+        struct StylePresetsPanel: View {
             let selectedTool: Tool
             @Binding var showStyleDetails: Bool
+
+            @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 let presets = toolManager.presetStyles[selectedTool] ?? []
@@ -159,59 +161,112 @@ struct ContentView: View {
         }
     }
 
-    struct StyleDetailView: View {
+    struct StyleDetailsPanel: View {
         let tool: Tool
-
-        @State private var color: Color = .black
-        @State private var width: Double = 4
-        @State private var opacity: Double = 1
+        @Binding var showStyleDetails: Bool
 
         @EnvironmentObject private var toolManager: ToolManager
 
+        // 本地编辑态，仅用于预览
+        @State private var color: Color = .black
+        @State private var width: Double = 4
+        @State private var opacity: Double = 1
+        private var previewStyle: ToolStyle {
+            var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
+            if tool.supportColor { style.color = UIColor(color) }
+            if tool.supportWidth { style.width = CGFloat(width) }
+            if tool.supportOpacity { style.opacity = CGFloat(opacity) }
+            return style
+        }
+
         var body: some View {
-            VStack(spacing: 12) {
-                HStack(spacing: 10) {
-                    // Color
-                    if tool.supportColor {
-                        ColorPicker("", selection: $color, supportsOpacity: false)
-                        .labelsHidden()
-                        .accessibilityLabel("Color")
-                    }
-                    if tool == .monoline || tool == .pen || tool == .highlighter {
-                        FancyBrushPreview(tool: tool, style: toolManager.styleForTool(for: tool) ?? ToolStyle())
-                            .frame(width: 20, height: 20)
-                    }
-                }
-                if tool.supportWidth {  
-                    HStack(spacing: 10) {
-                        Slider(value: $width, in: 1...10, step: 1)
-                            .frame(width: 50)
+            GlassEffectContainer {
+                VStack(spacing: 12) {
+                    HStack(spacing: 20) {
+                        if tool == .monoline || tool == .pen || tool == .highlighter {
+                            FancyBrushPreview(tool: tool, style: previewStyle)
+                            .frame(width: 60, height: 60)
+                            // .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            // .overlay(
+                            //     RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            //         .stroke(.white.opacity(0.12), lineWidth: 1)
+                            // )
+                        }
+                        if tool.supportColor {
+                            ColorPicker("", selection: $color, supportsOpacity: false)
                             .labelsHidden()
-                            .accessibilityLabel("Width")
-                        Text("\(Int(width))")
-                            .monospacedDigit()
-                            .frame(width: 42, alignment: .center)
-                            .multilineTextAlignment(.center)
+                            .accessibilityLabel("Color")
+                            .frame(width: 36, height: 36)
+                        }
                     }
-                }
-                if tool.supportOpacity {
+                    if tool.supportWidth {  
+                        HStack(spacing: 10) {
+                            Slider(value: $width, in: 1...10, step: 1)
+                                .controlSize(.mini)
+                                .labelsHidden()
+                                .accessibilityLabel("Width")
+                            Text("\(Int(width))")
+                                .monospacedDigit()
+                                .frame(width: 56, alignment: .center)
+                        }
+                    }
+                    if tool.supportOpacity {
+                        HStack(spacing: 10) {
+                            Slider(value: $opacity, in: 0.1...1, step: 0.01)
+                                .controlSize(.mini)
+                                .labelsHidden()
+                                .accessibilityLabel("Opacity")
+                            Text("\(Int(round(opacity * 100)))%")
+                                .monospacedDigit()
+                                .frame(width: 56, alignment: .center)
+                        }
+                    }
                     HStack(spacing: 10) {
-                        Slider(value: $opacity, in: 0.1...1)
-                            .frame(width: 50)
-                            .labelsHidden()
-                            .accessibilityLabel("Opacity")
-                        Text("\(Int(round(opacity * 100)))%")
-                            .monospacedDigit()
-                            .frame(width: 48, alignment: .center)
-                            .multilineTextAlignment(.center)
+                        Button {
+                            commitChanges()
+                        } label: {
+                            Label("Save", systemImage: "checkmark.circle")
+                                .labelStyle(.iconOnly)
+                        }
+                        .tint(.green)
+
+                        Button {
+                            loadFromManager()
+                            showStyleDetails = false
+                        } label: {
+                            Label("Discard", systemImage: "arrow.uturn.left")
+                                .labelStyle(.iconOnly)
+                        }
+                        .tint(.gray)
+
+                        Spacer(minLength: 0)
+
+                        Button {
+                            // duplicatePreset()
+                        } label: {
+                            Label("Duplicate", systemImage: "plus.square.on.square")
+                                .labelStyle(.iconOnly)
+                        }
+                        .tint(.blue)
+
+                        Button {
+                            // showDeleteConfirm = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                                .labelStyle(.iconOnly)
+                        }
+                        .tint(.red)
                     }
+                    .controlSize(.small)
+                }
+                .padding(10)
+                .onAppear(perform: loadFromManager)
+                .onChange(of: showStyleDetails) { shown in
+                    // 面板收起时一次性保存
+                    if !shown { commitChanges() }
                 }
             }
-            .padding(10)
-            .onAppear(perform: loadFromManager)
-            .onChange(of: color)   { _ in pushChange() }
-            .onChange(of: width)   { _ in pushChange() }
-            .onChange(of: opacity) { _ in pushChange() }
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
         }
 
         private func loadFromManager() {
@@ -221,12 +276,13 @@ struct ContentView: View {
             if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
         }
 
-        private func pushChange() {
+        private func commitChanges() {
             let updated = ToolStyle(
                 color: UIColor(color),
                 width: CGFloat(width),
                 opacity: CGFloat(opacity)
             )
+            if updated == (toolManager.styleForTool(for: tool) ?? ToolStyle()) { return }
             toolManager.setStyleFromDetail(for: tool, updated: updated)
         }
     }
