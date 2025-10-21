@@ -85,11 +85,11 @@ struct ContentView: View {
                             initial: preset,
                             onChange: { updated in
                                 // live preview
-                                ToolManager.shared.setStyle(for: selectedTool,
-                                                            color: updated.color,
-                                                            width: updated.width,
-                                                            opacity: updated.opacity)
-                                selectedPreset = updated
+                                // ToolManager.shared.setStyle(for: selectedTool,
+                                //                             color: updated.color,
+                                //                             width: updated.width,
+                                //                             opacity: updated.opacity)
+                                // selectedPreset = updated
                             },
                             onDone: {
                                 showStyleDetails = false
@@ -117,7 +117,7 @@ struct ContentView: View {
                             ToolButtonView(
                                 tool: tool,
                                 isSelected: selectedTool == tool,
-                                style: toolManager.style(for: tool)
+                                style: toolManager.currentStyle(for: tool)
                             ) {
                                 if selectedTool == tool {
                                     if selectedTool.supportColor || selectedTool.supportWidth {
@@ -150,18 +150,16 @@ struct ContentView: View {
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
-                let currentStyle = toolManager.style(for: selectedTool)
-                let presets = selectedTool.presetStyles
-                let currentPresetIdx = toolManager.currentPresetIndex(for: selectedTool)
+                let presets = toolManager.presetStyles[selectedTool] ?? []
+                let chosenPresetIndex = toolManager.currentPresetIndex(for: selectedTool)
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
-                            let isApplied = (currentStyle == style)
-                            let isChosen = (currentPresetIdx == idx)
+                            let isChosen = (chosenPresetIndex == idx)
                             ToolButtonView(
                                 tool: selectedTool,
-                                isSelected: isApplied || isChosen,
+                                isSelected: isChosen,
                                 style: style
                             ) {
                                 let second = toolManager.tapPreset(for: selectedTool, index: idx)
@@ -171,13 +169,7 @@ struct ContentView: View {
                                 //     width: style.width,
                                 //     opacity: style.opacity
                                 // )
-                                if second {
-                                // 第二次点同一项 → 交给上层开详情
-                                    onTapPreset(style)
-                                } else {
-                                    // 第一次点/换项 → 也可通知上层（如果你要记录 selectedPreset 用于详情）
-                                    onTapPreset(style)
-                                }
+                                onTapPreset(style)
                             }
                             .padding(iconPadding)
                         }
@@ -191,10 +183,8 @@ struct ContentView: View {
 
         private func handlePresetTap(_ style: ToolStyle) {
             if selectedPreset == style, !showStyleDetails {
-                // second tap on the same preset → open details
                 showStyleDetails = true
             } else {
-                // first tap or a different preset → apply & keep presets open
                 selectedPreset = style
                 showStyleDetails = false
             }
@@ -211,6 +201,8 @@ struct ContentView: View {
 
         let onChange: (ToolStyle) -> Void
         let onDone: () -> Void
+
+        @EnvironmentObject private var toolManager: ToolManager
 
         init(tool: Tool,
             initial: ToolStyle,
@@ -229,6 +221,7 @@ struct ContentView: View {
                 // Color
                 ColorPicker("Color", selection: $color, supportsOpacity: false)
                     .onChange(of: color) { _ in pushChange() }
+
                 // Width
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Width: \(Int(width))")
@@ -258,9 +251,13 @@ struct ContentView: View {
         }
 
         private func pushChange() {
-            onChange(ToolStyle(color: UIColor(color),
-                            width: CGFloat(width),
-                            opacity: CGFloat(opacity)))
+            let updated = ToolStyle(
+                color: UIColor(color),
+                width: CGFloat(width),
+                opacity: CGFloat(opacity)
+            )
+            toolManager.setStyleFromDetail(for: tool, updated: updated)
+            onChange(updated)
         }
     }
 
