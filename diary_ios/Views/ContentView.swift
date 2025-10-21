@@ -58,11 +58,11 @@ struct ContentView: View {
                 GlassEffectContainer {
                     ToolPanelView(
                         selectedTool: $selectedTool,
-                        showStylePresets: $showStylePresets,
-                        onWillSwitchTool: {
-                            selectedPreset = nil
-                            showStyleDetails = false
-                        }
+                        showStylePresets: $showStylePresets
+                        // onWillSwitchTool: {
+                        //     selectedPreset = nil
+                        //     showStyleDetails = false
+                        // }
                     )
                 }
                 .frame(width: panelWidth, height: toolPanelHeight)
@@ -70,9 +70,9 @@ struct ContentView: View {
                 if showStylePresets {
                     GlassEffectContainer {
                         StylePresetPanelView(
-                            selectedTool: selectedTool,
-                            selectedPreset: selectedPreset,
-                            onTapPreset: handlePresetTap(_:)
+                            selectedTool: $selectedTool,
+                            selectedPreset: $selectedPreset,
+                            showStyleDetails: $showStyleDetails
                         )
                     }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
@@ -103,7 +103,7 @@ struct ContentView: View {
         struct ToolPanelView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
-            var onWillSwitchTool: () -> Void = {} // NEW default
+            // var onWillSwitchTool: () -> Void = {} // NEW default
 
             @EnvironmentObject private var toolManager: ToolManager
 
@@ -123,7 +123,7 @@ struct ContentView: View {
                                         showStylePresets = false
                                     }
                                 } else {
-                                    onWillSwitchTool() 
+                                    // onWillSwitchTool() 
                                     selectedTool = tool
                                     toolManager.currentTool = tool
                                     showStylePresets = false
@@ -140,27 +140,34 @@ struct ContentView: View {
         }
 
         struct StylePresetPanelView: View {
-            let selectedTool: Tool
-            let selectedPreset: ToolStyle?
-            let onTapPreset: (ToolStyle) -> Void
+            @Binding var selectedTool: Tool
+            @Binding var selectedPreset: ToolStyle?
+            @Binding var showStyleDetails: Bool
 
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 let presets = toolManager.presetStyles[selectedTool] ?? []
-                let chosenPresetIndex = toolManager.presetIndexForTool(for: selectedTool)
+                let presetIndex = toolManager.presetIndexForTool(for: selectedTool)
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
-                            let isChosen = (chosenPresetIndex == idx)
                             ToolButtonView(
                                 tool: selectedTool,
-                                isSelected: isChosen,
+                                isSelected: presetIndex == idx,
                                 style: style
                             ) {
-                                if toolManager.tapPreset(for: selectedTool, index: ) {
-                                    toolManager.presetIndexes[tool] == idx
+                                if toolManager.presetIndexes[selectedTool] == idx {
+                                    if selectedTool.supportColor || selectedTool.supportWidth {
+                                        showStyleDetails.toggle()
+                                    } else {
+                                        showStyleDetails = false
+                                    }
+                                } else {
+                                    selectedPreset = style
+                                    toolManager.selectPreset(for: selectedTool, index: idx)
+                                    showStyleDetails = false
                                 }
                                 // ToolManager.shared.setStyle(
                                 //     for: selectedTool,
@@ -168,7 +175,6 @@ struct ContentView: View {
                                 //     width: style.width,
                                 //     opacity: style.opacity
                                 // )
-                                onTapPreset(style)
                             }
                             .padding(iconPadding)
                         }
@@ -177,15 +183,6 @@ struct ContentView: View {
                     .padding(.bottom, topPadding / 2)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-            }
-        }
-
-        private func handlePresetTap(_ style: ToolStyle) {
-            if selectedPreset == style, !showStyleDetails {
-                showStyleDetails = true
-            } else {
-                selectedPreset = style
-                showStyleDetails = false
             }
         }
     }

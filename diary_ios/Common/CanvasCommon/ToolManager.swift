@@ -81,17 +81,18 @@ class ToolManager: ObservableObject {
     @Published private(set) var presetIndexes: [Tool: Int?] = [:]
 
     // 合成 publisher：任何相关变化都会触发 (Tool, ToolStyle)
-    var toolManagerPublisher: AnyPublisher<(Tool, ToolStyle?), Never> {
+    var toolManagerPublisher: AnyPublisher<(Tool, ToolStyle), Never> {
         Publishers.CombineLatest3($currentTool, $presetIndexes, $presetStyles)
             .map { [weak self] tool, _, _ in
                 guard let self = self else { return (tool, ToolStyle(color: .black, width: 4, opacity: 1)) }
-                return (tool, self.styleForTool(for: tool))
+                return (tool, self.styleForTool(for: tool) ?? ToolStyle(color: .black, width: 4, opacity: 1))
             }
             .removeDuplicates { lhs, rhs in
                 lhs.0 == rhs.0 && lhs.1 == rhs.1     // ToolStyle 需 Equatable
             }
             .eraseToAnyPublisher()
     }
+
     // 初始化单例
     private init() {
         // 初始化每个工具的默认样式
@@ -105,8 +106,8 @@ class ToolManager: ObservableObject {
         })
     }
 
-    // 选择工具
     func selectTool(_ tool: Tool) { currentTool = tool }
+    func selectPreset(for tool: Tool, index: Int) { presetIndexes[tool] = index }
 
     // 获取某工具的选中样式下标
     func presetIndexForTool(for tool: Tool) -> Int? { presetIndexes[tool] ?? nil }
