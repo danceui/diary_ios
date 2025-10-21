@@ -90,9 +90,6 @@ struct ContentView: View {
                                 //                             width: updated.width,
                                 //                             opacity: updated.opacity)
                                 // selectedPreset = updated
-                            },
-                            onDone: {
-                                showStyleDetails = false
                             }
                         )
                     }
@@ -117,7 +114,7 @@ struct ContentView: View {
                             ToolButtonView(
                                 tool: tool,
                                 isSelected: selectedTool == tool,
-                                style: toolManager.currentStyle(for: tool)
+                                style: toolManager.styleForTool(for: tool)
                             ) {
                                 if selectedTool == tool {
                                     if selectedTool.supportColor || selectedTool.supportWidth {
@@ -151,7 +148,7 @@ struct ContentView: View {
 
             var body: some View {
                 let presets = toolManager.presetStyles[selectedTool] ?? []
-                let chosenPresetIndex = toolManager.currentPresetIndex(for: selectedTool)
+                let chosenPresetIndex = toolManager.presetIndexForTool(for: selectedTool)
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
@@ -162,7 +159,9 @@ struct ContentView: View {
                                 isSelected: isChosen,
                                 style: style
                             ) {
-                                let second = toolManager.tapPreset(for: selectedTool, index: idx)
+                                if toolManager.tapPreset(for: selectedTool, index: ) {
+                                    toolManager.presetIndexes[tool] == idx
+                                }
                                 // ToolManager.shared.setStyle(
                                 //     for: selectedTool,
                                 //     color: style.color,

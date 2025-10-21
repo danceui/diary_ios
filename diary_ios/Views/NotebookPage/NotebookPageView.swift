@@ -115,17 +115,16 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     // MARK: - 监听工具
     func activateToolListener() {
         guard !isObservingTool else { return }
-
         let manager = ToolManager.shared
+
         // 初始同步一次
-        self.toolDidChange(tool: manager.currentTool, style: manager.currentStyle(for: manager.currentTool))
+        self.toolDidChange(tool: manager.currentTool, style: manager.styleForTool(for: manager.currentTool))
 
         // 订阅 currentTool + toolStyles，任何一方变化都回调
-        manager.$currentTool
-            .combineLatest(manager.$selectedPresetIndex)
+        manager.toolManagerPublisher
             .receive(on: RunLoop.main) // 在主线程（UI 线程）执行订阅回调
-            .sink { [weak self] tool, styles in
-                self?.toolDidChange(tool: tool, style: manager.currentStyle(for: tool))
+            .sink { [weak self] tool, style in
+                self?.toolDidChange(tool: tool, style: style)
             } // sink 是 Combine 订阅的终点，这里是事件到达后执行的闭包
             .store(in: &cancellables)
 
