@@ -194,26 +194,22 @@ struct ContentView: View {
     struct StyleDetailPanelView: View {
         let tool: Tool
 
-        // Working copy of the style
         @State private var color: Color
         @State private var width: Double
         @State private var opacity: Double
 
         let onChange: (ToolStyle) -> Void
-        let onDone: () -> Void
 
         @EnvironmentObject private var toolManager: ToolManager
 
         init(tool: Tool,
             initial: ToolStyle,
-            onChange: @escaping (ToolStyle) -> Void,
-            onDone: @escaping () -> Void) {
+            onChange: @escaping (ToolStyle) -> Void) {
             self.tool = tool
             _color   = State(initialValue: initial.color?.toColor() ?? .black)
             _width   = State(initialValue: Double(initial.width ?? 4))
             _opacity = State(initialValue: Double(initial.opacity ?? 1.0))
             self.onChange = onChange
-            self.onDone   = onDone
         }
 
         var body: some View {
@@ -225,7 +221,7 @@ struct ContentView: View {
                 // Width
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Width: \(Int(width))")
-                    Slider(value: $width, in: 1...30, step: 1) { _ in
+                    Slider(value: $width, in: 1...14, step: 1) { _ in
                         pushChange()
                     }
                 }
@@ -235,16 +231,6 @@ struct ContentView: View {
                     Slider(value: $opacity, in: 0.1...1.0, step: 0.05) { _ in
                         pushChange()
                     }
-                }
-                HStack {
-                    Button("Reset") {
-                        // optional: define per-tool defaults if you like
-                        width = 4; opacity = 1.0; color = .black
-                        pushChange()
-                    }
-                    Spacer()
-                    Button("Done") { onDone() }
-                        .buttonStyle(.borderedProminent)
                 }
             }
             .padding(14)
