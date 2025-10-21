@@ -117,7 +117,7 @@ struct ContentView: View {
                             ToolButtonView(
                                 tool: tool,
                                 isSelected: selectedTool == tool,
-                                style: ToolManager.shared.style(for: tool)
+                                style: toolManager.style(for: tool)
                             ) {
                                 if selectedTool == tool {
                                     if selectedTool.supportColor || selectedTool.supportWidth {
@@ -128,7 +128,7 @@ struct ContentView: View {
                                 } else {
                                     onWillSwitchTool() 
                                     selectedTool = tool
-                                    ToolManager.shared.currentTool = tool
+                                    toolManager.currentTool = tool
                                     showStylePresets = false
                                 }
                             }
@@ -152,23 +152,32 @@ struct ContentView: View {
             var body: some View {
                 let currentStyle = toolManager.style(for: selectedTool)
                 let presets = selectedTool.presetStyles
+                let currentPresetIdx = toolManager.currentPresetIndex(for: selectedTool)
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
-                        ForEach(presets, id: \.self) { style in
-                            let isCurrent = (currentStyle == style)
-                            let isSelected = (selectedPreset == style)
+                        ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
+                            let isApplied = (currentStyle == style)
+                            let isChosen = (currentPresetIdx == idx)
                             ToolButtonView(
                                 tool: selectedTool,
-                                isSelected: currentStyle == style,
+                                isSelected: isApplied || isChosen,
                                 style: style
                             ) {
-                                ToolManager.shared.setStyle(
-                                    for: selectedTool,
-                                    color: style.color,
-                                    width: style.width,
-                                    opacity: style.opacity
-                                )
-                                onTapPreset(style)
+                                let second = toolManager.tapPreset(for: selectedTool, index: idx)
+                                // ToolManager.shared.setStyle(
+                                //     for: selectedTool,
+                                //     color: style.color,
+                                //     width: style.width,
+                                //     opacity: style.opacity
+                                // )
+                                if second {
+                                // 第二次点同一项 → 交给上层开详情
+                                    onTapPreset(style)
+                                } else {
+                                    // 第一次点/换项 → 也可通知上层（如果你要记录 selectedPreset 用于详情）
+                                    onTapPreset(style)
+                                }
                             }
                             .padding(iconPadding)
                         }
@@ -188,10 +197,6 @@ struct ContentView: View {
                 // first tap or a different preset → apply & keep presets open
                 selectedPreset = style
                 showStyleDetails = false
-                ToolManager.shared.setStyle(for: selectedTool,
-                                            color: style.color,
-                                            width: style.width,
-                                            opacity: style.opacity)
             }
         }
     }
