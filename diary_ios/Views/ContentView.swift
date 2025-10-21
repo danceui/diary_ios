@@ -48,8 +48,7 @@ struct ContentView: View {
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
-        @State private var selectedTool: Tool = ToolManager.shared.currentTool
-        @State private var selectedPreset: ToolStyle? = nil
+        @State private var selectedTool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
         @State private var showStyleDetails: Bool = false
 
@@ -60,10 +59,6 @@ struct ContentView: View {
                         selectedTool: $selectedTool,
                         showStylePresets: $showStylePresets,
                         showStyleDetails: $showStyleDetails
-                        // onWillSwitchTool: {
-                        //     selectedPreset = nil
-                        //     showStyleDetails = false
-                        // }
                     )
                 }
                 .frame(width: panelWidth, height: toolPanelHeight)
@@ -71,27 +66,17 @@ struct ContentView: View {
                 if showStylePresets, selectedTool.supportsPresets {
                     GlassEffectContainer {
                         StylePresetPanelView(
-                            selectedTool: $selectedTool,
-                            selectedPreset: $selectedPreset,
+                            selectedTool: selectedTool,
                             showStyleDetails: $showStyleDetails
                         )
                     }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
-                if showStyleDetails, selectedTool.supportsPresets, let preset = selectedPreset {
+                if showStyleDetails, selectedTool.supportsPresets {
                     GlassEffectContainer {
                         StyleDetailPanelView(
-                            tool: selectedTool,
-                            initial: preset,
-                            onChange: { updated in
-                                // live preview
-                                // ToolManager.shared.setStyle(for: selectedTool,
-                                //                             color: updated.color,
-                                //                             width: updated.width,
-                                //                             opacity: updated.opacity)
-                                // selectedPreset = updated
-                            }
+                            tool: selectedTool
                         )
                     }
                     .frame(width: styleDetailPanelWidth, height: styleDetailPanelHeight)
@@ -102,12 +87,11 @@ struct ContentView: View {
         }
         
         struct ToolPanelView: View {
+            @EnvironmentObject private var toolManager: ToolManager
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @Binding var showStyleDetails: Bool
             // var onWillSwitchTool: () -> Void = {} // NEW default
-
-            @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -140,11 +124,9 @@ struct ContentView: View {
         }
 
         struct StylePresetPanelView: View {
-            @Binding var selectedTool: Tool
-            @Binding var selectedPreset: ToolStyle?
-            @Binding var showStyleDetails: Bool
-
             @EnvironmentObject private var toolManager: ToolManager
+            let selectedTool: Tool
+            @Binding var showStyleDetails: Bool
 
             var body: some View {
                 let presets = toolManager.presetStyles[selectedTool] ?? []
@@ -165,16 +147,9 @@ struct ContentView: View {
                                 if toolManager.presetIndices[selectedTool] == idx {
                                     showStyleDetails.toggle()
                                 } else {
-                                    selectedPreset = style
                                     toolManager.selectPreset(for: selectedTool, index: idx)
                                     showStyleDetails = false
                                 }
-                                // ToolManager.shared.setStyle(
-                                //     for: selectedTool,
-                                //     color: style.color,
-                                //     width: style.width,
-                                //     opacity: style.opacity
-                                // )
                             }
                             .padding(iconPadding)
                         }
@@ -190,46 +165,45 @@ struct ContentView: View {
     struct StyleDetailPanelView: View {
         let tool: Tool
 
-        @State private var color: Color
-        @State private var width: Double
-        @State private var opacity: Double
-
-        let onChange: (ToolStyle) -> Void
+        @State private var color: Color = .black
+        @State private var width: Double = 4
+        @State private var opacity: Double = 1
 
         @EnvironmentObject private var toolManager: ToolManager
-
-        init(tool: Tool,
-            initial: ToolStyle,
-            onChange: @escaping (ToolStyle) -> Void) {
-            self.tool = tool
-            _color   = State(initialValue: initial.color?.toColor() ?? .black)
-            _width   = State(initialValue: Double(initial.width ?? 4))
-            _opacity = State(initialValue: Double(initial.opacity ?? 1.0))
-            self.onChange = onChange
-        }
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
                 // Color
-                ColorPicker("Color", selection: $color, supportsOpacity: false)
-                    .onChange(of: color) { _ in pushChange() }
-
-                // Width
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Width: \(Int(width))")
-                    Slider(value: $width, in: 1...14, step: 1) { _ in
-                        pushChange()
+                if tool.supportColor {
+                    ColorPicker("Color", selection: $color, supportsOpacity: false)
+                }
+                if tool.supportWidth {
+                    HStack {
+                        Text("Width")
+                        Slider(value: $width, in: 1...30, step: 1)
+                        Text("\(Int(width))").monospacedDigit().frame(width: 36, alignment: .trailing)
                     }
                 }
-                // Opacity
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Opacity: \(Int(opacity * 100))%")
-                    Slider(value: $opacity, in: 0.1...1.0, step: 0.05) { _ in
-                        pushChange()
+                if tool.supportOpacity {
+                    HStack {
+                        Text("Opacity")
+                        Slider(value: $opacity, in: 0...1)
+                        Text(String(format: "%.2f", opacity)).monospacedDigit().frame(width: 44, alignment: .trailing)
                     }
                 }
             }
             .padding(14)
+            .onAppear(perform: loadFromManager)
+            .onChange(of: color)   { _ in pushChange() }
+            .onChange(of: width)   { _ in pushChange() }
+            .onChange(of: opacity) { _ in pushChange() }
+        }
+
+        private func loadFromManager() {
+            guard let style = toolManager.styleForTool(for: tool) else { return }
+            if tool.supportColor   { color = style.color?.toColor() ?? .black }
+            if tool.supportWidth   { width = Double(style.width ?? 4) }
+            if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
         }
 
         private func pushChange() {
@@ -239,7 +213,6 @@ struct ContentView: View {
                 opacity: CGFloat(opacity)
             )
             toolManager.setStyleFromDetail(for: tool, updated: updated)
-            onChange(updated)
         }
     }
 
