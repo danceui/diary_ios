@@ -76,6 +76,7 @@ class ToolManager: ObservableObject {
     // 驱动 UI 的两个源：当前工具、每个工具的样式
     @Published var currentTool: Tool = .pen
     @Published private(set) var toolStyles: [Tool: ToolStyle]
+    @Published private(set) var selectedPresetIndex: [Tool: Int?]
 
     private init() {
         // 初始化每个工具的默认样式
@@ -83,12 +84,36 @@ class ToolManager: ObservableObject {
             let defaultStyle = tool.presetStyles.first ?? ToolStyle(color: nil, width: nil, opacity: nil)
             return (tool, defaultStyle)
         })
+        // 默认每个可用工具选中第 0 个 preset
+        selectedPresetIndex = Dictionary(uniqueKeysWithValues: allTools.map { tool in
+            (tool, tool.presetStyles.isEmpty ? nil : 0)
+        })
     }
 
-    func style(for tool: Tool) -> ToolStyle? {
-        return toolStyles[tool]
+    func style(for tool: Tool) -> ToolStyle? { return toolStyles[tool] }
+
+    // 用户点某个 preset；返回是否“第二次点同一 preset”
+    @discardableResult
+    func tapPreset(for tool: Tool, index: Int) -> Bool {
+        let secondTap = (selectedPresetIndex[tool] == index)
+        selectedPresetIndex[tool] = index
+
+        // 应用该 preset 到当前样式
+        let p = tool.presetStyles[index]
+        setStyle(for: tool, color: p.color, width: p.width, opacity: p.opacity)
+        return secondTap
     }
 
+    // 当前选中 preset 的索引（若存在）
+    func currentPresetIndex(for tool: Tool) -> Int? { selectedPresetIndex[tool] ?? nil }
+
+    // 可直接取到“当前选中 preset”的样式（若存在）
+    func currentPreset(for tool: Tool) -> ToolStyle? {
+        guard let idx = currentPresetIndex(for: tool),
+              tool.presetStyles.indices.contains(idx) else { return nil }
+        return tool.presetStyles[idx]
+    }
+    
     // 更新样式时，务必通过“读->改->写回”的方式触发 @Published 的变更
     func setStyle(for tool: Tool, color: UIColor? = nil, width: CGFloat? = nil, opacity: CGFloat? = nil) {
         var style = toolStyles[tool] ?? ToolStyle(color: nil, width: nil, opacity: nil)
