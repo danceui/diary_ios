@@ -15,6 +15,7 @@ enum Tool {
     var supportColor: Bool { self == .pen || self == .highlighter || self == .monoline }
     var supportWidth: Bool { self == .pen || self == .highlighter || self == .monoline || self == .eraser }
     var supportOpacity: Bool { self == .pen || self == .highlighter || self == .monoline }
+    var supportsPresets: Bool { self == .pen || self == .highlighter || self == .monoline }
 
     var iconName: String {
         switch self {
@@ -74,61 +75,52 @@ protocol ToolObserver: AnyObject {
 class ToolManager: ObservableObject {
     static let shared = ToolManager()
     
-    // 驱动 UI 的两个源：当前工具、每个工具的样式
     @Published var currentTool: Tool = .pen
-    // @Published private(set) var toolStyles: [Tool: ToolStyle]
     @Published private(set) var presetStyles: [Tool: [ToolStyle]] = [:]
-    @Published private(set) var presetIndexes: [Tool: Int?] = [:]
+    @Published private(set) var presetIndices: [Tool: Int] = [:]
 
-    // 合成 publisher：任何相关变化都会触发 (Tool, ToolStyle)
-    var toolManagerPublisher: AnyPublisher<(Tool, ToolStyle), Never> {
-        Publishers.CombineLatest3($currentTool, $presetIndexes, $presetStyles)
-            .map { [weak self] tool, _, _ in
-                guard let self = self else { return (tool, ToolStyle(color: .black, width: 4, opacity: 1)) }
-                return (tool, self.styleForTool(for: tool) ?? ToolStyle(color: .black, width: 4, opacity: 1))
+    // 初始化默认预设
+    private init() {
+        for tool in allTools where tool.supportsPresets {
+            presetStyles[tool] = tool.presetStyles
+            presetIndices[tool] = 0
+        }
+    }
+
+    // 合成 publisher
+    var toolAndStyle: AnyPublisher<(Tool, ToolStyle?), Never> {
+        Publishers.CombineLatest3($currentTool, $presetIndices, $presetStyles)
+            .map { [weak self] tool, _, _ -> (Tool, ToolStyle?) in
+                guard let self = self else { return (.pen, nil) }
+                return (tool, tool.supportsPresets ? self.styleForTool(for: tool) : nil)
             }
             .removeDuplicates { lhs, rhs in
-                lhs.0 == rhs.0 && lhs.1 == rhs.1     // ToolStyle 需 Equatable
+                lhs.0 == rhs.0 && lhs.1 == rhs.1
             }
             .eraseToAnyPublisher()
     }
 
-    // 初始化单例
-    private init() {
-        // 初始化每个工具的默认样式
-        presetStyles = Dictionary(uniqueKeysWithValues: allTools.map { tool in
-            (tool, tool.presetStyles)
-        })
-        // 默认每个可用工具选中第 0 个 preset
-        presetIndexes = Dictionary(uniqueKeysWithValues: allTools.map { tool in
-            let hasPreset = !(tool.presetStyles.isEmpty ?? true)
-            return (tool, hasPreset ? 0 : nil)
-        })
-    }
-
+    // 外部操作
     func selectTool(_ tool: Tool) { currentTool = tool }
-    func selectPreset(for tool: Tool, index: Int) { presetIndexes[tool] = index }
-
-    // 获取某工具的选中样式下标
-    func presetIndexForTool(for tool: Tool) -> Int? { presetIndexes[tool] ?? nil }
-
-    // 获取某工具的当前样式
-    func styleForTool(for tool: Tool) -> ToolStyle? {
-        guard let idx = presetIndexForTool(for: tool),
-              let thisPresetStyles = presetStyles[tool],
-              thisPresetStyles.indices.contains(idx) else { return nil }
-        return thisPresetStyles[idx]
+    func selectPreset(for tool: Tool, index: Int) {
+        guard tool.supportsPresets,
+            let thisPresetStyles = presetStyles[tool],
+            thisPresetStyles.indices.contains(index) else { return }
+        presetIndices[tool] = index
     }
 
-    // 用户点某个 preset；返回是否“第二次点同一项”
-    @discardableResult
-    func tapPreset(for tool: Tool, index: Int) -> Bool {
-        let secondTap = (presetIndexes[tool] == index)
-        presetIndexes[tool] = index
-        // 应用该 preset 到当前样式
-        // let p = tool.presetStyles[index]
-        // setStyle(for: tool, color: p.color, width: p.width, opacity: p.opacity)
-        return secondTap
+    // 外部查询
+    func presetIndexForTool(for tool: Tool) -> Int? {
+        guard tool.supportsPresets else { return nil}
+        return presetIndices[tool]
+    }
+
+    func styleForTool(for tool: Tool) -> ToolStyle? {
+        guard tool.supportsPresets,
+            let idx = presetIndices[tool],
+            let thisPresetStyles = presetStyles[tool],
+            thisPresetStyles.indices.contains(idx) else { return nil }
+        return thisPresetStyles[idx]
     }
 
     // 更新样式时，务必通过“读->改->写回”的方式触发 @Published 的变更
@@ -142,10 +134,12 @@ class ToolManager: ObservableObject {
 
     // 从 Detail 面板实时修改：直接写回“当前选中 preset”的样式
     func setStyleFromDetail(for tool: Tool, updated: ToolStyle) {
-        guard let idx = presetIndexForTool(for: tool),
-              var thisPresetStyles = presetStyles[tool],
-              thisPresetStyles.indices.contains(idx) else { return }
-        presetStyles[tool]?[idx] = updated
+        guard tool.supportsPresets,
+            let idx = presetIndices[tool],
+            var thisPresetStyles = presetStyles[tool],
+            thisPresetStyles.indices.contains(idx) else { return }
+        thisPresetStyles[idx] = updated
+        presetStyles[tool] = thisPresetStyles
     }
 
 }

@@ -58,7 +58,8 @@ struct ContentView: View {
                 GlassEffectContainer {
                     ToolPanelView(
                         selectedTool: $selectedTool,
-                        showStylePresets: $showStylePresets
+                        showStylePresets: $showStylePresets,
+                        showStyleDetails: $showStyleDetails
                         // onWillSwitchTool: {
                         //     selectedPreset = nil
                         //     showStyleDetails = false
@@ -67,7 +68,7 @@ struct ContentView: View {
                 }
                 .frame(width: panelWidth, height: toolPanelHeight)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                if showStylePresets {
+                if showStylePresets, selectedTool.supportsPresets {
                     GlassEffectContainer {
                         StylePresetPanelView(
                             selectedTool: $selectedTool,
@@ -78,7 +79,7 @@ struct ContentView: View {
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
-                if showStyleDetails, let preset = selectedPreset {
+                if showStyleDetails, selectedTool.supportsPresets, let preset = selectedPreset {
                     GlassEffectContainer {
                         StyleDetailPanelView(
                             tool: selectedTool,
@@ -103,6 +104,7 @@ struct ContentView: View {
         struct ToolPanelView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
+            @Binding var showStyleDetails: Bool
             // var onWillSwitchTool: () -> Void = {} // NEW default
 
             @EnvironmentObject private var toolManager: ToolManager
@@ -117,16 +119,14 @@ struct ContentView: View {
                                 style: toolManager.styleForTool(for: tool)
                             ) {
                                 if selectedTool == tool {
-                                    if selectedTool.supportColor || selectedTool.supportWidth {
-                                        showStylePresets.toggle()
-                                    } else {
-                                        showStylePresets = false
-                                    }
+                                    showStylePresets.toggle()
+                                    showStyleDetails = false
                                 } else {
                                     // onWillSwitchTool() 
                                     selectedTool = tool
                                     toolManager.currentTool = tool
                                     showStylePresets = false
+                                    showStyleDetails = false
                                 }
                             }
                             .padding(iconPadding)
@@ -158,12 +158,12 @@ struct ContentView: View {
                                 isSelected: presetIndex == idx,
                                 style: style
                             ) {
-                                if toolManager.presetIndexes[selectedTool] == idx {
-                                    if selectedTool.supportColor || selectedTool.supportWidth {
-                                        showStyleDetails.toggle()
-                                    } else {
-                                        showStyleDetails = false
-                                    }
+                                guard selectedTool.supportsPresets else {
+                                    showStyleDetails = false
+                                    return
+                                }
+                                if toolManager.presetIndices[selectedTool] == idx {
+                                    showStyleDetails.toggle()
                                 } else {
                                     selectedPreset = style
                                     toolManager.selectPreset(for: selectedTool, index: idx)

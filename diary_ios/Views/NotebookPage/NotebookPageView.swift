@@ -117,15 +117,13 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         guard !isObservingTool else { return }
         let manager = ToolManager.shared
 
-        // 初始同步一次
         self.toolDidChange(tool: manager.currentTool, style: manager.styleForTool(for: manager.currentTool))
 
-        // 订阅 currentTool + toolStyles，任何一方变化都回调
-        manager.toolManagerPublisher
-            .receive(on: RunLoop.main) // 在主线程（UI 线程）执行订阅回调
+        manager.toolAndStyle
+            .receive(on: RunLoop.main)
             .sink { [weak self] tool, style in
                 self?.toolDidChange(tool: tool, style: style)
-            } // sink 是 Combine 订阅的终点，这里是事件到达后执行的闭包
+            }
             .store(in: &cancellables)
 
         isObservingTool = true
