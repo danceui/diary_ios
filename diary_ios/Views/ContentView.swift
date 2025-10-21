@@ -135,16 +135,13 @@ struct ContentView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
+                            let isSelected = (presetIndex == idx)
                             ToolButtonView(
                                 tool: selectedTool,
-                                isSelected: presetIndex == idx,
+                                isSelected: isSelected,
                                 style: style
                             ) {
-                                guard selectedTool.supportsPresets else {
-                                    showStyleDetails = false
-                                    return
-                                }
-                                if toolManager.presetIndices[selectedTool] == idx {
+                                if isSelected {
                                     showStyleDetails.toggle()
                                 } else {
                                     toolManager.selectPreset(for: selectedTool, index: idx)

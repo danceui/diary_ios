@@ -90,9 +90,14 @@ class ToolManager: ObservableObject {
     // 合成 publisher
     var toolAndStyle: AnyPublisher<(Tool, ToolStyle?), Never> {
         Publishers.CombineLatest3($currentTool, $presetIndices, $presetStyles)
-            .map { [weak self] tool, _, _ -> (Tool, ToolStyle?) in
-                guard let self = self else { return (.pen, nil) }
-                return (tool, tool.supportsPresets ? self.styleForTool(for: tool) : nil)
+            .map { tool, indices, styles -> (Tool, ToolStyle?) in
+                guard tool.supportsPresets,
+                    let idx = indices[tool],
+                    let arr = styles[tool],
+                    arr.indices.contains(idx) else {
+                    return (tool, nil)
+                }
+                return (tool, arr[idx])
             }
             .removeDuplicates { lhs, rhs in
                 lhs.0 == rhs.0 && lhs.1 == rhs.1
@@ -132,7 +137,6 @@ class ToolManager: ObservableObject {
     //     toolStyles[tool] = style
     // }
 
-    // 从 Detail 面板实时修改：直接写回“当前选中 preset”的样式
     func setStyleFromDetail(for tool: Tool, updated: ToolStyle) {
         guard tool.supportsPresets,
             let idx = presetIndices[tool],
