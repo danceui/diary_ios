@@ -76,8 +76,7 @@ struct ContentView: View {
                 if showStyleDetails, selectedTool.supportsPresets {
                     GlassEffectContainer {
                         StyleDetailsPanel(
-                            tool: selectedTool,
-                            showStyleDetails: $showStyleDetails
+                            tool: selectedTool
                         )
                     }
                     .frame(width: styleDetailWidth, height: styleDetailHeight)
@@ -163,7 +162,6 @@ struct ContentView: View {
 
     struct StyleDetailsPanel: View {
         let tool: Tool
-        @Binding var showStyleDetails: Bool
 
         @EnvironmentObject private var toolManager: ToolManager
 
@@ -171,6 +169,11 @@ struct ContentView: View {
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
+
+        // 去抖提交
+        @State private var pendingCommit: DispatchWorkItem?
+        private let commitDelay: TimeInterval = 0.3
+
         private var previewStyle: ToolStyle {
             var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
             if tool.supportColor { style.color = UIColor(color) }
@@ -185,26 +188,32 @@ struct ContentView: View {
                     HStack(spacing: 20) {
                         if tool == .monoline || tool == .pen || tool == .highlighter {
                             FancyBrushPreview(tool: tool, style: previewStyle)
-                            .frame(width: 60, height: 60)
-                            // .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            // .overlay(
-                            //     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            //         .stroke(.white.opacity(0.12), lineWidth: 1)
-                            // )
+                                .frame(width: 60, height: 60)
                         }
                         if tool.supportColor {
                             ColorPicker("", selection: $color, supportsOpacity: false)
-                            .labelsHidden()
-                            .accessibilityLabel("Color")
-                            .frame(width: 36, height: 36)
+                                .labelsHidden()
+                                .accessibilityLabel("Color")
+                                .frame(width: 36, height: 36)
+                                .onChange(of: color) { _ in scheduleCommit() }
                         }
                     }
                     if tool.supportWidth {  
                         HStack(spacing: 10) {
-                            Slider(value: $width, in: 1...10, step: 1)
+                            Slider(value: $width, in: 1...10, step: 1,
+                                onEditingChanged: { editing in
+                                    if editing {
+                                        cancelPendingCommit()
+                                    } else {
+                                        cancelPendingCommit()
+                                        commitChanges()
+                                    }
+                                })
                                 .controlSize(.mini)
                                 .labelsHidden()
                                 .accessibilityLabel("Width")
+                                .frame(maxWidth: .infinity)
+                                .onChange(of: width) { _ in scheduleCommit() }
                             Text("\(Int(width))")
                                 .monospacedDigit()
                                 .frame(width: 56, alignment: .center)
@@ -212,58 +221,31 @@ struct ContentView: View {
                     }
                     if tool.supportOpacity {
                         HStack(spacing: 10) {
-                            Slider(value: $opacity, in: 0.1...1, step: 0.01)
+                            Slider(value: $opacity, in: 0.1...1, step: 0.01,
+                                onEditingChanged: { editing in
+                                    if editing {
+                                        cancelPendingCommit()
+                                    } else {
+                                        cancelPendingCommit()
+                                        commitChanges()
+                                    }
+                                })
                                 .controlSize(.mini)
                                 .labelsHidden()
                                 .accessibilityLabel("Opacity")
+                                .frame(maxWidth: .infinity)
+                                .onChange(of: opacity) { _ in scheduleCommit() }
                             Text("\(Int(round(opacity * 100)))%")
                                 .monospacedDigit()
                                 .frame(width: 56, alignment: .center)
                         }
                     }
-                    HStack(spacing: 10) {
-                        Button {
-                            commitChanges()
-                        } label: {
-                            Label("Save", systemImage: "checkmark.circle")
-                                .labelStyle(.iconOnly)
-                        }
-                        .tint(.green)
-
-                        Button {
-                            loadFromManager()
-                            showStyleDetails = false
-                        } label: {
-                            Label("Discard", systemImage: "arrow.uturn.left")
-                                .labelStyle(.iconOnly)
-                        }
-                        .tint(.gray)
-
-                        Spacer(minLength: 0)
-
-                        Button {
-                            // duplicatePreset()
-                        } label: {
-                            Label("Duplicate", systemImage: "plus.square.on.square")
-                                .labelStyle(.iconOnly)
-                        }
-                        .tint(.blue)
-
-                        Button {
-                            // showDeleteConfirm = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                                .labelStyle(.iconOnly)
-                        }
-                        .tint(.red)
-                    }
-                    .controlSize(.small)
                 }
                 .padding(10)
                 .onAppear(perform: loadFromManager)
-                .onChange(of: showStyleDetails) { shown in
-                    // 面板收起时一次性保存
-                    if !shown { commitChanges() }
+                .onDisappear { 
+                    cancelPendingCommit()
+                    commitChanges()
                 }
             }
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
@@ -274,6 +256,18 @@ struct ContentView: View {
             if tool.supportColor   { color = style.color?.toColor() ?? .black }
             if tool.supportWidth   { width = Double(style.width ?? 4) }
             if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
+        }
+        
+        private func scheduleCommit() {
+            cancelPendingCommit()
+            let work = DispatchWorkItem { commitChanges() }
+            pendingCommit = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + commitDelay, execute: work)
+        }
+
+        private func cancelPendingCommit() {
+            pendingCommit?.cancel()
+            pendingCommit = nil
         }
 
         private func commitChanges() {
