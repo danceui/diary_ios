@@ -169,10 +169,11 @@ struct ContentView: View {
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
+        @State private var isEditing = false
 
         // 去抖提交
         @State private var pendingCommit: DispatchWorkItem?
-        private let commitDelay: TimeInterval = 0.3
+        private let commitDelay: TimeInterval = 0.1
 
         private var previewStyle: ToolStyle {
             var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
@@ -202,6 +203,7 @@ struct ContentView: View {
                         HStack(spacing: 10) {
                             Slider(value: $width, in: 1...10, step: 1,
                                 onEditingChanged: { editing in
+                                    isEditing = editing
                                     if editing {
                                         cancelPendingCommit()
                                     } else {
@@ -223,6 +225,7 @@ struct ContentView: View {
                         HStack(spacing: 10) {
                             Slider(value: $opacity, in: 0.1...1, step: 0.01,
                                 onEditingChanged: { editing in
+                                    isEditing = editing
                                     if editing {
                                         cancelPendingCommit()
                                     } else {
@@ -259,6 +262,7 @@ struct ContentView: View {
         }
         
         private func scheduleCommit() {
+            if isEditing { return }
             cancelPendingCommit()
             let work = DispatchWorkItem { commitChanges() }
             pendingCommit = work
