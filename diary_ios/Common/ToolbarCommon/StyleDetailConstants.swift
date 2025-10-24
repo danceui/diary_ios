@@ -38,37 +38,6 @@ struct Palette {
     ]
 }
 
-struct Swatch: View {
-    let color: Color
-    let isSelected: Bool
-    let size: CGFloat
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                Circle()
-                    .fill(color)
-                    .frame(width: size, height: size)
-
-                if isSelected {
-                    Circle()
-                        .strokeBorder(.primary.opacity(0.9), lineWidth: 2)
-                        .frame(width: size + 6, height: size + 6)
-                        .overlay(
-                            Image(systemName: "checkmark")
-                                .font(.system(size: size * 0.45, weight: .bold))
-                                .foregroundStyle(.primary)
-                        )
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Color swatch")
-    }
-}
-
-
 extension Color {
     /// Hex like 0xRRGGBB
     init(hex: UInt32) {

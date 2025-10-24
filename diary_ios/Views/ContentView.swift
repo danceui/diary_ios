@@ -192,12 +192,7 @@ struct ContentView: View {
                                 .frame(width: 60, height: 60)
                         }
                         if tool.supportColor {
-                            PresetPalettePicker(selectedColor: $color)
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(color)
-                                .frame(height: 44)
-                                .overlay(Text("Preview").foregroundStyle(.white).bold())
-                                .padding(.horizontal)
+                            // PresetPalettePopoverButton(selectedColor: $color)
                         }
                     }
                     if tool.supportWidth {  
@@ -292,7 +287,6 @@ struct ContentView: View {
 
             @State private var isPresented = false
             @State private var style: PaletteStyle = .monochrome
-            @State private var opacity: Double = 1.0
 
             var body: some View {
                 Button {
@@ -300,9 +294,6 @@ struct ContentView: View {
                 } label: {
                     Circle()
                         .fill(selectedColor)
-                        .overlay(
-                            Circle().strokeBorder(.secondary.opacity(0.35), lineWidth: 1)
-                        )
                         .frame(width: swatchSize, height: swatchSize)
                         .contentShape(Circle())
                 }
@@ -310,8 +301,7 @@ struct ContentView: View {
                 .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
                     PresetPalettePanel(
                         selectedColor: $selectedColor,
-                        style: $style,
-                        opacity: $opacity
+                        style: $style
                     ) {
                         if autoDismissOnPick { isPresented = false }
                     }
@@ -321,10 +311,9 @@ struct ContentView: View {
             }
         }
         
-        private struct PresetPalettePanel: View {
+        struct PresetPalettePanel: View {
             @Binding var selectedColor: Color
             @Binding var style: PaletteStyle
-            @Binding var opacity: Double
             var onPick: () -> Void
 
             private let columns: [GridItem] = Array(repeating: .init(.fixed(32), spacing: 10), count: 6)
@@ -338,7 +327,6 @@ struct ContentView: View {
                         Circle()
                             .fill(selectedColor)
                             .frame(width: 18, height: 18)
-                            .overlay(Circle().stroke(.secondary.opacity(0.4), lineWidth: 1))
                     }
 
                     // category tabs
@@ -355,21 +343,11 @@ struct ContentView: View {
                             ForEach(Palette.colors[style] ?? [], id: \.self) { color in
                                 // inline swatch button (no separate Swatch type)
                                 Button {
-                                    let target = color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style))
-                                    selectedColor = target
+                                    selectedColor = color
                                     onPick()
                                 } label: {
                                     Circle()
-                                        .fill(color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style)))
                                         .frame(width: 28, height: 28)
-                                        .overlay(
-                                            Circle().strokeBorder(
-                                                isSame(selectedColor, color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style)))
-                                                ? .primary.opacity(0.9)
-                                                : .secondary.opacity(0.3),
-                                                lineWidth: isSame(selectedColor, color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style))) ? 2 : 1
-                                            )
-                                        )
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Preset color")
@@ -377,40 +355,6 @@ struct ContentView: View {
                         }
                         .padding(.top, 2)
                     }
-                }
-            }
-        }
-        struct PresetPalettePicker: View {
-            @Binding var selectedColor: Color
-            @State private var style: PaletteStyle = .monochrome
-            @State private var opacity: Double = 1.0   // useful for highlighters
-
-            var swatchSize: CGFloat = 28
-            var columns: [GridItem] = Array(repeating: .init(.fixed(32), spacing: 10), count: 6)
-
-            var body: some View {
-                VStack(spacing: 12) {
-                    // category tabs
-                    Picker("", selection: $style) {
-                        ForEach(PaletteStyle.allCases) { s in
-                            Text(s.rawValue).tag(s)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    // swatches
-                    LazyVGrid(columns: columns, spacing: 10) {
-                        ForEach(Palette.colors[style] ?? [], id: \.self) { color in
-                            Swatch(
-                                color: color.opacity(opacity),
-                                isSelected: selectedColor.matches(color.opacity(opacity)),
-                                size: swatchSize
-                            ) {
-                                selectedColor = color.opacity(opacity)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 2)
                 }
             }
         }
