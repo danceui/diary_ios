@@ -289,10 +289,8 @@ struct ContentView: View {
             @Binding var selectedColor: Color
             var onPick: () -> Void
             var swatchSize: CGFloat = 24
-            var autoDismissOnPick: Bool = true
 
             @State private var isPresented = false
-            @State private var style: PaletteStyle = .monochrome
 
             var body: some View {
                 Button {
@@ -304,12 +302,10 @@ struct ContentView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
                     PresetPalettePanel(
-                        selectedColor: $selectedColor,
-                        style: $style
+                        selectedColor: $selectedColor
                     ) {
-                        if autoDismissOnPick { isPresented = false }
                         onPick()
                     }
                     .padding(12)
@@ -319,7 +315,6 @@ struct ContentView: View {
 
         struct PresetPalettePanel: View {
             @Binding var selectedColor: Color
-            @Binding var style: PaletteStyle   // still here in case you track it elsewhere
             var onPick: () -> Void
 
             // Tunables
@@ -337,7 +332,6 @@ struct ContentView: View {
                                     ForEach(colors, id: \.self) { color in
                                         Button {
                                             selectedColor = color
-                                            style = s // keep external state in sync if needed
                                             onPick()
                                         } label: {
                                             Circle()
