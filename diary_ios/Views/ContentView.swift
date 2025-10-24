@@ -192,7 +192,12 @@ struct ContentView: View {
                                 .frame(width: 60, height: 60)
                         }
                         if tool.supportColor {
-                            // PresetPalettePopoverButton(selectedColor: $color)
+                            PresetPalettePopoverButton(
+                                selectedColor: $color
+                            ) {
+                                cancelPendingCommit()
+                                commitChanges()
+                            }
                         }
                     }
                     if tool.supportWidth {  
@@ -282,6 +287,7 @@ struct ContentView: View {
 
         struct PresetPalettePopoverButton: View {
             @Binding var selectedColor: Color
+            var onPick: () -> Void
             var swatchSize: CGFloat = 24
             var autoDismissOnPick: Bool = true
 
@@ -304,53 +310,50 @@ struct ContentView: View {
                         style: $style
                     ) {
                         if autoDismissOnPick { isPresented = false }
+                        onPick()
                     }
-                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 360, minHeight: 220)
                     .padding(12)
                 }
             }
         }
-        
+
         struct PresetPalettePanel: View {
             @Binding var selectedColor: Color
-            @Binding var style: PaletteStyle
+            @Binding var style: PaletteStyle   // still here in case you track it elsewhere
             var onPick: () -> Void
 
-            private let columns: [GridItem] = Array(repeating: .init(.fixed(32), spacing: 10), count: 6)
+            // Tunables
+            private let swatchSize: CGFloat = 28
+            private let rowSpacing: CGFloat = 10
+            private let swatchSpacing: CGFloat = 10
 
             var body: some View {
                 VStack(spacing: 12) {
-                    // header
-                    HStack {
-                        Text("Colors").font(.headline)
-                        Spacer()
-                        Circle()
-                            .fill(selectedColor)
-                            .frame(width: 18, height: 18)
-                    }
-
-                    // category tabs
-                    Picker("", selection: $style) {
-                        ForEach(PaletteStyle.allCases) { s in
-                            Text(s.rawValue).tag(s)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    // grid
                     ScrollView {
-                        LazyVGrid(columns: columns, spacing: 10) {
-                            ForEach(Palette.colors[style] ?? [], id: \.self) { color in
-                                // inline swatch button (no separate Swatch type)
-                                Button {
-                                    selectedColor = color
-                                    onPick()
-                                } label: {
-                                    Circle()
-                                        .frame(width: 28, height: 28)
+                        LazyVStack(spacing: rowSpacing) {
+                            ForEach(PaletteStyle.allCases) { s in
+                                let colors = Palette.colors[s] ?? []
+                                HStack(spacing: swatchSpacing) {
+                                    ForEach(colors, id: \.self) { color in
+                                        Button {
+                                            selectedColor = color
+                                            style = s // keep external state in sync if needed
+                                            onPick()
+                                        } label: {
+                                            Circle()
+                                                .fill(color)
+                                                .frame(width: swatchSize, height: swatchSize)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(lineWidth: selectedColor == color ? 3 : 0)
+                                                        .foregroundStyle(.primary.opacity(0.8))
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Preset color")
+                                    }
+                                    Spacer(minLength: 0) // left-align row
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Preset color")
                             }
                         }
                         .padding(.top, 2)
