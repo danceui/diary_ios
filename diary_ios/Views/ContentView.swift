@@ -173,6 +173,8 @@ struct ContentView: View {
         @State private var width: Double = 4
         @State private var opacity: Double = 1
         @State private var isEditing = false
+        
+        @State private var showColorPopover = false
 
         // 去抖提交
         @State private var pendingCommit: DispatchWorkItem?
@@ -189,19 +191,9 @@ struct ContentView: View {
         var body: some View {
             GlassEffectContainer {
                 VStack(spacing: 12) {
-                    HStack(spacing: 20) {
-                        if tool == .monoline || tool == .pen || tool == .highlighter {
-                            FancyBrushPreview(tool: tool, style: previewStyle)
-                                .frame(width: 60, height: 60)
-                        }
-                        if tool.supportColor {
-                            PresetPalettePopoverButton(
-                                selectedColor: $color
-                            ) {
-                                cancelPendingCommit()
-                                commitChanges()
-                            }
-                        }
+                    if tool == .monoline || tool == .pen || tool == .highlighter {
+                        FancyBrushPreview(tool: tool, style: previewStyle)
+                            .frame(width: 60, height: 60)
                     }
                     if tool.supportWidth {  
                         HStack(spacing: 10) {
@@ -241,11 +233,43 @@ struct ContentView: View {
                                 .labelsHidden()
                                 .accessibilityLabel("Opacity")
                                 .frame(maxWidth: .infinity)
-                                .onChange(of: opacity) { _ in scheduleCommit() }
+                                .onChange(of: opacity) { scheduleCommit() }
                             Text("\(Int(round(opacity * 100)))%")
                                 .monospacedDigit()
                                 .frame(width: 56, alignment: .center)
                         }
+                    }
+                    if tool.supportColor {
+                        ScrollView {
+                            LazyVStack(spacing: 10) {
+                                ForEach(PaletteStyle.allCases) { s in
+                                    let colors = Palette.colors[s] ?? []
+                                    HStack(spacing: 10) {
+                                        ForEach(colors, id: \.self) { c in
+                                            Button {
+                                                color = c
+                                                showColorPopover = false
+                                                cancelPendingCommit()
+                                                commitChanges()
+                                            } label: {
+                                                Circle()
+                                                    .fill(c)
+                                                    .frame(width: 28, height: 28)
+                                                    .overlay(
+                                                        Circle()
+                                                            .stroke(lineWidth: color == c ? 3 : 0)
+                                                            .foregroundStyle(.primary.opacity(0.8))
+                                                    )
+                                            }
+                                            .buttonStyle(.plain)
+                                            .accessibilityLabel("Preset color")
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.top, 2)
+                        }
+                        .padding(12)
                     }
                 }
                 .padding(10)
@@ -286,61 +310,6 @@ struct ContentView: View {
             )
             if updated == (toolManager.styleForTool(for: tool) ?? ToolStyle()) { return }
             toolManager.setStyleFromDetail(for: tool, updated: updated)
-        }
-    }
-    // MARK: - 4.Palette Popover
-    struct PresetPalettePopover: View {
-        @Binding var selectedColor: Color
-        var onPick: () -> Void
-
-        // Tunables
-        private let swatchSize: CGFloat = 28
-        private let rowSpacing: CGFloat = 10
-        private let swatchSpacing: CGFloat = 10
-
-        @State private var isPresented = false
-
-        var body: some View {
-            Button {
-                isPresented = true
-            } label: {
-                Circle()
-                    .fill(selectedColor)
-                    .frame(width: swatchSize, height: swatchSize)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
-                ScrollView {
-                    LazyVStack(spacing: rowSpacing) {
-                        ForEach(PaletteStyle.allCases) { s in
-                            let colors = Palette.colors[s] ?? []
-                            HStack(spacing: swatchSpacing) {
-                                ForEach(colors, id: \.self) { color in
-                                    Button {
-                                        selectedColor = color
-                                        onPick()
-                                    } label: {
-                                        Circle()
-                                            .fill(color)
-                                            .frame(width: swatchSize, height: swatchSize)
-                                            .overlay(
-                                                Circle()
-                                                    .stroke(lineWidth: selectedColor == color ? 3 : 0)
-                                                    .foregroundStyle(.primary.opacity(0.8))
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
-                                    .accessibilityLabel("Preset color")
-                                }
-                                Spacer(minLength: 0) // left-align row
-                            }
-                        }
-                    }
-                    .padding(.top, 2)
-                }
-                .padding(12)
-            }
         }
     }
 
