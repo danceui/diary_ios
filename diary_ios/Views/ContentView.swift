@@ -86,6 +86,7 @@ struct ContentView: View {
             }
         }
         
+        // MARK: - 1.Tools Panel
         struct ToolsPanel: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
@@ -123,6 +124,7 @@ struct ContentView: View {
             }
         }
 
+        // MARK: - 2.Style Presets Panel
         struct StylePresetsPanel: View {
             let selectedTool: Tool
             @Binding var showStyleDetails: Bool
@@ -160,6 +162,7 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - 3.Style Details Panel
     struct StyleDetailsPanel: View {
         let tool: Tool
 
@@ -284,75 +287,59 @@ struct ContentView: View {
             if updated == (toolManager.styleForTool(for: tool) ?? ToolStyle()) { return }
             toolManager.setStyleFromDetail(for: tool, updated: updated)
         }
+    }
+    // MARK: - 4.Palette Popover
+    struct PresetPalettePopover: View {
+        @Binding var selectedColor: Color
+        var onPick: () -> Void
 
-        struct PresetPalettePopoverButton: View {
-            @Binding var selectedColor: Color
-            var onPick: () -> Void
-            var swatchSize: CGFloat = 24
+        // Tunables
+        private let swatchSize: CGFloat = 28
+        private let rowSpacing: CGFloat = 10
+        private let swatchSpacing: CGFloat = 10
 
-            @State private var isPresented = false
+        @State private var isPresented = false
 
-            var body: some View {
-                Button {
-                    isPresented = true
-                } label: {
-                    Circle()
-                        .fill(selectedColor)
-                        .frame(width: swatchSize, height: swatchSize)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
-                    PresetPalettePanel(
-                        selectedColor: $selectedColor
-                    ) {
-                        onPick()
-                    }
-                    .padding(12)
-                }
+        var body: some View {
+            Button {
+                isPresented = true
+            } label: {
+                Circle()
+                    .fill(selectedColor)
+                    .frame(width: swatchSize, height: swatchSize)
+                    .contentShape(Circle())
             }
-        }
-
-        struct PresetPalettePanel: View {
-            @Binding var selectedColor: Color
-            var onPick: () -> Void
-
-            // Tunables
-            private let swatchSize: CGFloat = 28
-            private let rowSpacing: CGFloat = 10
-            private let swatchSpacing: CGFloat = 10
-
-            var body: some View {
-                VStack(spacing: 12) {
-                    ScrollView {
-                        LazyVStack(spacing: rowSpacing) {
-                            ForEach(PaletteStyle.allCases) { s in
-                                let colors = Palette.colors[s] ?? []
-                                HStack(spacing: swatchSpacing) {
-                                    ForEach(colors, id: \.self) { color in
-                                        Button {
-                                            selectedColor = color
-                                            onPick()
-                                        } label: {
-                                            Circle()
-                                                .fill(color)
-                                                .frame(width: swatchSize, height: swatchSize)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(lineWidth: selectedColor == color ? 3 : 0)
-                                                        .foregroundStyle(.primary.opacity(0.8))
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel("Preset color")
+            .buttonStyle(.plain)
+            .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
+                ScrollView {
+                    LazyVStack(spacing: rowSpacing) {
+                        ForEach(PaletteStyle.allCases) { s in
+                            let colors = Palette.colors[s] ?? []
+                            HStack(spacing: swatchSpacing) {
+                                ForEach(colors, id: \.self) { color in
+                                    Button {
+                                        selectedColor = color
+                                        onPick()
+                                    } label: {
+                                        Circle()
+                                            .fill(color)
+                                            .frame(width: swatchSize, height: swatchSize)
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(lineWidth: selectedColor == color ? 3 : 0)
+                                                    .foregroundStyle(.primary.opacity(0.8))
+                                            )
                                     }
-                                    Spacer(minLength: 0) // left-align row
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Preset color")
                                 }
+                                Spacer(minLength: 0) // left-align row
                             }
                         }
-                        .padding(.top, 2)
                     }
+                    .padding(.top, 2)
                 }
+                .padding(12)
             }
         }
     }
