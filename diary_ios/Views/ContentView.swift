@@ -192,11 +192,12 @@ struct ContentView: View {
                                 .frame(width: 60, height: 60)
                         }
                         if tool.supportColor {
-                            ColorPicker("", selection: $color, supportsOpacity: false)
-                                .labelsHidden()
-                                .accessibilityLabel("Color")
-                                .frame(width: 36, height: 36)
-                                .onChange(of: color) { _ in scheduleCommit() }
+                            PresetPalettePicker(selectedColor: $color)
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(color)
+                                .frame(height: 44)
+                                .overlay(Text("Preview").foregroundStyle(.white).bold())
+                                .padding(.horizontal)
                         }
                     }
                     if tool.supportWidth {  
@@ -282,6 +283,136 @@ struct ContentView: View {
             )
             if updated == (toolManager.styleForTool(for: tool) ?? ToolStyle()) { return }
             toolManager.setStyleFromDetail(for: tool, updated: updated)
+        }
+
+        struct PresetPalettePopoverButton: View {
+            @Binding var selectedColor: Color
+            var swatchSize: CGFloat = 24
+            var autoDismissOnPick: Bool = true
+
+            @State private var isPresented = false
+            @State private var style: PaletteStyle = .monochrome
+            @State private var opacity: Double = 1.0
+
+            var body: some View {
+                Button {
+                    isPresented = true
+                } label: {
+                    Circle()
+                        .fill(selectedColor)
+                        .overlay(
+                            Circle().strokeBorder(.secondary.opacity(0.35), lineWidth: 1)
+                        )
+                        .frame(width: swatchSize, height: swatchSize)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                    PresetPalettePanel(
+                        selectedColor: $selectedColor,
+                        style: $style,
+                        opacity: $opacity
+                    ) {
+                        if autoDismissOnPick { isPresented = false }
+                    }
+                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 360, minHeight: 220)
+                    .padding(12)
+                }
+            }
+        }
+        
+        private struct PresetPalettePanel: View {
+            @Binding var selectedColor: Color
+            @Binding var style: PaletteStyle
+            @Binding var opacity: Double
+            var onPick: () -> Void
+
+            private let columns: [GridItem] = Array(repeating: .init(.fixed(32), spacing: 10), count: 6)
+
+            var body: some View {
+                VStack(spacing: 12) {
+                    // header
+                    HStack {
+                        Text("Colors").font(.headline)
+                        Spacer()
+                        Circle()
+                            .fill(selectedColor)
+                            .frame(width: 18, height: 18)
+                            .overlay(Circle().stroke(.secondary.opacity(0.4), lineWidth: 1))
+                    }
+
+                    // category tabs
+                    Picker("", selection: $style) {
+                        ForEach(PaletteStyle.allCases) { s in
+                            Text(s.rawValue).tag(s)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    // grid
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 10) {
+                            ForEach(Palette.colors[style] ?? [], id: \.self) { color in
+                                // inline swatch button (no separate Swatch type)
+                                Button {
+                                    let target = color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style))
+                                    selectedColor = target
+                                    onPick()
+                                } label: {
+                                    Circle()
+                                        .fill(color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style)))
+                                        .frame(width: 28, height: 28)
+                                        .overlay(
+                                            Circle().strokeBorder(
+                                                isSame(selectedColor, color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style)))
+                                                ? .primary.opacity(0.9)
+                                                : .secondary.opacity(0.3),
+                                                lineWidth: isSame(selectedColor, color.opacity(opacityForCurrentStyle(base: opacity, currentStyle: style))) ? 2 : 1
+                                            )
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Preset color")
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
+                }
+            }
+        }
+        struct PresetPalettePicker: View {
+            @Binding var selectedColor: Color
+            @State private var style: PaletteStyle = .monochrome
+            @State private var opacity: Double = 1.0   // useful for highlighters
+
+            var swatchSize: CGFloat = 28
+            var columns: [GridItem] = Array(repeating: .init(.fixed(32), spacing: 10), count: 6)
+
+            var body: some View {
+                VStack(spacing: 12) {
+                    // category tabs
+                    Picker("", selection: $style) {
+                        ForEach(PaletteStyle.allCases) { s in
+                            Text(s.rawValue).tag(s)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    // swatches
+                    LazyVGrid(columns: columns, spacing: 10) {
+                        ForEach(Palette.colors[style] ?? [], id: \.self) { color in
+                            Swatch(
+                                color: color.opacity(opacity),
+                                isSelected: selectedColor.matches(color.opacity(opacity)),
+                                size: swatchSize
+                            ) {
+                                selectedColor = color.opacity(opacity)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
+            }
         }
     }
 
