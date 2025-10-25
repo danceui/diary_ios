@@ -63,6 +63,7 @@ struct ContentView: View {
                 }
                 .frame(width: panelWidth, height: toolPanelHeight)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+
                 if showStylePresets, selectedTool.supportsPresets {
                     GlassEffectContainer {
                         StylePresetsPanel(
@@ -73,16 +74,16 @@ struct ContentView: View {
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
-                if showStyleDetails, selectedTool.supportsPresets {
-                    GlassEffectContainer {
-                        StyleDetailsPanel(
-                            tool: selectedTool
-                        )
-                    }
-                    .frame(width: styleDetailWidth, height: styleDetailHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    // .transition(.move(edge: .trailing).combined(with: .opacity))
-                }
+
+                // if showStyleDetails, selectedTool.supportsPresets {
+                //     GlassEffectContainer {
+                //         StyleDetailsPanel(
+                //             tool: selectedTool
+                //         )
+                //     }
+                //     .frame(width: styleDetailWidth, height: styleDetailHeight)
+                //     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                // }
             }
         }
         
@@ -91,7 +92,6 @@ struct ContentView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @Binding var showStyleDetails: Bool
-            
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -107,7 +107,6 @@ struct ContentView: View {
                                     showStylePresets.toggle()
                                     showStyleDetails = false
                                 } else {
-                                    // onWillSwitchTool() 
                                     selectedTool = tool
                                     toolManager.currentTool = tool
                                     showStylePresets = false
@@ -128,7 +127,6 @@ struct ContentView: View {
         struct StylePresetsPanel: View {
             let selectedTool: Tool
             @Binding var showStyleDetails: Bool
-
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -139,6 +137,7 @@ struct ContentView: View {
                     VStack(spacing: iconSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
                             let isSelected = (presetIndex == idx)
+
                             ToolButtonView(
                                 tool: selectedTool,
                                 isSelected: isSelected,
@@ -152,6 +151,20 @@ struct ContentView: View {
                                 }
                             }
                             .padding(iconPadding)
+                            // 关键：把 popover 挂到“当前被选中”的这个按钮上
+                            .popover(
+                                isPresented: Binding(
+                                    get: { isSelected && showStyleDetails },
+                                    set: { newVal in showStyleDetails = newVal }
+                                ),
+                                attachmentAnchor: .rect(.bounds),
+                                arrowEdge: .leading // 让弹窗在按钮右侧；需要左侧换 .leading
+                            ) {
+                                StyleDetailsPanel(tool: selectedTool)
+                                    .environmentObject(toolManager)
+                                    .presentationCompactAdaptation(.popover)
+                                    .padding(8)
+                            }
                         }
                     }
                     .padding(.top, topPadding / 2)
@@ -173,8 +186,6 @@ struct ContentView: View {
         @State private var width: Double = 4
         @State private var opacity: Double = 1
         @State private var isEditing = false
-        
-        @State private var showColorPopover = false
 
         // 去抖提交
         @State private var pendingCommit: DispatchWorkItem?
@@ -189,97 +200,93 @@ struct ContentView: View {
         }
 
         var body: some View {
-            GlassEffectContainer {
-                VStack(spacing: 12) {
-                    if tool == .monoline || tool == .pen || tool == .highlighter {
-                        FancyBrushPreview(tool: tool, style: previewStyle)
-                            .frame(width: 60, height: 60)
+            VStack(spacing: 12) {
+                if tool == .monoline || tool == .pen || tool == .highlighter {
+                    FancyBrushPreview(tool: tool, style: previewStyle)
+                        .frame(width: 60, height: 60)
+                }
+                if tool.supportWidth {  
+                    HStack(spacing: 10) {
+                        Slider(value: $width, in: 1...10, step: 1,
+                            onEditingChanged: { editing in
+                                isEditing = editing
+                                if editing {
+                                    cancelPendingCommit()
+                                } else {
+                                    cancelPendingCommit()
+                                    commitChanges()
+                                }
+                            })
+                            .controlSize(.mini)
+                            .labelsHidden()
+                            .accessibilityLabel("Width")
+                            .frame(maxWidth: .infinity)
+                            .onChange(of: width) { scheduleCommit() }
+                        Text("\(Int(width))")
+                            .monospacedDigit()
+                            .frame(width: 56, alignment: .center)
                     }
-                    if tool.supportWidth {  
-                        HStack(spacing: 10) {
-                            Slider(value: $width, in: 1...10, step: 1,
-                                onEditingChanged: { editing in
-                                    isEditing = editing
-                                    if editing {
-                                        cancelPendingCommit()
-                                    } else {
-                                        cancelPendingCommit()
-                                        commitChanges()
-                                    }
-                                })
-                                .controlSize(.mini)
-                                .labelsHidden()
-                                .accessibilityLabel("Width")
-                                .frame(maxWidth: .infinity)
-                                .onChange(of: width) { _ in scheduleCommit() }
-                            Text("\(Int(width))")
-                                .monospacedDigit()
-                                .frame(width: 56, alignment: .center)
-                        }
+                }
+                if tool.supportOpacity {
+                    HStack(spacing: 10) {
+                        Slider(value: $opacity, in: 0.1...1, step: 0.01,
+                            onEditingChanged: { editing in
+                                isEditing = editing
+                                if editing {
+                                    cancelPendingCommit()
+                                } else {
+                                    cancelPendingCommit()
+                                    commitChanges()
+                                }
+                            })
+                            .controlSize(.mini)
+                            .labelsHidden()
+                            .accessibilityLabel("Opacity")
+                            .frame(maxWidth: .infinity)
+                            .onChange(of: opacity) { scheduleCommit() }
+                        Text("\(Int(round(opacity * 100)))%")
+                            .monospacedDigit()
+                            .frame(width: 56, alignment: .center)
                     }
-                    if tool.supportOpacity {
-                        HStack(spacing: 10) {
-                            Slider(value: $opacity, in: 0.1...1, step: 0.01,
-                                onEditingChanged: { editing in
-                                    isEditing = editing
-                                    if editing {
-                                        cancelPendingCommit()
-                                    } else {
-                                        cancelPendingCommit()
-                                        commitChanges()
-                                    }
-                                })
-                                .controlSize(.mini)
-                                .labelsHidden()
-                                .accessibilityLabel("Opacity")
-                                .frame(maxWidth: .infinity)
-                                .onChange(of: opacity) { scheduleCommit() }
-                            Text("\(Int(round(opacity * 100)))%")
-                                .monospacedDigit()
-                                .frame(width: 56, alignment: .center)
-                        }
-                    }
-                    if tool.supportColor {
-                        ScrollView {
-                            LazyVStack(spacing: 10) {
-                                ForEach(PaletteStyle.allCases) { s in
-                                    let colors = Palette.colors[s] ?? []
-                                    HStack(spacing: 10) {
-                                        ForEach(colors, id: \.self) { c in
-                                            Button {
-                                                color = c
-                                                showColorPopover = false
-                                                cancelPendingCommit()
-                                                commitChanges()
-                                            } label: {
-                                                Circle()
-                                                    .fill(c)
-                                                    .frame(width: 28, height: 28)
-                                                    .overlay(
-                                                        Circle()
-                                                            .stroke(lineWidth: color == c ? 3 : 0)
-                                                            .foregroundStyle(.primary.opacity(0.8))
-                                                    )
-                                            }
-                                            .buttonStyle(.plain)
-                                            .accessibilityLabel("Preset color")
+                }
+                if tool.supportColor {
+                    ScrollView {
+                        LazyVStack(spacing: 10) {
+                            ForEach(PaletteStyle.allCases) { s in
+                                let colors = Palette.colors[s] ?? []
+                                HStack(spacing: 10) {
+                                    ForEach(colors, id: \.self) { c in
+                                        Button {
+                                            color = c
+                                            cancelPendingCommit()
+                                            commitChanges()
+                                        } label: {
+                                            Circle()
+                                                .fill(c)
+                                                .frame(width: 28, height: 28)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(lineWidth: color == c ? 3 : 0)
+                                                        .foregroundStyle(.primary.opacity(0.8))
+                                                )
                                         }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Preset color")
                                     }
                                 }
                             }
-                            .padding(.top, 2)
                         }
-                        .padding(12)
+                        .padding(.top, 2)
                     }
-                }
-                .padding(10)
-                .onAppear(perform: loadFromManager)
-                .onDisappear { 
-                    cancelPendingCommit()
-                    commitChanges()
+                    .padding(12)
                 }
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+            .padding(10)
+            .onAppear(perform: loadFromManager)
+            .onDisappear { 
+                cancelPendingCommit()
+                commitChanges()
+            }
         }
 
         private func loadFromManager() {
