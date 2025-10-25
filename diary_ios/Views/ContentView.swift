@@ -54,35 +54,47 @@ struct ContentView: View {
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
-                GlassEffectContainer {
+                // GlassEffectContainer {
                     ToolsPanel(
                         selectedTool: $selectedTool,
                         showStylePresets: $showStylePresets,
                         showStyleDetails: $showStyleDetails
                     )
-                }
+                // }
                 .frame(width: panelWidth, height: toolPanelHeight)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .background(
+                    RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                )
+                // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
 
                 if showStylePresets, selectedTool.supportsPresets {
-                    GlassEffectContainer {
+                    // GlassEffectContainer {
                         StylePresetsPanel(
                             selectedTool: selectedTool,
                             showStyleDetails: $showStyleDetails
                         )
-                    }
+                    // }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .background(
+                        RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    )
+                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
                 
                 if showStyleDetails, selectedTool.supportsPresets {
-                    GlassEffectContainer {
+                    // GlassEffectContainer {
                         StyleDetailsPanel(
                             tool: selectedTool
                         )
-                    }
+                    // }
                     .frame(width: styleDetailWidth, height: styleDetailHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .background(
+                        RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    )
+                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
             }
         }
@@ -142,7 +154,9 @@ struct ContentView: View {
                                 style: style
                             ) {
                                 if presetIndex == idx {
-                                    showStyleDetails.toggle()
+                                    // DispatchQueue.main.async {
+                                        showStyleDetails.toggle()
+                                    // }
                                 } else {
                                     toolManager.selectPreset(for: selectedTool, index: idx)
                                     showStyleDetails = false
@@ -169,9 +183,8 @@ struct ContentView: View {
         var body: some View {
             Group {
                 if loaded {
-                    // 真正的内容
-                    // StyleDetailsContentView(tool: tool) // 使用新的内容视图
-                    Text("Style Details for \(tool)") // 占位
+                    StyleDetailsContentView(tool: tool) // 使用新的内容视图
+                    // Text("Style Details for \(tool)") // 占位
                         .environmentObject(toolManager)
                         // 移除 .presentationCompactAdaptation(.popover) 等 popover 特有代码
                         .padding(8)
@@ -182,6 +195,7 @@ struct ContentView: View {
             }
             .onAppear {
                 // 下一帧再加载重内容，避免面板打开瞬间卡顿
+                let _ = print("StyleDetailsPanel appeared - \(Date())")
                 DispatchQueue.main.async {
                     loaded = true
                 }
@@ -217,23 +231,23 @@ struct ContentView: View {
                     //     .frame(width: 60, height: 60)
                 // }
                 if tool.supportWidth {  
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: $width,
-                            in: 1...10,
-                            step: 1,
-                            onEditingChanged: { editing in
-                                if !editing { commitChanges() }
-                            }
-                        )
-                        .controlSize(.mini)
-                        .labelsHidden()
-                        .accessibilityLabel("Width")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 10) {Text("Style Details for \(tool)") 
+                        // Slider(
+                        //     value: $width,
+                        //     in: 1...10,
+                        //     step: 1,
+                        //     onEditingChanged: { editing in
+                        //         if !editing { commitChanges() }
+                        //     }
+                        // )
+                        // .controlSize(.mini)
+                        // .labelsHidden()
+                        // .accessibilityLabel("Width")
+                        // .frame(maxWidth: .infinity)
 
-                        Text("\(Int(width))")
-                            .monospacedDigit()
-                            .frame(width: 56, alignment: .center)
+                        // Text("\(Int(width))")
+                        //     .monospacedDigit()
+                        //     .frame(width: 56, alignment: .center)
                     }
                 }
                 // if tool.supportOpacity {
@@ -289,6 +303,7 @@ struct ContentView: View {
             .padding(10)
             .onAppear {
                 loadFromManager()
+                let _ = print("StyleDetailsContentView appeared - \(Date())")
             }
         }
 
