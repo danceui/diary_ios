@@ -23,7 +23,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            // NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
+            NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
             // 左侧工具栏
             VStack {
                 Spacer()
@@ -52,25 +52,24 @@ struct ContentView: View {
         @State private var showStylePresets: Bool = false
 
         var body: some View {
-            let _ = print("DrawingToolbar body computed - \(Date())")
             HStack(alignment: .top, spacing: popoverGap) {
-                // GlassEffectContainer {
+                GlassEffectContainer {
                     ToolsPanel(
                         selectedTool: $selectedTool,
                         showStylePresets: $showStylePresets
                     )
-                // }
+                }
                 .frame(width: panelWidth, height: toolPanelHeight)
-                // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
 
                 if showStylePresets, selectedTool.supportsPresets {
-                    // GlassEffectContainer {
+                    GlassEffectContainer {
                         StylePresetsPanel(
                             selectedTool: selectedTool
                         )
-                    // }
+                    }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
-                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
             }
         }
@@ -82,7 +81,6 @@ struct ContentView: View {
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
-                let _ = print("ToolsPanel body computed - \(Date())")
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(allTools, id: \.self) { tool in
@@ -105,7 +103,7 @@ struct ContentView: View {
                     .padding(.top, topPadding / 2)
                     .padding(.bottom, topPadding / 2)
                 }
-                // .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
 
@@ -116,7 +114,6 @@ struct ContentView: View {
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
-                let _ = print("StylePresetsPanel body computed - \(Date())")
                 let presets = toolManager.presetStyles[selectedTool] ?? []
                 let presetIndex = toolManager.presetIndexForTool(for: selectedTool)
 
@@ -132,6 +129,7 @@ struct ContentView: View {
                                 style: style
                             ) {
                                 if isSelected {
+                                    // 展开/收起详情面板
                                     detailIndex = (detailIndex == idx) ? nil : idx
                                 } else {
                                     toolManager.selectPreset(for: selectedTool, index: idx)
@@ -139,15 +137,6 @@ struct ContentView: View {
                                 }
                             }
                             .padding(iconPadding)
-                            // .overlay(alignment: .trailing) {
-                            //     if isShowingDetails {
-                            //         StyleDetailsPanel(tool: selectedTool, detailIndex: idx)
-                            //             .frame(width: 260)
-                            //             .padding(.leading, 8)
-                            //             .transition(.move(edge: .leading).combined(with: .opacity))
-                            //             .zIndex(10)
-                            //     }
-                            // }
                             .popover(
                                 isPresented: Binding(
                                     get: { isShowingDetails },
@@ -158,38 +147,23 @@ struct ContentView: View {
                                 attachmentAnchor: .rect(.bounds),
                                 arrowEdge: .leading
                             ) {
-                                StyleDetailsPanel(tool: selectedTool, detailIndex: idx)
+                                StyleDetailsPopover(tool: selectedTool, detailIndex: idx)
+                                    .environmentObject(toolManager)
+                                    .presentationCompactAdaptation(.popover)
+                                    .padding(8)
                             }
                         }
                     }
                     .padding(.top, topPadding / 2)
                     .padding(.bottom, topPadding / 2)
                 }
-                // .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
     }
 
-    // MARK: - 3.Style Details Panel
-    struct StyleDetailsPanel: View {
-        let tool: Tool
-        let detailIndex: Int
-        @EnvironmentObject private var toolManager: ToolManager
-
-        // 最简版本测试
-        var body: some View {
-            VStack {
-                Text("Simple Panel")
-                    .padding()
-            }
-            .frame(width: 260, height: 300)
-            .background(Color.white)
-            .onAppear {
-                print("Simple panel appeared instantly")
-            }
-        }
-    }
-    struct StyleDetailsPanelOrigin: View {
+    // MARK: - 3.Style Details Popover
+    struct StyleDetailsPopover: View {
         let tool: Tool
         let detailIndex: Int
         @EnvironmentObject private var toolManager: ToolManager
@@ -198,12 +172,6 @@ struct ContentView: View {
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
-
-        init(tool: Tool, detailIndex: Int) {
-            self.tool = tool
-            self.detailIndex = detailIndex
-            print("StyleDetailsPanel init - \(Date())")
-        }
 
         private var previewStyle: ToolStyle {
             var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
@@ -214,12 +182,11 @@ struct ContentView: View {
         }
 
         var body: some View {
-            let _ = print("StyleDetailsPanel body computed - \(Date())")
             VStack(spacing: 12) {
-                if tool == .monoline || tool == .pen || tool == .highlighter {
-                    FancyBrushPreview(tool: tool, style: previewStyle)
-                        .frame(width: 60, height: 60)
-                }
+                // if tool == .monoline || tool == .pen || tool == .highlighter {
+                    // FancyBrushPreview(tool: tool, style: previewStyle)
+                    //     .frame(width: 60, height: 60)
+                // }
                 if tool.supportWidth {  
                     HStack(spacing: 10) {
                         Slider(
@@ -227,7 +194,7 @@ struct ContentView: View {
                             in: 1...10,
                             step: 1,
                             onEditingChanged: { editing in
-                                // if !editing { commitChanges() }
+                                if !editing { commitChanges() }
                             }
                         )
                         .controlSize(.mini)
@@ -240,62 +207,63 @@ struct ContentView: View {
                             .frame(width: 56, alignment: .center)
                     }
                 }
-                if tool.supportOpacity {
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: $opacity,
-                            in: 0.1...1,
-                            step: 0.01,
-                            onEditingChanged: { editing in
-                                if !editing { commitChanges() }
-                            })
-                        .controlSize(.mini)
-                        .labelsHidden()
-                        .accessibilityLabel("Opacity")
-                        .frame(maxWidth: .infinity)
+                // if tool.supportOpacity {
+                //     HStack(spacing: 10) {
+                //         Slider(
+                //             value: $opacity,
+                //             in: 0.1...1,
+                //             step: 0.01,
+                //             onEditingChanged: { editing in
+                //                 if !editing { commitChanges() }
+                //             })
+                //         .controlSize(.mini)
+                //         .labelsHidden()
+                //         .accessibilityLabel("Opacity")
+                //         .frame(maxWidth: .infinity)
 
-                        Text("\(Int(round(opacity * 100)))%")
-                            .monospacedDigit()
-                            .frame(width: 56, alignment: .center)
-                    }
-                }
-                if tool.supportColor {
-                    ScrollView {
-                        VStack(spacing: 10) {
-                            ForEach(PaletteStyle.allCases) { s in
-                                let colors = Palette.colors[s] ?? []
-                                HStack(spacing: 10) {
-                                    ForEach(colors, id: \.self) { c in
-                                        Button {
-                                            color = c
-                                            commitChanges()
-                                        } label: {
-                                            Circle()
-                                                .fill(c)
-                                                .frame(width: 28, height: 28)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(lineWidth: color == c ? 3 : 0)
-                                                        .foregroundStyle(.primary.opacity(0.8))
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel("Preset color")
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.top, 2)
-                    }
-                    .padding(12)
-                }
+                //         Text("\(Int(round(opacity * 100)))%")
+                //             .monospacedDigit()
+                //             .frame(width: 56, alignment: .center)
+                //     }
+                // }
+                // if tool.supportColor {
+                //     ScrollView {
+                //         VStack(spacing: 10) {
+                //             ForEach(PaletteStyle.allCases) { s in
+                //                 let colors = Palette.colors[s] ?? []
+                //                 HStack(spacing: 10) {
+                //                     ForEach(colors, id: \.self) { c in
+                //                         Button {
+                //                             color = c
+                //                             commitChanges()
+                //                         } label: {
+                //                             Circle()
+                //                                 .fill(c)
+                //                                 .frame(width: 28, height: 28)
+                //                                 .overlay(
+                //                                     Circle()
+                //                                         .stroke(lineWidth: color == c ? 3 : 0)
+                //                                         .foregroundStyle(.primary.opacity(0.8))
+                //                                 )
+                //                         }
+                //                         .buttonStyle(.plain)
+                //                         .accessibilityLabel("Preset color")
+                //                     }
+                //                 }
+                //             }
+                //         }
+                //         .padding(.top, 2)
+                //     }
+                //     .padding(12)
+                // }
             }
             .padding(10)
-            .onAppear(perform: loadFromManager)
             .onAppear {
-                print("StyleDetailsPanel onAppear - \(Date())")
+                loadFromManager()
             }
-            .onDisappear(perform: commitChanges)
+            .onDisappear {
+                commitChanges()
+            }
         }
 
         private func loadFromManager() {
@@ -327,13 +295,13 @@ struct ContentView: View {
         var body: some View {
             Button(action: action) {
                 Group {
-                    // if tool == .monoline || tool == .pen || tool == .highlighter, let style {
-                    //     FancyBrushPreview(tool: tool, style: style)
-                    // } else {
+                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
+                        FancyBrushPreview(tool: tool, style: style)
+                    } else {
                         Image(systemName: tool.iconName)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                    // }
+                    }
                 }
                 .frame(width: iconSize, height: iconSize)
                 .padding(iconPadding)
@@ -344,7 +312,7 @@ struct ContentView: View {
                     .blur(radius: isSelected ? 0.55 : 0.2)
                 )
             }
-            // .buttonStyle(ToolButtonStyle(isSelected: isSelected))
+            .buttonStyle(ToolButtonStyle(isSelected: isSelected))
         } 
     }
 
@@ -405,7 +373,7 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         
         var body: some View {
-            // GlassEffectContainer {
+            GlassEffectContainer {
                 HStack(spacing: iconSpacing) {
                     FunctionButtonView(iconName: "arrow.uturn.backward") {
                     notebookSpreadViewController.undo()
@@ -419,8 +387,8 @@ struct ContentView: View {
                 }
                 .padding(.leading, topPadding / 2)
                 .padding(.trailing, topPadding / 2)
-            // }
-            // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+            }
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
         }
     }
 
