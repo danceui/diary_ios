@@ -170,7 +170,8 @@ struct ContentView: View {
             Group {
                 if loaded {
                     // 真正的内容
-                    StyleDetailsContentView(tool: tool) // 使用新的内容视图
+                    // StyleDetailsContentView(tool: tool) // 使用新的内容视图
+                    Text("Style Details for \(tool)") // 占位
                         .environmentObject(toolManager)
                         // 移除 .presentationCompactAdaptation(.popover) 等 popover 特有代码
                         .padding(8)
