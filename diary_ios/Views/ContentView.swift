@@ -52,6 +52,7 @@ struct ContentView: View {
         @State private var showStylePresets: Bool = false
 
         var body: some View {
+            let _ = print("DrawingToolbar body computed - \(Date())")
             HStack(alignment: .top, spacing: popoverGap) {
                 // GlassEffectContainer {
                     ToolsPanel(
@@ -81,6 +82,7 @@ struct ContentView: View {
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
+                let _ = print("ToolsPanel body computed - \(Date())")
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(allTools, id: \.self) { tool in
@@ -103,7 +105,7 @@ struct ContentView: View {
                     .padding(.top, topPadding / 2)
                     .padding(.bottom, topPadding / 2)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                // .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
 
@@ -114,6 +116,7 @@ struct ContentView: View {
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
+                let _ = print("StylePresetsPanel body computed - \(Date())")
                 let presets = toolManager.presetStyles[selectedTool] ?? []
                 let presetIndex = toolManager.presetIndexForTool(for: selectedTool)
 
@@ -162,7 +165,7 @@ struct ContentView: View {
                     .padding(.top, topPadding / 2)
                     .padding(.bottom, topPadding / 2)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                // .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
     }
@@ -341,7 +344,7 @@ struct ContentView: View {
                     .blur(radius: isSelected ? 0.55 : 0.2)
                 )
             }
-            .buttonStyle(ToolButtonStyle(isSelected: isSelected))
+            // .buttonStyle(ToolButtonStyle(isSelected: isSelected))
         } 
     }
 
