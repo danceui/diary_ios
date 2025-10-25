@@ -50,15 +50,13 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var selectedTool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
-        @State private var showStyleDetails: Bool = false
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
                 GlassEffectContainer {
                     ToolsPanel(
                         selectedTool: $selectedTool,
-                        showStylePresets: $showStylePresets,
-                        showStyleDetails: $showStyleDetails
+                        showStylePresets: $showStylePresets
                     )
                 }
                 .frame(width: panelWidth, height: toolPanelHeight)
@@ -67,23 +65,12 @@ struct ContentView: View {
                 if showStylePresets, selectedTool.supportsPresets {
                     GlassEffectContainer {
                         StylePresetsPanel(
-                            selectedTool: selectedTool,
-                            showStyleDetails: $showStyleDetails
+                            selectedTool: selectedTool
                         )
                     }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
-
-                // if showStyleDetails, selectedTool.supportsPresets {
-                //     GlassEffectContainer {
-                //         StyleDetailsPanel(
-                //             tool: selectedTool
-                //         )
-                //     }
-                //     .frame(width: styleDetailWidth, height: styleDetailHeight)
-                //     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                // }
             }
         }
         
@@ -91,7 +78,6 @@ struct ContentView: View {
         struct ToolsPanel: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
-            @Binding var showStyleDetails: Bool
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -105,12 +91,10 @@ struct ContentView: View {
                             ) {
                                 if selectedTool == tool {
                                     showStylePresets.toggle()
-                                    showStyleDetails = false
                                 } else {
                                     selectedTool = tool
                                     toolManager.currentTool = tool
                                     showStylePresets = false
-                                    showStyleDetails = false
                                 }
                             }
                             .padding(iconPadding)
@@ -126,7 +110,7 @@ struct ContentView: View {
         // MARK: - 2.Style Presets Panel
         struct StylePresetsPanel: View {
             let selectedTool: Tool
-            @Binding var showStyleDetails: Bool
+            @State private var detailIndex: Int? = nil
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -137,6 +121,7 @@ struct ContentView: View {
                     VStack(spacing: iconSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
                             let isSelected = (presetIndex == idx)
+                            let isDetailForThis = (detailIndex == idx)
 
                             ToolButtonView(
                                 tool: selectedTool,
@@ -144,23 +129,25 @@ struct ContentView: View {
                                 style: style
                             ) {
                                 if isSelected {
-                                    showStyleDetails.toggle()
+                                    // 展开/收起详情面板
+                                    detailIndex = (detailIndex == idx) ? nil : idx
                                 } else {
                                     toolManager.selectPreset(for: selectedTool, index: idx)
-                                    showStyleDetails = false
+                                    detailIndex = nil
                                 }
                             }
                             .padding(iconPadding)
-                            // 关键：把 popover 挂到“当前被选中”的这个按钮上
                             .popover(
                                 isPresented: Binding(
-                                    get: { isSelected && showStyleDetails },
-                                    set: { newVal in showStyleDetails = newVal }
+                                    get: { isDetailForThis },
+                                    set: { newVal in
+                                        if !newVal, detailIndex == idx { detailIndex = nil }
+                                    }
                                 ),
                                 attachmentAnchor: .rect(.bounds),
                                 arrowEdge: .leading
                             ) {
-                                StyleDetailsPanel(tool: selectedTool)
+                                StyleDetailsPanel(tool: selectedTool, detailIndex: idx)
                                     .environmentObject(toolManager)
                                     .presentationCompactAdaptation(.popover)
                                     .padding(8)
@@ -178,7 +165,7 @@ struct ContentView: View {
     // MARK: - 3.Style Details Panel
     struct StyleDetailsPanel: View {
         let tool: Tool
-
+        let detailIndex: Int
         @EnvironmentObject private var toolManager: ToolManager
 
         // 本地编辑态，仅用于预览
@@ -241,7 +228,6 @@ struct ContentView: View {
                 }
                 if tool.supportColor {
                     ScrollView {
-                        // LazyVStack(spacing: 10) {
                         VStack(spacing: 10) {
                             ForEach(PaletteStyle.allCases) { s in
                                 let colors = Palette.colors[s] ?? []
@@ -279,7 +265,7 @@ struct ContentView: View {
         }
 
         private func loadFromManager() {
-            guard let style = toolManager.styleForTool(for: tool) else { return }
+            guard let style = toolManager.getStyle(for: tool, at: detailIndex) else { return }
             if tool.supportColor   { color = style.color?.toColor() ?? .black }
             if tool.supportWidth   { width = Double(style.width ?? 4) }
             if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
@@ -291,8 +277,8 @@ struct ContentView: View {
                 width: CGFloat(width),
                 opacity: CGFloat(opacity)
             )
-            if updated == (toolManager.styleForTool(for: tool) ?? ToolStyle()) { return }
-            toolManager.setStyleFromDetail(for: tool, updated: updated)
+            if updated == (toolManager.getStyle(for: tool, at: detailIndex) ?? ToolStyle()) { return }
+            toolManager.setStyle(for: tool, at: detailIndex, to: updated)
         }
     }
 

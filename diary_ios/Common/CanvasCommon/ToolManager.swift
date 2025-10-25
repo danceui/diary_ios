@@ -109,8 +109,8 @@ class ToolManager: ObservableObject {
     func selectTool(_ tool: Tool) { currentTool = tool }
     func selectPreset(for tool: Tool, index: Int) {
         guard tool.supportsPresets,
-            let thisPresetStyles = presetStyles[tool],
-            thisPresetStyles.indices.contains(index) else { return }
+            let arr = presetStyles[tool],
+            arr.indices.contains(index) else { return }
         presetIndices[tool] = index
     }
 
@@ -123,17 +123,26 @@ class ToolManager: ObservableObject {
     func styleForTool(for tool: Tool) -> ToolStyle? {
         guard tool.supportsPresets,
             let idx = presetIndices[tool],
-            let thisPresetStyles = presetStyles[tool],
-            thisPresetStyles.indices.contains(idx) else { return nil }
-        return thisPresetStyles[idx]
+            let arr = presetStyles[tool],
+            arr.indices.contains(idx) else { return nil }
+        return arr[idx]
     }
 
-    func setStyleFromDetail(for tool: Tool, index: Int, updated: ToolStyle) {
+    func getStyle(for tool: Tool, at index: Int) -> ToolStyle? {
         guard tool.supportsPresets,
-            var thisPresetStyles = presetStyles[tool],
-            thisPresetStyles.indices.contains(idx) else { return }
-        thisPresetStyles[idx] = updated
-        presetStyles[tool] = thisPresetStyles
+            let arr = presetStyles[tool],
+            arr.indices.contains(index) else { return nil }
+        return arr[index]
     }
 
+    @discardableResult
+    func setStyle(for tool: Tool, at index: Int, to updated: ToolStyle) -> Bool {
+        guard tool.supportsPresets,
+            var arr = presetStyles[tool],
+            arr.indices.contains(index) else { return false}
+
+        arr[index] = updated
+        presetStyles[tool] = arr
+        return true
+    }
 }
