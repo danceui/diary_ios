@@ -20,9 +20,9 @@ enum Tool {
     var iconName: String {
         switch self {
         case .pen:
-            return "pen_drawing"
+            return "paintbrush.pointed.fill"
         case .monoline:
-            return "monoline_drawing"
+            return "paintbrush.pointed.fill"
         case .highlighter:
             return "paintbrush.pointed.fill" // SF Symbol
         case .eraser:

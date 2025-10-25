@@ -23,7 +23,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
+            // NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
             // 左侧工具栏
             VStack {
                 Spacer()
@@ -44,7 +44,7 @@ struct ContentView: View {
         }
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
-    
+
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
@@ -53,23 +53,23 @@ struct ContentView: View {
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
-                GlassEffectContainer {
+                // GlassEffectContainer {
                     ToolsPanel(
                         selectedTool: $selectedTool,
                         showStylePresets: $showStylePresets
                     )
-                }
+                // }
                 .frame(width: panelWidth, height: toolPanelHeight)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
 
                 if showStylePresets, selectedTool.supportsPresets {
-                    GlassEffectContainer {
+                    // GlassEffectContainer {
                         StylePresetsPanel(
                             selectedTool: selectedTool
                         )
-                    }
+                    // }
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
             }
         }
@@ -120,54 +120,75 @@ struct ContentView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
-                            let isDetailForThis = (detailIndex == idx)
                             let isSelected = (presetIndex == idx)
+                            let isShowingDetails = (detailIndex == idx)
 
-                            // 每个 preset 一块：按钮 +（可选）详情卡片
-                            VStack(alignment: .leading, spacing: 8) {
-                                ToolButtonView(
-                                    tool: selectedTool,
-                                    isSelected: isSelected,
-                                    style: style
-                                ) {
-                                    if isSelected {
-                                        // 展开/收起当前项的详情
-                                        withAnimation(.snappy) {
-                                            detailIndex = (detailIndex == idx) ? nil : idx
-                                        }
-                                    } else {
-                                        // 切换预设，不展开详情
-                                        toolManager.selectPreset(for: selectedTool, index: idx)
-                                        withAnimation(.snappy) {
-                                            detailIndex = nil
-                                        }
+                            ToolButtonView(
+                                tool: selectedTool,
+                                isSelected: isSelected,
+                                style: style
+                            ) {
+                                if isSelected {
+                                    detailIndex = (detailIndex == idx) ? nil : idx
+                                } else {
+                                    toolManager.selectPreset(for: selectedTool, index: idx)
+                                    detailIndex = nil
+                                }
+                            }
+                            .padding(iconPadding)
+                            // .overlay(alignment: .trailing) {
+                            //     if isShowingDetails {
+                            //         StyleDetailsPanel(tool: selectedTool, detailIndex: idx)
+                            //             .frame(width: 260)
+                            //             .padding(.leading, 8)
+                            //             .transition(.move(edge: .leading).combined(with: .opacity))
+                            //             .zIndex(10)
+                            //     }
+                            // }
+                            .popover(
+                                isPresented: Binding(
+                                    get: { isShowingDetails },
+                                    set: { newVal in
+                                        if !newVal, detailIndex == idx { detailIndex = nil }
                                     }
-                                }
-                                .padding(iconPadding)
-
-                                if isDetailForThis {
-                                    let initial = toolManager.getStyle(for: selectedTool, at: idx) ?? ToolStyle()
-                                    StyleDetailsPanel(
-                                        tool: selectedTool,
-                                        detailIndex: idx,
-                                        initial: initial
-                                    )
-                                }
+                                ),
+                                attachmentAnchor: .rect(.bounds),
+                                arrowEdge: .leading
+                            ) {
+                                StyleDetailsPanel(tool: selectedTool, detailIndex: idx)
                             }
                         }
                     }
-                    .padding(.vertical, topPadding / 2)
+                    .padding(.top, topPadding / 2)
+                    .padding(.bottom, topPadding / 2)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
     }
 
-    // MARK: - 3.Style Details Popover
+    // MARK: - 3.Style Details Panel
     struct StyleDetailsPanel: View {
         let tool: Tool
         let detailIndex: Int
-        let initial: ToolStyle
+        @EnvironmentObject private var toolManager: ToolManager
+
+        // 最简版本测试
+        var body: some View {
+            VStack {
+                Text("Simple Panel")
+                    .padding()
+            }
+            .frame(width: 260, height: 300)
+            .background(Color.white)
+            .onAppear {
+                print("Simple panel appeared instantly")
+            }
+        }
+    }
+    struct StyleDetailsPanelOrigin: View {
+        let tool: Tool
+        let detailIndex: Int
         @EnvironmentObject private var toolManager: ToolManager
 
         // 本地编辑态，仅用于预览
@@ -175,29 +196,27 @@ struct ContentView: View {
         @State private var width: Double = 4
         @State private var opacity: Double = 1
 
-        init(tool: Tool, detailIndex: Int, initial: ToolStyle) {
+        init(tool: Tool, detailIndex: Int) {
             self.tool = tool
             self.detailIndex = detailIndex
-            self.initial = initial
-            _color   = State(initialValue: initial.color?.toColor() ?? .black)
-            _width   = State(initialValue: Double(initial.width ?? 4))
-            _opacity = State(initialValue: Double(initial.opacity ?? 1))
+            print("StyleDetailsPanel init - \(Date())")
         }
 
-        // private var previewStyle: ToolStyle {
-        //     var base = initial
-        //     if tool.supportColor { base.color = UIColor(color) }
-        //     if tool.supportWidth { base.width = CGFloat(width) }
-        //     if tool.supportOpacity { base.opacity = CGFloat(opacity) }
-        //     return base
-        // }
+        private var previewStyle: ToolStyle {
+            var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
+            if tool.supportColor { style.color = UIColor(color) }
+            if tool.supportWidth { style.width = CGFloat(width) }
+            if tool.supportOpacity { style.opacity = CGFloat(opacity) }
+            return style
+        }
 
         var body: some View {
+            let _ = print("StyleDetailsPanel body computed - \(Date())")
             VStack(spacing: 12) {
-                // if tool == .monoline || tool == .pen || tool == .highlighter {
-                    // FancyBrushPreview(tool: tool, style: previewStyle)
-                    //     .frame(width: 60, height: 60)
-                // }
+                if tool == .monoline || tool == .pen || tool == .highlighter {
+                    FancyBrushPreview(tool: tool, style: previewStyle)
+                        .frame(width: 60, height: 60)
+                }
                 if tool.supportWidth {  
                     HStack(spacing: 10) {
                         Slider(
@@ -205,7 +224,7 @@ struct ContentView: View {
                             in: 1...10,
                             step: 1,
                             onEditingChanged: { editing in
-                                if !editing { commitChanges() }
+                                // if !editing { commitChanges() }
                             }
                         )
                         .controlSize(.mini)
@@ -237,41 +256,50 @@ struct ContentView: View {
                             .frame(width: 56, alignment: .center)
                     }
                 }
-                // if tool.supportColor {
-                //     ScrollView {
-                //         VStack(spacing: 10) {
-                //             ForEach(PaletteStyle.allCases) { s in
-                //                 let colors = Palette.colors[s] ?? []
-                //                 HStack(spacing: 10) {
-                //                     ForEach(colors, id: \.self) { c in
-                //                         Button {
-                //                             color = c
-                //                             commitChanges()
-                //                         } label: {
-                //                             Circle()
-                //                                 .fill(c)
-                //                                 .frame(width: 28, height: 28)
-                //                                 .overlay(
-                //                                     Circle()
-                //                                         .stroke(lineWidth: color == c ? 3 : 0)
-                //                                         .foregroundStyle(.primary.opacity(0.8))
-                //                                 )
-                //                         }
-                //                         .buttonStyle(.plain)
-                //                         .accessibilityLabel("Preset color")
-                //                     }
-                //                 }
-                //             }
-                //         }
-                //         .padding(.top, 2)
-                //     }
-                //     .padding(12)
-                // }
+                if tool.supportColor {
+                    ScrollView {
+                        VStack(spacing: 10) {
+                            ForEach(PaletteStyle.allCases) { s in
+                                let colors = Palette.colors[s] ?? []
+                                HStack(spacing: 10) {
+                                    ForEach(colors, id: \.self) { c in
+                                        Button {
+                                            color = c
+                                            commitChanges()
+                                        } label: {
+                                            Circle()
+                                                .fill(c)
+                                                .frame(width: 28, height: 28)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(lineWidth: color == c ? 3 : 0)
+                                                        .foregroundStyle(.primary.opacity(0.8))
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Preset color")
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
+                    .padding(12)
+                }
             }
             .padding(10)
-            .onDisappear {
-                commitChanges()
+            .onAppear(perform: loadFromManager)
+            .onAppear {
+                print("StyleDetailsPanel onAppear - \(Date())")
             }
+            .onDisappear(perform: commitChanges)
+        }
+
+        private func loadFromManager() {
+            guard let style = toolManager.getStyle(for: tool, at: detailIndex) else { return }
+            if tool.supportColor   { color = style.color?.toColor() ?? .black }
+            if tool.supportWidth   { width = Double(style.width ?? 4) }
+            if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
         }
 
         private func commitChanges() {
@@ -296,13 +324,13 @@ struct ContentView: View {
         var body: some View {
             Button(action: action) {
                 Group {
-                    if tool == .monoline || tool == .pen || tool == .highlighter, let style {
-                        FancyBrushPreview(tool: tool, style: style)
-                    } else {
+                    // if tool == .monoline || tool == .pen || tool == .highlighter, let style {
+                    //     FancyBrushPreview(tool: tool, style: style)
+                    // } else {
                         Image(systemName: tool.iconName)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                    }
+                    // }
                 }
                 .frame(width: iconSize, height: iconSize)
                 .padding(iconPadding)
@@ -374,7 +402,7 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         
         var body: some View {
-            GlassEffectContainer {
+            // GlassEffectContainer {
                 HStack(spacing: iconSpacing) {
                     FunctionButtonView(iconName: "arrow.uturn.backward") {
                     notebookSpreadViewController.undo()
@@ -388,8 +416,8 @@ struct ContentView: View {
                 }
                 .padding(.leading, topPadding / 2)
                 .padding(.trailing, topPadding / 2)
-            }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+            // }
+            // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
         }
     }
 
