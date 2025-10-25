@@ -24,6 +24,7 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
+            PopoverPrewarm()
             // 左侧工具栏
             VStack {
                 Spacer()
@@ -45,6 +46,35 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
     }
 
+    struct PopoverPrewarm: View {
+        @State private var show = false
+        @State private var didWarm = false
+
+        var body: some View {
+            // 一个 1×1 的透明锚点
+            Color.clear
+                .frame(width: 1, height: 1)
+                .position(x: -5000, y: -5000)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .popover(isPresented: $show) {
+                    Text("").padding(1)
+                }
+                .transaction { t in
+                    t.disablesAnimations = true
+                }
+                .onAppear {
+                    guard !didWarm else { return }
+                    didWarm = true
+                    // 下一帧打开，再下一帧关闭，完成一次呈现周期
+                    DispatchQueue.main.async {
+                        show = true
+                        DispatchQueue.main.async { show = false }
+                    }
+                }
+        }
+    }
+    
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
@@ -147,7 +177,7 @@ struct ContentView: View {
                                 attachmentAnchor: .rect(.bounds),
                                 arrowEdge: .leading
                             ) {
-                                StyleDetailsPanel(tool: selectedTool, detailIndex: idx)
+                                StyleDetailsPopover(tool: selectedTool, detailIndex: idx)
                                     .environmentObject(toolManager)
                                     .presentationCompactAdaptation(.popover)
                                     .padding(8)
@@ -162,8 +192,8 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - 3.Style Details Panel
-    struct StyleDetailsPanel: View {
+    // MARK: - 3.Style Details Popover
+    struct StyleDetailsPopover: View {
         let tool: Tool
         let detailIndex: Int
         @EnvironmentObject private var toolManager: ToolManager
@@ -183,82 +213,84 @@ struct ContentView: View {
 
         var body: some View {
             VStack(spacing: 12) {
-                if tool == .monoline || tool == .pen || tool == .highlighter {
-                    FancyBrushPreview(tool: tool, style: previewStyle)
-                        .frame(width: 60, height: 60)
-                }
-                if tool.supportWidth {  
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: $width,
-                            in: 1...10,
-                            step: 1,
-                            onEditingChanged: { editing in
-                                if !editing { commitChanges() }
-                            }
-                        )
-                        .controlSize(.mini)
-                        .labelsHidden()
-                        .accessibilityLabel("Width")
-                        .frame(maxWidth: .infinity)
+                // if tool == .monoline || tool == .pen || tool == .highlighter {
+                    // FancyBrushPreview(tool: tool, style: previewStyle)
+                    //     .frame(width: 60, height: 60)
+                // }
+                // if tool.supportWidth {  
+                //     HStack(spacing: 10) {
+                //         Slider(
+                //             value: $width,
+                //             in: 1...10,
+                //             step: 1,
+                //             onEditingChanged: { editing in
+                //                 if !editing { commitChanges() }
+                //             }
+                //         )
+                //         .controlSize(.mini)
+                //         .labelsHidden()
+                //         .accessibilityLabel("Width")
+                //         .frame(maxWidth: .infinity)
 
-                        Text("\(Int(width))")
-                            .monospacedDigit()
-                            .frame(width: 56, alignment: .center)
-                    }
-                }
-                if tool.supportOpacity {
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: $opacity,
-                            in: 0.1...1,
-                            step: 0.01,
-                            onEditingChanged: { editing in
-                                if !editing { commitChanges() }
-                            })
-                        .controlSize(.mini)
-                        .labelsHidden()
-                        .accessibilityLabel("Opacity")
-                        .frame(maxWidth: .infinity)
+                //         Text("\(Int(width))")
+                //             .monospacedDigit()
+                //             .frame(width: 56, alignment: .center)
+                //     }
+                // }
+                // if tool.supportOpacity {
+                //     HStack(spacing: 10) {
+                //         Slider(
+                //             value: $opacity,
+                //             in: 0.1...1,
+                //             step: 0.01,
+                //             onEditingChanged: { editing in
+                //                 if !editing { commitChanges() }
+                //             })
+                //         .controlSize(.mini)
+                //         .labelsHidden()
+                //         .accessibilityLabel("Opacity")
+                //         .frame(maxWidth: .infinity)
 
-                        Text("\(Int(round(opacity * 100)))%")
-                            .monospacedDigit()
-                            .frame(width: 56, alignment: .center)
-                    }
-                }
-                if tool.supportColor {
-                    ScrollView {
-                        VStack(spacing: 10) {
-                            ForEach(PaletteStyle.allCases) { s in
-                                let colors = Palette.colors[s] ?? []
-                                HStack(spacing: 10) {
-                                    ForEach(colors, id: \.self) { c in
-                                        Button {
-                                            color = c
-                                            commitChanges()
-                                        } label: {
-                                            Circle()
-                                                .fill(c)
-                                                .frame(width: 28, height: 28)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(lineWidth: color == c ? 3 : 0)
-                                                        .foregroundStyle(.primary.opacity(0.8))
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel("Preset color")
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.top, 2)
-                    }
-                    .padding(12)
-                }
+                //         Text("\(Int(round(opacity * 100)))%")
+                //             .monospacedDigit()
+                //             .frame(width: 56, alignment: .center)
+                //     }
+                // }
+                // if tool.supportColor {
+                //     ScrollView {
+                //         VStack(spacing: 10) {
+                //             ForEach(PaletteStyle.allCases) { s in
+                //                 let colors = Palette.colors[s] ?? []
+                //                 HStack(spacing: 10) {
+                //                     ForEach(colors, id: \.self) { c in
+                //                         Button {
+                //                             color = c
+                //                             commitChanges()
+                //                         } label: {
+                //                             Circle()
+                //                                 .fill(c)
+                //                                 .frame(width: 28, height: 28)
+                //                                 .overlay(
+                //                                     Circle()
+                //                                         .stroke(lineWidth: color == c ? 3 : 0)
+                //                                         .foregroundStyle(.primary.opacity(0.8))
+                //                                 )
+                //                         }
+                //                         .buttonStyle(.plain)
+                //                         .accessibilityLabel("Preset color")
+                //                     }
+                //                 }
+                //             }
+                //         }
+                //         .padding(.top, 2)
+                //     }
+                //     .padding(12)
+                // }
             }
             .padding(10)
-            .onAppear(perform: loadFromManager)
+            .onAppear {
+                loadFromManager()
+            }
             .onDisappear {
                 commitChanges()
             }
