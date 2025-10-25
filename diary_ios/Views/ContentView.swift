@@ -24,7 +24,6 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
-            PopoverPrewarm()
             // 左侧工具栏
             VStack {
                 Spacer()
@@ -44,35 +43,6 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
-    }
-
-    struct PopoverPrewarm: View {
-        @State private var show = false
-        @State private var didWarm = false
-
-        var body: some View {
-            // 一个 1×1 的透明锚点
-            Color.clear
-                .frame(width: 1, height: 1)
-                .position(x: -5000, y: -5000)
-                .opacity(0.01)
-                .allowsHitTesting(false)
-                .popover(isPresented: $show) {
-                    Text("").padding(1)
-                }
-                .transaction { t in
-                    t.disablesAnimations = true
-                }
-                .onAppear {
-                    guard !didWarm else { return }
-                    didWarm = true
-                    // 下一帧打开，再下一帧关闭，完成一次呈现周期
-                    DispatchQueue.main.async {
-                        show = true
-                        DispatchQueue.main.async { show = false }
-                    }
-                }
-        }
     }
     
     // MARK: - Drawing Toolbar
@@ -150,42 +120,43 @@ struct ContentView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: iconSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
-                            let isSelected = (presetIndex == idx)
                             let isDetailForThis = (detailIndex == idx)
+                            let isSelected = (presetIndex == idx)
 
-                            ToolButtonView(
-                                tool: selectedTool,
-                                isSelected: isSelected,
-                                style: style
-                            ) {
-                                if isSelected {
-                                    // 展开/收起详情面板
-                                    detailIndex = (detailIndex == idx) ? nil : idx
-                                } else {
-                                    toolManager.selectPreset(for: selectedTool, index: idx)
-                                    detailIndex = nil
-                                }
-                            }
-                            .padding(iconPadding)
-                            .popover(
-                                isPresented: Binding(
-                                    get: { isDetailForThis },
-                                    set: { newVal in
-                                        if !newVal, detailIndex == idx { detailIndex = nil }
+                            // 每个 preset 一块：按钮 +（可选）详情卡片
+                            VStack(alignment: .leading, spacing: 8) {
+                                ToolButtonView(
+                                    tool: selectedTool,
+                                    isSelected: isSelected,
+                                    style: style
+                                ) {
+                                    if isSelected {
+                                        // 展开/收起当前项的详情
+                                        withAnimation(.snappy) {
+                                            detailIndex = (detailIndex == idx) ? nil : idx
+                                        }
+                                    } else {
+                                        // 切换预设，不展开详情
+                                        toolManager.selectPreset(for: selectedTool, index: idx)
+                                        withAnimation(.snappy) {
+                                            detailIndex = nil
+                                        }
                                     }
-                                ),
-                                attachmentAnchor: .rect(.bounds),
-                                arrowEdge: .leading
-                            ) {
-                                StyleDetailsPopover(tool: selectedTool, detailIndex: idx)
-                                    .environmentObject(toolManager)
-                                    .presentationCompactAdaptation(.popover)
-                                    .padding(8)
+                                }
+                                .padding(iconPadding)
+
+                                if isDetailForThis {
+                                    let initial = toolManager.getStyle(for: selectedTool, at: idx) ?? ToolStyle()
+                                    StyleDetailsPanel(
+                                        tool: selectedTool,
+                                        detailIndex: idx,
+                                        initial: initial
+                                    )
+                                }
                             }
                         }
                     }
-                    .padding(.top, topPadding / 2)
-                    .padding(.bottom, topPadding / 2)
+                    .padding(.vertical, topPadding / 2)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
@@ -193,9 +164,10 @@ struct ContentView: View {
     }
 
     // MARK: - 3.Style Details Popover
-    struct StyleDetailsPopover: View {
+    struct StyleDetailsPanel: View {
         let tool: Tool
         let detailIndex: Int
+        let initial: ToolStyle
         @EnvironmentObject private var toolManager: ToolManager
 
         // 本地编辑态，仅用于预览
@@ -203,13 +175,22 @@ struct ContentView: View {
         @State private var width: Double = 4
         @State private var opacity: Double = 1
 
-        private var previewStyle: ToolStyle {
-            var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
-            if tool.supportColor { style.color = UIColor(color) }
-            if tool.supportWidth { style.width = CGFloat(width) }
-            if tool.supportOpacity { style.opacity = CGFloat(opacity) }
-            return style
+        init(tool: Tool, detailIndex: Int, initial: ToolStyle) {
+            self.tool = tool
+            self.detailIndex = detailIndex
+            self.initial = initial
+            _color   = State(initialValue: initial.color?.toColor() ?? .black)
+            _width   = State(initialValue: Double(initial.width ?? 4))
+            _opacity = State(initialValue: Double(initial.opacity ?? 1))
         }
+
+        // private var previewStyle: ToolStyle {
+        //     var base = initial
+        //     if tool.supportColor { base.color = UIColor(color) }
+        //     if tool.supportWidth { base.width = CGFloat(width) }
+        //     if tool.supportOpacity { base.opacity = CGFloat(opacity) }
+        //     return base
+        // }
 
         var body: some View {
             VStack(spacing: 12) {
@@ -217,45 +198,45 @@ struct ContentView: View {
                     // FancyBrushPreview(tool: tool, style: previewStyle)
                     //     .frame(width: 60, height: 60)
                 // }
-                // if tool.supportWidth {  
-                //     HStack(spacing: 10) {
-                //         Slider(
-                //             value: $width,
-                //             in: 1...10,
-                //             step: 1,
-                //             onEditingChanged: { editing in
-                //                 if !editing { commitChanges() }
-                //             }
-                //         )
-                //         .controlSize(.mini)
-                //         .labelsHidden()
-                //         .accessibilityLabel("Width")
-                //         .frame(maxWidth: .infinity)
+                if tool.supportWidth {  
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: $width,
+                            in: 1...10,
+                            step: 1,
+                            onEditingChanged: { editing in
+                                if !editing { commitChanges() }
+                            }
+                        )
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .accessibilityLabel("Width")
+                        .frame(maxWidth: .infinity)
 
-                //         Text("\(Int(width))")
-                //             .monospacedDigit()
-                //             .frame(width: 56, alignment: .center)
-                //     }
-                // }
-                // if tool.supportOpacity {
-                //     HStack(spacing: 10) {
-                //         Slider(
-                //             value: $opacity,
-                //             in: 0.1...1,
-                //             step: 0.01,
-                //             onEditingChanged: { editing in
-                //                 if !editing { commitChanges() }
-                //             })
-                //         .controlSize(.mini)
-                //         .labelsHidden()
-                //         .accessibilityLabel("Opacity")
-                //         .frame(maxWidth: .infinity)
+                        Text("\(Int(width))")
+                            .monospacedDigit()
+                            .frame(width: 56, alignment: .center)
+                    }
+                }
+                if tool.supportOpacity {
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: $opacity,
+                            in: 0.1...1,
+                            step: 0.01,
+                            onEditingChanged: { editing in
+                                if !editing { commitChanges() }
+                            })
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .accessibilityLabel("Opacity")
+                        .frame(maxWidth: .infinity)
 
-                //         Text("\(Int(round(opacity * 100)))%")
-                //             .monospacedDigit()
-                //             .frame(width: 56, alignment: .center)
-                //     }
-                // }
+                        Text("\(Int(round(opacity * 100)))%")
+                            .monospacedDigit()
+                            .frame(width: 56, alignment: .center)
+                    }
+                }
                 // if tool.supportColor {
                 //     ScrollView {
                 //         VStack(spacing: 10) {
@@ -288,19 +269,9 @@ struct ContentView: View {
                 // }
             }
             .padding(10)
-            .onAppear {
-                loadFromManager()
-            }
             .onDisappear {
                 commitChanges()
             }
-        }
-
-        private func loadFromManager() {
-            guard let style = toolManager.getStyle(for: tool, at: detailIndex) else { return }
-            if tool.supportColor   { color = style.color?.toColor() ?? .black }
-            if tool.supportWidth   { width = Double(style.width ?? 4) }
-            if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
         }
 
         private func commitChanges() {
