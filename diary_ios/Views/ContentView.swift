@@ -158,7 +158,7 @@ struct ContentView: View {
                                     set: { newVal in showStyleDetails = newVal }
                                 ),
                                 attachmentAnchor: .rect(.bounds),
-                                arrowEdge: .leading // 让弹窗在按钮右侧；需要左侧换 .leading
+                                arrowEdge: .leading
                             ) {
                                 StyleDetailsPanel(tool: selectedTool)
                                     .environmentObject(toolManager)
@@ -185,11 +185,6 @@ struct ContentView: View {
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
-        @State private var isEditing = false
-
-        // 去抖提交
-        @State private var pendingCommit: DispatchWorkItem?
-        private let commitDelay: TimeInterval = 0.1
 
         private var previewStyle: ToolStyle {
             var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
@@ -207,21 +202,19 @@ struct ContentView: View {
                 }
                 if tool.supportWidth {  
                     HStack(spacing: 10) {
-                        Slider(value: $width, in: 1...10, step: 1,
+                        Slider(
+                            value: $width,
+                            in: 1...10,
+                            step: 1,
                             onEditingChanged: { editing in
-                                isEditing = editing
-                                if editing {
-                                    cancelPendingCommit()
-                                } else {
-                                    cancelPendingCommit()
-                                    commitChanges()
-                                }
-                            })
-                            .controlSize(.mini)
-                            .labelsHidden()
-                            .accessibilityLabel("Width")
-                            .frame(maxWidth: .infinity)
-                            .onChange(of: width) { scheduleCommit() }
+                                if !editing { commitChanges() }
+                            }
+                        )
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .accessibilityLabel("Width")
+                        .frame(maxWidth: .infinity)
+
                         Text("\(Int(width))")
                             .monospacedDigit()
                             .frame(width: 56, alignment: .center)
@@ -229,21 +222,18 @@ struct ContentView: View {
                 }
                 if tool.supportOpacity {
                     HStack(spacing: 10) {
-                        Slider(value: $opacity, in: 0.1...1, step: 0.01,
+                        Slider(
+                            value: $opacity,
+                            in: 0.1...1,
+                            step: 0.01,
                             onEditingChanged: { editing in
-                                isEditing = editing
-                                if editing {
-                                    cancelPendingCommit()
-                                } else {
-                                    cancelPendingCommit()
-                                    commitChanges()
-                                }
+                                if !editing { commitChanges() }
                             })
-                            .controlSize(.mini)
-                            .labelsHidden()
-                            .accessibilityLabel("Opacity")
-                            .frame(maxWidth: .infinity)
-                            .onChange(of: opacity) { scheduleCommit() }
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .accessibilityLabel("Opacity")
+                        .frame(maxWidth: .infinity)
+
                         Text("\(Int(round(opacity * 100)))%")
                             .monospacedDigit()
                             .frame(width: 56, alignment: .center)
@@ -251,14 +241,14 @@ struct ContentView: View {
                 }
                 if tool.supportColor {
                     ScrollView {
-                        LazyVStack(spacing: 10) {
+                        // LazyVStack(spacing: 10) {
+                        VStack(spacing: 10) {
                             ForEach(PaletteStyle.allCases) { s in
                                 let colors = Palette.colors[s] ?? []
                                 HStack(spacing: 10) {
                                     ForEach(colors, id: \.self) { c in
                                         Button {
                                             color = c
-                                            cancelPendingCommit()
                                             commitChanges()
                                         } label: {
                                             Circle()
@@ -283,8 +273,7 @@ struct ContentView: View {
             }
             .padding(10)
             .onAppear(perform: loadFromManager)
-            .onDisappear { 
-                cancelPendingCommit()
+            .onDisappear {
                 commitChanges()
             }
         }
@@ -294,19 +283,6 @@ struct ContentView: View {
             if tool.supportColor   { color = style.color?.toColor() ?? .black }
             if tool.supportWidth   { width = Double(style.width ?? 4) }
             if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
-        }
-        
-        private func scheduleCommit() {
-            if isEditing { return }
-            cancelPendingCommit()
-            let work = DispatchWorkItem { commitChanges() }
-            pendingCommit = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + commitDelay, execute: work)
-        }
-
-        private func cancelPendingCommit() {
-            pendingCommit?.cancel()
-            pendingCommit = nil
         }
 
         private func commitChanges() {

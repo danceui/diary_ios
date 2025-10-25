@@ -128,18 +128,8 @@ class ToolManager: ObservableObject {
         return thisPresetStyles[idx]
     }
 
-    // 更新样式时，务必通过“读->改->写回”的方式触发 @Published 的变更
-    // func setStyle(for tool: Tool, color: UIColor? = nil, width: CGFloat? = nil, opacity: CGFloat? = nil) {
-    //     var style = toolStyles[tool] ?? ToolStyle(color: nil, width: nil, opacity: nil)
-    //     if let color = color { style.color = color }
-    //     if let width = width { style.width = width }
-    //     if let opacity = opacity { style.opacity = opacity }
-    //     toolStyles[tool] = style
-    // }
-
-    func setStyleFromDetail(for tool: Tool, updated: ToolStyle) {
+    func setStyleFromDetail(for tool: Tool, index: Int, updated: ToolStyle) {
         guard tool.supportsPresets,
-            let idx = presetIndices[tool],
             var thisPresetStyles = presetStyles[tool],
             thisPresetStyles.indices.contains(idx) else { return }
         thisPresetStyles[idx] = updated
