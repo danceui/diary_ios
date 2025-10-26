@@ -85,20 +85,20 @@ struct ContentView: View {
                     }
                 }
                 
-                if toolManager.currentTool.supportsPresets, 
-                    let lockedIndex = toolManager.presetIndexForTool(for: toolManager.currentTool),
-                    let style = toolManager.getStyle(for: toolManager.currentTool, at: lockedIndex) {
+                if toolManager.currentTool.supportsPresets,
+                    let locked = lockedIndex,
+                    let style = toolManager.getStyle(for: toolManager.currentTool, at: locked) {
                     GlassEffectContainer {
                         StyleDetailsPanel(
                             tool: toolManager.currentTool,
-                            lockedIndex: lockedIndex,
+                            lockedIndex: locked,
                             initialStyle: style
                         )
                     }
                     .frame(width: styleDetailWidth, height: styleDetailHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .offset(x: calculateOffset())
-                    .opacity(showStyleDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
+                    .opacity(showStyleDetails ? 1 : 0)
                 }
             }
         }
@@ -205,8 +205,10 @@ struct ContentView: View {
                                     if showStyleDetails {
                                         showStyleDetails = false
                                     }
-                                    toolManager.selectPreset(for: tool, index: idx)
-                                    lockedIndex = nil
+                                    DispatchQueue.main.async {
+                                        toolManager.selectPreset(for: tool, index: idx)
+                                        lockedIndex = nil
+                                    }
                                 }
                             }
                             .padding(buttonPadding)
@@ -233,15 +235,18 @@ struct ContentView: View {
         @State private var width: Double = 4
         @State private var opacity: Double = 1
       
+        // 基底：已提交版本（打开时 = initialStyle；提交后同步为 updated）
+        @State private var baseStyle: ToolStyle
+
         init(tool: Tool, lockedIndex: Int, initialStyle: ToolStyle) {
             self.tool = tool
             self.lockedIndex = lockedIndex
             self.initialStyle = initialStyle
-            
+            _baseStyle = State(initialValue: initialStyle) // 用父级传入的初值初始化
         }
 
         private var previewStyle: ToolStyle {
-            var style = ToolStyle()
+            var style = baseStyle
             if tool.supportColor   { style.color   = UIColor(color) }
             if tool.supportWidth   { style.width   = CGFloat(width) }
             if tool.supportOpacity { style.opacity = CGFloat(opacity) }
@@ -334,11 +339,14 @@ struct ContentView: View {
             }
             .padding(10)
             .onAppear {
-                if debugToolManager { print("🎨 [StyleDetailsPanel] Loading style from manager.") }
-                previewStyle = initialStyle
+                if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
+                // 用 baseStyle 同步控件初值（首次出现时）
+                if tool.supportColor   { color   = baseStyle.color?.toColor() ?? .black }
+                if tool.supportWidth   { width   = Double(baseStyle.width ?? 4) }
+                if tool.supportOpacity { opacity = Double(baseStyle.opacity ?? 1) }
             }
             .onDisappear { 
-                commitChanges() 
+                commitChanges()
             }
         }
 
@@ -350,6 +358,7 @@ struct ContentView: View {
             )
             // if updated == (toolManager.getStyle(for: tool, at: idx) ?? ToolStyle()) { return }
             toolManager.setStyle(for: tool, at: lockedIndex, to: updated)
+            baseStyle = updated // 更新基底，保持预览一致
         }
     }
 
