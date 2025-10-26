@@ -85,18 +85,16 @@ struct ContentView: View {
                     }
                 }
                 
-                if toolManager.currentTool.supportsPresets, let locked = lockedIndex {
-                    GlassEffectContainer {
-                        StyleDetailsPanel(
-                            tool: toolManager.currentTool,
-                            lockedIndex: locked
-                        )
-                    }
-                    .frame(width: styleDetailWidth, height: styleDetailHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    .offset(x: calculateOffset())
-                    .opacity(showStyleDetails ? 1 : 0)
+                GlassEffectContainer {
+                    StyleDetailsPanel(
+                        tool: toolManager.currentTool,
+                        lockedIndex: lockedIndex
+                    )
                 }
+                .frame(width: styleDetailWidth, height: styleDetailHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .offset(x: calculateOffset())
+                .opacity(showStyleDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
             }
         }
 
@@ -223,7 +221,7 @@ struct ContentView: View {
     // MARK: - 3.Style Details Panel
     struct StyleDetailsPanel: View {
         let tool: Tool
-        let lockedIndex: Int
+        let lockedIndex: Int?
         @EnvironmentObject private var toolManager: ToolManager
 
         // 本地编辑态，仅用于预览
@@ -243,103 +241,33 @@ struct ContentView: View {
         var body: some View {
             VStack(spacing: 12) {
                 if tool == .monoline || tool == .pen || tool == .highlighter {
-                    FancyBrushPreview(tool: tool, style: previewStyle)
-                    .frame(width: detailPreviewSize, height: detailPreviewSize)
+                    StyleDetailsPreview(tool: tool, style: previewStyle)
                 }
                 if tool.supportWidth {
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: $width,
-                            in: 1...10,
-                            step: 1,
-                            onEditingChanged: { editing in
-                                if !editing { commitChanges() }
-                            }
-                        )
-                        .controlSize(.mini)
-                        .labelsHidden()
-                        .accessibilityLabel("Width")
-                        .frame(maxWidth: .infinity)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-
-                        Text("\(Int(width))")
-                        .monospacedDigit()
-                        .frame(width: 56, alignment: .center)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-                    }
+                    StyleWidthControl(width: $width) { commitChanges() }
                 }
                 if tool.supportOpacity {
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: $opacity,
-                            in: 0.1...1,
-                            step: 0.01,
-                            onEditingChanged: { editing in
-                                if !editing { commitChanges() }
-                            })
-                        .controlSize(.mini)
-                        .labelsHidden()
-                        .accessibilityLabel("Opacity")
-                        .frame(maxWidth: .infinity)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-
-                        Text("\(Int(round(opacity * 100)))%")
-                        .monospacedDigit()
-                        .frame(width: 56, alignment: .center)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-                    }
+                    StyleOpacityControl(opacity: $opacity) { commitChanges() }
                 }
                 if tool.supportColor {
-                    ScrollView {
-                        VStack(spacing: 10) {
-                            ForEach(PaletteStyle.allCases) { s in
-                                let colors = Palette.colors[s] ?? []
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 10) {
-                                        ForEach(colors, id: \.self) { c in
-                                            Button {
-                                                color = c
-                                                commitChanges()
-                                            } label: {
-                                                Circle()
-                                                    .fill(c)
-                                                    .frame(width: 28, height: 28)
-                                                    .overlay(
-                                                        Circle()
-                                                            .stroke(lineWidth: color == c ? 3 : 0)
-                                                            .foregroundStyle(.primary.opacity(0.8))
-                                                    )
-                                            }
-                                            .buttonStyle(.plain)
-                                            .accessibilityLabel("Preset color")
-                                            .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
-                                        }
-                                    }
-                                }
-                            }
-                            .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .padding(4)
+                    StyleColorPalette(selectedColor: $color) { commitChanges() }
                 }
             }
             .padding(10)
             .onAppear {
-                if let style = toolManager.getStyle(for: tool, at: lockedIndex) {
-                    applyStyle(style)
+                if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
+                if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
+                    applyStyle(style) 
                 }
+            }
+            .onReceive(toolManager.presetStylePublisher(for: tool, at: lockedIndex ?? -1)) { latest in
+                guard let latest else { return }
+                if debugToolManager { print("🎨 [StyleDetailsPanel] Reloaded.") }
+                if latest != previewStyle { applyStyle(latest) }
             }
             .onDisappear { 
                 commitChanges()
             }
-            .onReceive(currentLockedStylePublisher()) { latest in
-                guard let latest else { return }
-                if latest != previewStyle {
-                    applyStyle(latest)
-                }
-            }
-            .onDisappear { commitChanges() }
         }
 
         private func applyStyle(_ s: ToolStyle) {
@@ -351,13 +279,116 @@ struct ContentView: View {
 
         private func commitChanges() {
             let updated = ToolStyle(
-                color: UIColor(color),
-                width: CGFloat(width),
-                opacity: CGFloat(opacity)
-            )
-            if updated == toolManager.getStyle(for: tool, at: lockedIndex) { return }
-            toolManager.setStyle(for: tool, at: lockedIndex, to: updated)
+                    color: UIColor(color),
+                    width: CGFloat(width),
+                    opacity: CGFloat(opacity)
+                )
+            guard let idx = lockedIndex, updated != toolManager.getStyle(for: tool, at: idx) else { return }
+            toolManager.setStyle(for: tool, at: idx, to: updated)
             baseStyle = updated
+        }
+        
+        struct StyleDetailsPreview: View {
+            let tool: Tool
+            let style: ToolStyle
+
+            var body: some View {
+                FancyBrushPreview(tool: tool, style: style)
+                    .frame(width: detailPreviewSize, height: detailPreviewSize)
+                    .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
+            }
+        }
+
+        struct StyleWidthControl: View {
+            @Binding var width: Double
+            var onCommit: () -> Void
+
+            var body: some View {
+                HStack(spacing: 10) {
+                    Slider(
+                        value: $width,
+                        in: 1...10,
+                        step: 1,
+                        onEditingChanged: { editing in if !editing { onCommit() } }
+                    )
+                    .controlSize(.mini)
+                    .labelsHidden()
+                    .accessibilityLabel("Width")
+                    .frame(maxWidth: .infinity)
+                    .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
+
+                    Text("\(Int(width))")
+                        .monospacedDigit()
+                        .frame(width: 56, alignment: .center)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
+                }
+            }
+        }
+
+        struct StyleOpacityControl: View {
+            @Binding var opacity: Double
+            var onCommit: () -> Void
+
+            var body: some View {
+                HStack(spacing: 10) {
+                    Slider(
+                        value: $opacity,
+                        in: 0.1...1,
+                        step: 0.01,
+                        onEditingChanged: { editing in if !editing { onCommit() } }
+                    )
+                    .controlSize(.mini)
+                    .labelsHidden()
+                    .accessibilityLabel("Opacity")
+                    .frame(maxWidth: .infinity)
+                    .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
+
+                    Text("\(Int(round(opacity * 100)))%")
+                        .monospacedDigit()
+                        .frame(width: 56, alignment: .center)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
+                }
+            }
+        }
+
+        struct StyleColorPalette: View {
+            @Binding var selectedColor: Color
+            var onCommit: () -> Void
+
+            var body: some View {
+                ScrollView {
+                    VStack(spacing: 10) {
+                        ForEach(PaletteStyle.allCases) { s in
+                            let colors = Palette.colors[s] ?? []
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(colors, id: \.self) { c in
+                                        Button {
+                                            selectedColor = c
+                                            onCommit()
+                                        } label: {
+                                            Circle()
+                                                .fill(c)
+                                                .frame(width: 28, height: 28)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(lineWidth: selectedColor == c ? 3 : 0)
+                                                        .foregroundStyle(.primary.opacity(0.8))
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Preset color")
+                                        .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
+                                    }
+                                }
+                            }
+                        }
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
+                    }
+                    .padding(.vertical, 4)
+                }
+                .padding(4)
+            }
         }
     }
 
