@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Combine
 
 private let toolsPanelHeight = ToolbarConstants.toolsPanelHeight
 private let stylePresetPanelHeight = ToolbarConstants.stylePresetPanelHeight
@@ -109,18 +110,17 @@ struct ContentView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @Binding var showStyleDetails: Bool
-            @State private var cachedStyles: [Tool: ToolStyle?] = [:]
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: buttonSpacing) {
                         ForEach(allTools, id: \.self) { tool in
-                            ToolButton(
-                                tool: tool,
-                                isSelected: selectedTool == tool,
-                                style: cachedStyles[tool] ?? nil
-                            ) {
+                            // ToolButton(
+                            //     tool: tool,
+                            //     isSelected: selectedTool == tool,
+                            //     style: cachedStyles[tool] ?? nil
+                            ToolButtonForToolsPanel(tool: tool) {
                                 if selectedTool == tool {
                                     showStylePresets.toggle()
                                     showStyleDetails = false
@@ -139,19 +139,39 @@ struct ContentView: View {
                     .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                .onAppear { refreshCache() }
-                .onReceive(toolManager.$presetStyles) { _ in refreshCache() }
-                .onReceive(toolManager.$presetIndices) { _ in refreshCache() }
             }
+        }
 
-            private func refreshCache() {
-                print("🧰 [ToolsPanel] Refreshing cached styles for all tools.")
-                var dict: [Tool: ToolStyle?] = [:]
-                for t in allTools {
-                    dict[t] = toolManager.styleForTool(for: t) // 只在需要时集中查询一次
+        struct ToolButtonForToolsPanel: View {
+            let tool: Tool
+            let action: () -> Void
+            @State private var style: ToolStyle? = nil
+            @State private var isSelected: Bool = false
+            @EnvironmentObject private var toolManager: ToolManager
+
+            var body: some View {
+                ToolButton(
+                    tool: tool,
+                    isSelected: isSelected,
+                    style: style,
+                    action: action
+                )
+                .onAppear {
+                    toolManager.stylePublisher(for: tool)
+                        .receive(on: RunLoop.main)
+                        .sink { newStyle in
+                            self.style = newStyle
+                        }
+                        .store(in: &cancellables)
+                    toolManager.isSelectedPublisher(for: tool)
+                        .receive(on: RunLoop.main)
+                        .sink { selected in
+                            self.isSelected = selected
+                        }
+                        .store(in: &cancellables)
                 }
-                cachedStyles = dict
             }
+            @State private var cancellables: Set<AnyCancellable> = []
         }
 
         // MARK: - 2.Style Presets Panel

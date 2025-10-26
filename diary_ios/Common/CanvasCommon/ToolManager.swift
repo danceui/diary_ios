@@ -105,6 +105,27 @@ class ToolManager: ObservableObject {
             .eraseToAnyPublisher()
     }
 
+    // 外部监听
+    func stylePublisher(for tool: Tool) -> AnyPublisher<ToolStyle?, Never> {
+        Publishers.CombineLatest($presetStyles, $presetIndices)
+            .map { styles, indices -> ToolStyle? in
+                guard tool.supportsPresets,
+                    let arr = styles[tool],
+                    let idx = indices[tool],
+                    arr.indices.contains(idx) else { return nil }
+                return arr[idx]
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    func isSelectedPublisher(for tool: Tool) -> AnyPublisher<Bool, Never> {
+        $currentTool
+            .map { $0 == tool }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     // 外部操作
     func selectTool(_ tool: Tool) { currentTool = tool }
     func selectPreset(for tool: Tool, index: Int) {
