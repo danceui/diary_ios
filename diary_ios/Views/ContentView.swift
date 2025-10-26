@@ -15,7 +15,8 @@ private let iconPadding = ToolbarConstants.iconPadding
 private let buttonPadding = ToolbarConstants.buttonPadding
 private let buttonSpacing = ToolbarConstants.buttonSpacing
 private let popoverMaxHeight: CGFloat = stylePresetPanelHeight
-private let popoverGap = ToolbarConstants.popoverGap
+private let detailPreviewSize = ToolbarConstants.detailPreviewSize
+private let panelGap = ToolbarConstants.panelGap
 
 private let debugBorder = Debuggers.debugBorder
 
@@ -57,7 +58,7 @@ struct ContentView: View {
 
         var body: some View {
             ZStack(alignment: .topLeading) {
-                HStack(alignment: .top, spacing: popoverGap) {
+                HStack(alignment: .top, spacing: panelGap) {
                     GlassEffectContainer {
                         ToolsPanel(
                             selectedTool: $selectedTool,
@@ -93,9 +94,9 @@ struct ContentView: View {
         }
 
         private func calculateOffset() -> CGFloat {
-            var offset = panelWidth + popoverGap
+            var offset = panelWidth + panelGap
             if showStylePresets && selectedTool.supportsPresets {
-                offset += panelWidth + popoverGap
+                offset += panelWidth + panelGap
             }
             return offset
         }
@@ -200,9 +201,9 @@ struct ContentView: View {
             VStack(spacing: 12) {
                 if tool == .monoline || tool == .pen || tool == .highlighter {
                     FancyBrushPreview(tool: tool, style: previewStyle)
-                        .frame(width: 60, height: 60)
+                    .frame(width: detailPreviewSize, height: detailPreviewSize)
                 }
-                if tool.supportWidth {  
+                if tool.supportWidth {
                     HStack(spacing: 10) {
                         Slider(
                             value: $width,
@@ -216,10 +217,12 @@ struct ContentView: View {
                         .labelsHidden()
                         .accessibilityLabel("Width")
                         .frame(maxWidth: .infinity)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
 
                         Text("\(Int(width))")
-                            .monospacedDigit()
-                            .frame(width: 56, alignment: .center)
+                        .monospacedDigit()
+                        .frame(width: 56, alignment: .center)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
                     }
                 }
                 if tool.supportOpacity {
@@ -235,10 +238,12 @@ struct ContentView: View {
                         .labelsHidden()
                         .accessibilityLabel("Opacity")
                         .frame(maxWidth: .infinity)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
 
                         Text("\(Int(round(opacity * 100)))%")
-                            .monospacedDigit()
-                            .frame(width: 56, alignment: .center)
+                        .monospacedDigit()
+                        .frame(width: 56, alignment: .center)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
                     }
                 }
                 if tool.supportColor {
@@ -246,30 +251,34 @@ struct ContentView: View {
                         VStack(spacing: 10) {
                             ForEach(PaletteStyle.allCases) { s in
                                 let colors = Palette.colors[s] ?? []
-                                HStack(spacing: 10) {
-                                    ForEach(colors, id: \.self) { c in
-                                        Button {
-                                            color = c
-                                            commitChanges()
-                                        } label: {
-                                            Circle()
-                                                .fill(c)
-                                                .frame(width: 28, height: 28)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(lineWidth: color == c ? 3 : 0)
-                                                        .foregroundStyle(.primary.opacity(0.8))
-                                                )
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 10) {
+                                        ForEach(colors, id: \.self) { c in
+                                            Button {
+                                                color = c
+                                                commitChanges()
+                                            } label: {
+                                                Circle()
+                                                    .fill(c)
+                                                    .frame(width: 28, height: 28)
+                                                    .overlay(
+                                                        Circle()
+                                                            .stroke(lineWidth: color == c ? 3 : 0)
+                                                            .foregroundStyle(.primary.opacity(0.8))
+                                                    )
+                                            }
+                                            .buttonStyle(.plain)
+                                            .accessibilityLabel("Preset color")
+                                            .overlay(Rectangle().stroke(debugBorder ? Color.green : .clear, lineWidth: 1))
                                         }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel("Preset color")
                                     }
                                 }
                             }
+                            .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
                         }
-                        .padding(.top, 2)
+                        .padding(.vertical, 4)
                     }
-                    .padding(12)
+                    .padding(4)
                 }
             }
             .padding(10)
