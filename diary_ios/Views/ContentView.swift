@@ -109,6 +109,7 @@ struct ContentView: View {
             @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @Binding var showStyleDetails: Bool
+            @State private var cachedStyles: [Tool: ToolStyle?] = [:]
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -118,9 +119,8 @@ struct ContentView: View {
                             ToolButton(
                                 tool: tool,
                                 isSelected: selectedTool == tool,
-                                style: toolManager.styleForTool(for: tool)
+                                style: cachedStyles[tool] ?? nil
                             ) {
-                                if debugToolManager { print("🧰 [ToolsPanel] Get current style for tool \(tool).") }
                                 if selectedTool == tool {
                                     showStylePresets.toggle()
                                     showStyleDetails = false
@@ -139,6 +139,18 @@ struct ContentView: View {
                     .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .onAppear { refreshCache() }
+                .onReceive(toolManager.$presetStyles) { _ in refreshCache() }
+                .onReceive(toolManager.$presetIndices) { _ in refreshCache() }
+            }
+
+            private func refreshCache() {
+                print("🧰 [ToolsPanel] Refreshing cached styles for all tools.")
+                var dict: [Tool: ToolStyle?] = [:]
+                for t in allTools {
+                    dict[t] = toolManager.styleForTool(for: t) // 只在需要时集中查询一次
+                }
+                cachedStyles = dict
             }
         }
 
@@ -189,13 +201,9 @@ struct ContentView: View {
         @State private var width: Double = 4
         @State private var opacity: Double = 1
         @State private var baseStyle: ToolStyle = ToolStyle()
-
-        private var detailIndex: Int? {
-            toolManager.presetIndexForTool(for: tool)
-        }
+        @State private var editingIndex: Int? = nil
 
         private var previewStyle: ToolStyle {
-            // if debugToolManager { print("🎨 [StyleDetailsPanel] Generating preview style.") }
             var style = baseStyle
             if tool.supportColor { style.color = UIColor(color) }
             if tool.supportWidth { style.width = CGFloat(width) }
@@ -288,16 +296,19 @@ struct ContentView: View {
                 }
             }
             .padding(10)
-            .onAppear { 
+            .onAppear {
+                editingIndex = toolManager.presetIndexForTool(for: tool)
                 if debugToolManager { print("🎨 [StyleDetailsPanel] Loading style from manager.") }
                 loadFromManager()
             }
-            .onDisappear { commitChanges() }
+            .onDisappear { 
+                commitChanges() 
+            }
         }
 
         private func loadFromManager() {
-            guard let idx = detailIndex,
-              let style = toolManager.styleForTool(for: tool) else { return }
+            guard let idx = editingIndex,
+              let style = toolManager.getStyle(for: tool, at: idx) else { return }
             baseStyle = style
             if tool.supportColor   { color = style.color?.toColor() ?? .black }
             if tool.supportWidth   { width = Double(style.width ?? 4) }
@@ -305,7 +316,7 @@ struct ContentView: View {
         }
 
         private func commitChanges() {
-            guard let idx = detailIndex else { return }
+            guard let idx = editingIndex else { return }
             let updated = ToolStyle(
                 color: UIColor(color),
                 width: CGFloat(width),
@@ -313,6 +324,7 @@ struct ContentView: View {
             )
             // if updated == (toolManager.getStyle(for: tool, at: idx) ?? ToolStyle()) { return }
             toolManager.setStyle(for: tool, at: idx, to: updated)
+            baseStyle = updated
         }
     }
 
