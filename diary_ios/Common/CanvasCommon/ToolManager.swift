@@ -112,6 +112,7 @@ class ToolManager: ObservableObject {
             let arr = presetStyles[tool],
             arr.indices.contains(index) else { return }
         presetIndices[tool] = index
+        print("⚒️ [ToolManager] Selected #\(index) preset.")
     }
 
     // 外部查询
@@ -125,6 +126,7 @@ class ToolManager: ObservableObject {
             let idx = presetIndices[tool],
             let arr = presetStyles[tool],
             arr.indices.contains(idx) else { return nil }
+        print("⚒️ [ToolManager] Get current style at #\(idx) preset.")
         return arr[idx]
     }
 
@@ -132,6 +134,7 @@ class ToolManager: ObservableObject {
         guard tool.supportsPresets,
             let arr = presetStyles[tool],
             arr.indices.contains(index) else { return nil }
+        print("⚒️ [ToolManager] Get style of #\(index) preset.")
         return arr[index]
     }
 
@@ -143,6 +146,7 @@ class ToolManager: ObservableObject {
 
         arr[index] = updated
         presetStyles[tool] = arr
+        print("⚒️ [ToolManager] Set style for #\(index) preset.")
         return true
     }
 }

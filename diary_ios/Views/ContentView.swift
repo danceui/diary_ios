@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-private let toolPanelHeight = ToolbarConstants.toolPanelHeight
+private let toolsPanelHeight = ToolbarConstants.toolsPanelHeight
 private let stylePresetPanelHeight = ToolbarConstants.stylePresetPanelHeight
 private let panelWidth = ToolbarConstants.panelWidth
 private let styleDetailWidth = ToolbarConstants.styleDetailWidth
@@ -66,7 +66,7 @@ struct ContentView: View {
                             showStyleDetails: $showStyleDetails
                         )
                     }
-                    .frame(width: panelWidth, height: toolPanelHeight)
+                    .frame(width: panelWidth, height: toolsPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
 
@@ -82,7 +82,6 @@ struct ContentView: View {
                         .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
                 }
-                .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
 
                 GlassEffectContainer {
                     StyleDetailsPanel(
@@ -120,6 +119,7 @@ struct ContentView: View {
                                 isSelected: selectedTool == tool,
                                 style: toolManager.styleForTool(for: tool)
                             ) {
+                                print("🧰 [ToolsPanel] Get current style for tool \(tool).")
                                 if selectedTool == tool {
                                     showStylePresets.toggle()
                                     showStyleDetails = false
@@ -162,8 +162,8 @@ struct ContentView: View {
                                 if presetIndex == idx {
                                     showStyleDetails.toggle()
                                 } else {
-                                    toolManager.selectPreset(for: selectedTool, index: idx)
                                     showStyleDetails = false
+                                    toolManager.selectPreset(for: selectedTool, index: idx)
                                 }
                             }
                             .padding(buttonPadding)
@@ -193,6 +193,7 @@ struct ContentView: View {
         }
 
         private var previewStyle: ToolStyle {
+            print("🎨 [StyleDetailsPanel] Generating preview style.")
             var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
             if tool.supportColor { style.color = UIColor(color) }
             if tool.supportWidth { style.width = CGFloat(width) }
@@ -285,12 +286,16 @@ struct ContentView: View {
                 }
             }
             .padding(10)
-            .onAppear { loadFromManager() }
+            .onAppear { 
+                print("🎨 [StyleDetailsPanel] Loading style from manager.")
+                loadFromManager() 
+            }
+            .onDisappear { commitChanges() }
         }
 
         private func loadFromManager() {
             guard let idx = detailIndex,
-              let style = toolManager.getStyle(for: tool, at: idx) else { return }
+              let style = toolManager.styleForTool(for: tool) else { return }
             if tool.supportColor   { color = style.color?.toColor() ?? .black }
             if tool.supportWidth   { width = Double(style.width ?? 4) }
             if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
@@ -303,7 +308,7 @@ struct ContentView: View {
                 width: CGFloat(width),
                 opacity: CGFloat(opacity)
             )
-            if updated == (toolManager.getStyle(for: tool, at: idx) ?? ToolStyle()) { return }
+            // if updated == (toolManager.getStyle(for: tool, at: idx) ?? ToolStyle()) { return }
             toolManager.setStyle(for: tool, at: idx, to: updated)
         }
     }
