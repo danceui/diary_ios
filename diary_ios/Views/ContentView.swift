@@ -19,6 +19,7 @@ private let detailPreviewSize = ToolbarConstants.detailPreviewSize
 private let panelGap = ToolbarConstants.panelGap
 
 private let debugBorder = Debuggers.debugBorder
+private let debugToolManager = Debuggers.debugToolManager
 
 @available(iOS 26.0, *)
 struct ContentView: View {
@@ -119,7 +120,7 @@ struct ContentView: View {
                                 isSelected: selectedTool == tool,
                                 style: toolManager.styleForTool(for: tool)
                             ) {
-                                print("🧰 [ToolsPanel] Get current style for tool \(tool).")
+                                if debugToolManager { print("🧰 [ToolsPanel] Get current style for tool \(tool).") }
                                 if selectedTool == tool {
                                     showStylePresets.toggle()
                                     showStyleDetails = false
@@ -187,14 +188,15 @@ struct ContentView: View {
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
+        @State private var baseStyle: ToolStyle = ToolStyle()
 
         private var detailIndex: Int? {
             toolManager.presetIndexForTool(for: tool)
         }
 
         private var previewStyle: ToolStyle {
-            print("🎨 [StyleDetailsPanel] Generating preview style.")
-            var style = toolManager.styleForTool(for: tool) ?? ToolStyle()
+            // if debugToolManager { print("🎨 [StyleDetailsPanel] Generating preview style.") }
+            var style = baseStyle
             if tool.supportColor { style.color = UIColor(color) }
             if tool.supportWidth { style.width = CGFloat(width) }
             if tool.supportOpacity { style.opacity = CGFloat(opacity) }
@@ -287,8 +289,8 @@ struct ContentView: View {
             }
             .padding(10)
             .onAppear { 
-                print("🎨 [StyleDetailsPanel] Loading style from manager.")
-                loadFromManager() 
+                if debugToolManager { print("🎨 [StyleDetailsPanel] Loading style from manager.") }
+                loadFromManager()
             }
             .onDisappear { commitChanges() }
         }
@@ -296,6 +298,7 @@ struct ContentView: View {
         private func loadFromManager() {
             guard let idx = detailIndex,
               let style = toolManager.styleForTool(for: tool) else { return }
+            baseStyle = style
             if tool.supportColor   { color = style.color?.toColor() ?? .black }
             if tool.supportWidth   { width = Double(style.width ?? 4) }
             if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }

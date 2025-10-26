@@ -126,7 +126,7 @@ class ToolManager: ObservableObject {
             let idx = presetIndices[tool],
             let arr = presetStyles[tool],
             arr.indices.contains(idx) else { return nil }
-        print("⚒️ [ToolManager] Get current style at #\(idx) preset.")
+        print("⚒️ [ToolManager] Get current style for \(tool) at #\(idx) preset.")
         return arr[idx]
     }
 
