@@ -54,47 +54,38 @@ struct ContentView: View {
 
         var body: some View {
             HStack(alignment: .top, spacing: popoverGap) {
-                // GlassEffectContainer {
-                    ToolsPanel(
-                        selectedTool: $selectedTool,
-                        showStylePresets: $showStylePresets,
-                        showStyleDetails: $showStyleDetails
-                    )
-                // }
+                ToolsPanel(
+                    selectedTool: $selectedTool,
+                    showStylePresets: $showStylePresets,
+                    showStyleDetails: $showStyleDetails
+                )
                 .frame(width: panelWidth, height: toolPanelHeight)
                 .background(
                     RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
                         .fill(.ultraThinMaterial)
                 )
-                // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
 
                 if showStylePresets, selectedTool.supportsPresets {
-                    // GlassEffectContainer {
-                        StylePresetsPanel(
-                            selectedTool: selectedTool,
-                            showStyleDetails: $showStyleDetails
-                        )
-                    // }
+                    StylePresetsPanel(
+                        selectedTool: selectedTool,
+                        showStyleDetails: $showStyleDetails
+                    )
                     .frame(width: panelWidth, height: stylePresetPanelHeight)
                     .background(
                         RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
                             .fill(.ultraThinMaterial)
                     )
-                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
                 
                 if showStyleDetails, selectedTool.supportsPresets {
-                    // GlassEffectContainer {
-                        StyleDetailsPanel(
-                            tool: selectedTool
-                        )
-                    // }
+                    StyleDetailsContentView(
+                        tool: selectedTool
+                    )
                     .frame(width: styleDetailWidth, height: styleDetailHeight)
                     .background(
                         RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
                             .fill(.ultraThinMaterial)
                     )
-                    // .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 }
             }
         }
