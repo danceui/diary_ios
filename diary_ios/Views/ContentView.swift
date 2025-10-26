@@ -66,10 +66,6 @@ struct ContentView: View {
                         )
                     }
                     .frame(width: panelWidth, height: toolPanelHeight)
-                    .background(
-                        RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                    )
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
 
                     if showStylePresets, selectedTool.supportsPresets {
@@ -80,10 +76,6 @@ struct ContentView: View {
                             )
                         }
                         .frame(width: panelWidth, height: stylePresetPanelHeight)
-                        .background(
-                            RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                        )
                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     }
                 }
@@ -383,8 +375,7 @@ struct ContentView: View {
                 case .lasso: break
                 } 
             }
-            .frame(width: iconSize, height: iconSize)
-            // .border(.red, width: 1)
+            .overlay(Rectangle().stroke(debugBorder ? Color.green : .clear, lineWidth: 1))
         }
     }
 
