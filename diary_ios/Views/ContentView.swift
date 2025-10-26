@@ -86,6 +86,17 @@ struct ContentView: View {
                 RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
+            .offset(x: calculateOffset())
+            .opacity(showStyleDetails && selectedTool.supportsPresets ? 1 : 0)
+        }
+        }
+
+        private func calculateOffset() -> CGFloat {
+            var offset = panelWidth + popoverGap
+            if showStylePresets && selectedTool.supportsPresets {
+                offset += panelWidth + popoverGap
+            }
+            return offset
         }
         
         // MARK: - 1.Tools Panel
@@ -161,36 +172,6 @@ struct ContentView: View {
     }
 
     // MARK: - 3.Style Details Panel
-    struct StyleDetailsPanel: View {
-        let tool: Tool
-        @EnvironmentObject private var toolManager: ToolManager
-
-        // 控制延迟加载
-        @State private var loaded = false
-
-        var body: some View {
-            Group {
-                if loaded {
-                    StyleDetailsContentView(tool: tool) // 使用新的内容视图
-                    // Text("Style Details for \(tool)") // 占位
-                        .environmentObject(toolManager)
-                        // 移除 .presentationCompactAdaptation(.popover) 等 popover 特有代码
-                        .padding(8)
-                } else {
-                    // 占位（轻量）
-                    ProgressView().frame(width: styleDetailWidth - 20, height: styleDetailHeight - 20)
-                }
-            }
-            .onAppear {
-                // 下一帧再加载重内容，避免面板打开瞬间卡顿
-                let _ = print("StyleDetailsPanel appeared - \(Date())")
-                DispatchQueue.main.async {
-                    loaded = true
-                }
-            }
-        }
-    }
-
     struct StyleDetailsContentView: View {
         let tool: Tool
         @EnvironmentObject private var toolManager: ToolManager
@@ -214,79 +195,79 @@ struct ContentView: View {
 
         var body: some View {
             VStack(spacing: 12) {
-                // if tool == .monoline || tool == .pen || tool == .highlighter {
-                    // FancyBrushPreview(tool: tool, style: previewStyle)
-                    //     .frame(width: 60, height: 60)
-                // }
+                if tool == .monoline || tool == .pen || tool == .highlighter {
+                    FancyBrushPreview(tool: tool, style: previewStyle)
+                        .frame(width: 60, height: 60)
+                }
                 if tool.supportWidth {  
-                    HStack(spacing: 10) {Text("Style Details for \(tool)") 
-                        // Slider(
-                        //     value: $width,
-                        //     in: 1...10,
-                        //     step: 1,
-                        //     onEditingChanged: { editing in
-                        //         if !editing { commitChanges() }
-                        //     }
-                        // )
-                        // .controlSize(.mini)
-                        // .labelsHidden()
-                        // .accessibilityLabel("Width")
-                        // .frame(maxWidth: .infinity)
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: $width,
+                            in: 1...10,
+                            step: 1,
+                            onEditingChanged: { editing in
+                                if !editing { commitChanges() }
+                            }
+                        )
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .accessibilityLabel("Width")
+                        .frame(maxWidth: .infinity)
 
-                        // Text("\(Int(width))")
-                        //     .monospacedDigit()
-                        //     .frame(width: 56, alignment: .center)
+                        Text("\(Int(width))")
+                            .monospacedDigit()
+                            .frame(width: 56, alignment: .center)
                     }
                 }
-                // if tool.supportOpacity {
-                //     HStack(spacing: 10) {
-                //         Slider(
-                //             value: $opacity,
-                //             in: 0.1...1,
-                //             step: 0.01,
-                //             onEditingChanged: { editing in
-                //                 if !editing { commitChanges() }
-                //             })
-                //         .controlSize(.mini)
-                //         .labelsHidden()
-                //         .accessibilityLabel("Opacity")
-                //         .frame(maxWidth: .infinity)
+                if tool.supportOpacity {
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: $opacity,
+                            in: 0.1...1,
+                            step: 0.01,
+                            onEditingChanged: { editing in
+                                if !editing { commitChanges() }
+                            })
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .accessibilityLabel("Opacity")
+                        .frame(maxWidth: .infinity)
 
-                //         Text("\(Int(round(opacity * 100)))%")
-                //             .monospacedDigit()
-                //             .frame(width: 56, alignment: .center)
-                //     }
-                // }
-                // if tool.supportColor {
-                //     ScrollView {
-                //         VStack(spacing: 10) {
-                //             ForEach(PaletteStyle.allCases) { s in
-                //                 let colors = Palette.colors[s] ?? []
-                //                 HStack(spacing: 10) {
-                //                     ForEach(colors, id: \.self) { c in
-                //                         Button {
-                //                             color = c
-                //                             commitChanges()
-                //                         } label: {
-                //                             Circle()
-                //                                 .fill(c)
-                //                                 .frame(width: 28, height: 28)
-                //                                 .overlay(
-                //                                     Circle()
-                //                                         .stroke(lineWidth: color == c ? 3 : 0)
-                //                                         .foregroundStyle(.primary.opacity(0.8))
-                //                                 )
-                //                         }
-                //                         .buttonStyle(.plain)
-                //                         .accessibilityLabel("Preset color")
-                //                     }
-                //                 }
-                //             }
-                //         }
-                //         .padding(.top, 2)
-                //     }
-                //     .padding(12)
-                // }
+                        Text("\(Int(round(opacity * 100)))%")
+                            .monospacedDigit()
+                            .frame(width: 56, alignment: .center)
+                    }
+                }
+                if tool.supportColor {
+                    ScrollView {
+                        VStack(spacing: 10) {
+                            ForEach(PaletteStyle.allCases) { s in
+                                let colors = Palette.colors[s] ?? []
+                                HStack(spacing: 10) {
+                                    ForEach(colors, id: \.self) { c in
+                                        Button {
+                                            color = c
+                                            commitChanges()
+                                        } label: {
+                                            Circle()
+                                                .fill(c)
+                                                .frame(width: 28, height: 28)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(lineWidth: color == c ? 3 : 0)
+                                                        .foregroundStyle(.primary.opacity(0.8))
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Preset color")
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
+                    .padding(12)
+                }
             }
             .padding(10)
             .onAppear {
