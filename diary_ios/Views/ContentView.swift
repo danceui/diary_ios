@@ -349,8 +349,15 @@ struct ContentView: View {
         let style: ToolStyle
         var body: some View {
             Canvas { context, size in
-                let segments = generatePathSegments(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
-                let line = generatePathLine(in: CGRect(origin: .zero, size: size), base: PreviewSVGConstants.baseSize)
+                // Canvas 内容随 .frame(width:) 自适应放大缩小
+                let base = PreviewSVGConstants.baseSize
+                let scale = min(size.width / base, size.height / base)
+                context.scaleBy(x: scale, y: scale)
+
+                let rect = CGRect(x: 0, y: 0, width: base, height: base)
+                let segments = generatePathSegments(in: rect, base: base)
+                let line = generatePathLine(in: rect, base: base)
+
                 switch tool {
                 case .monoline:
                     drawMonolinePreview(

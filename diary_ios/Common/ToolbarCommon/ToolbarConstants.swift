@@ -8,7 +8,7 @@ struct BezierSegment {
 
 struct PreviewSVGConstants {
     static let canvasSize = CGSize(width: 200, height: 200)
-    static let baseSize = 24.0
+    static let baseSize = 24.0 // original SVG size
     static let baseSegments: [BezierSegment] = {
         let rawPoints: [(p0: CGPoint, c1: CGPoint, c2: CGPoint, p3: CGPoint)] = [
             (p0: CGPoint(x: 4.82, y: 15.6), c1: CGPoint(x: 4.52, y: 13.5), c2: CGPoint(x: 5.62, y: 10.7), p3: CGPoint(x: 7.32, y: 8.8)),
