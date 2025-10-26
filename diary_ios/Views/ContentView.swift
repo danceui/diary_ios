@@ -53,6 +53,7 @@ struct ContentView: View {
         @State private var showStyleDetails: Bool = false
 
         var body: some View {
+        ZStack(alignment: .topLeading) {
             HStack(alignment: .top, spacing: popoverGap) {
                 ToolsPanel(
                     selectedTool: $selectedTool,
@@ -76,18 +77,15 @@ struct ContentView: View {
                             .fill(.ultraThinMaterial)
                     )
                 }
-                
-                if showStyleDetails, selectedTool.supportsPresets {
-                    StyleDetailsContentView(
-                        tool: selectedTool
-                    )
-                    .frame(width: styleDetailWidth, height: styleDetailHeight)
-                    .background(
-                        RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                    )
-                }
             }
+            StyleDetailsContentView(
+                tool: selectedTool
+            )
+            .frame(width: styleDetailWidth, height: styleDetailHeight)
+            .background(
+                RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
         }
         
         // MARK: - 1.Tools Panel
@@ -144,10 +142,9 @@ struct ContentView: View {
                                 isSelected: presetIndex == idx,
                                 style: style
                             ) {
+                                let _ = print("Clicked #\(idx) preset - \(Date())")
                                 if presetIndex == idx {
-                                    // DispatchQueue.main.async {
-                                        showStyleDetails.toggle()
-                                    // }
+                                    showStyleDetails.toggle()
                                 } else {
                                     toolManager.selectPreset(for: selectedTool, index: idx)
                                     showStyleDetails = false
