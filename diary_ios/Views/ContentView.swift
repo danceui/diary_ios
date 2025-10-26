@@ -68,6 +68,7 @@ struct ContentView: View {
                     }
                     .frame(width: panelWidth, height: toolPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
 
                     if showStylePresets, selectedTool.supportsPresets {
                         GlassEffectContainer {
@@ -78,8 +79,10 @@ struct ContentView: View {
                         }
                         .frame(width: panelWidth, height: stylePresetPanelHeight)
                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
                 }
+                .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
 
                 GlassEffectContainer {
                     StyleDetailsPanel(
@@ -128,11 +131,11 @@ struct ContentView: View {
                                 }
                             }
                             .padding(buttonPadding)
-                            .overlay(Rectangle().stroke(debugBorder ? Color.blue : .clear, lineWidth: 1))
+                            .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
                     }
                     .padding(.vertical, buttonSpacing)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.red : .clear, lineWidth: 1))
+                    .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
@@ -164,11 +167,11 @@ struct ContentView: View {
                                 }
                             }
                             .padding(buttonPadding)
-                            .overlay(Rectangle().stroke(debugBorder ? Color.blue : .clear, lineWidth: 1))
+                            .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
                     }
                     .padding(.vertical, buttonSpacing)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.red : .clear, lineWidth: 1))
+                    .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
@@ -217,12 +220,12 @@ struct ContentView: View {
                         .labelsHidden()
                         .accessibilityLabel("Width")
                         .frame(maxWidth: .infinity)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
 
                         Text("\(Int(width))")
                         .monospacedDigit()
                         .frame(width: 56, alignment: .center)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
                 }
                 if tool.supportOpacity {
@@ -238,12 +241,12 @@ struct ContentView: View {
                         .labelsHidden()
                         .accessibilityLabel("Opacity")
                         .frame(maxWidth: .infinity)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
 
                         Text("\(Int(round(opacity * 100)))%")
                         .monospacedDigit()
                         .frame(width: 56, alignment: .center)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
                 }
                 if tool.supportColor {
@@ -269,12 +272,12 @@ struct ContentView: View {
                                             }
                                             .buttonStyle(.plain)
                                             .accessibilityLabel("Preset color")
-                                            .overlay(Rectangle().stroke(debugBorder ? Color.green : .clear, lineWidth: 1))
+                                            .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
                                         }
                                     }
                                 }
                             }
-                            .overlay(Rectangle().stroke(debugBorder ? Color.orange : .clear, lineWidth: 1))
+                            .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
                         .padding(.vertical, 4)
                     }
@@ -391,7 +394,7 @@ struct ContentView: View {
                 case .lasso: break
                 } 
             }
-            .overlay(Rectangle().stroke(debugBorder ? Color.green : .clear, lineWidth: 1))
+            .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
         }
     }
 
