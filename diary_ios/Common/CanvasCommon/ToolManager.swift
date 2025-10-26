@@ -119,15 +119,9 @@ class ToolManager: ObservableObject {
             .eraseToAnyPublisher()
     }
 
-    func presetStylePublisher(for tool: Tool, at index: Int) -> AnyPublisher<ToolStyle?, Never> {
-        Publishers.CombineLatest($presetStyles, $presetIndices)
-            .map { styles, indices -> ToolStyle? in
-                guard tool.supportsPresets,
-                    let arr = styles[tool],
-                    arr.indices.contains(index) else { return nil }
-                return arr[index]
-            }
-            .removeDuplicates()
+    func presetStylePublisher() -> AnyPublisher<Void, Never> {
+        Publishers.CombineLatest($currentTool, $presetIndices)
+            .map { _ in () }
             .eraseToAnyPublisher()
     }
 

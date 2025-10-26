@@ -142,6 +142,7 @@ struct ContentView: View {
             let action: () -> Void
             @State private var style: ToolStyle? = nil
             @State private var isSelected: Bool = false
+            @State private var cancellables: Set<AnyCancellable> = []
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
@@ -166,7 +167,6 @@ struct ContentView: View {
                         .store(in: &cancellables)
                 }
             }
-            @State private var cancellables: Set<AnyCancellable> = []
         }
 
         // MARK: - 2.Style Presets Panel
@@ -228,10 +228,10 @@ struct ContentView: View {
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
-        @State private var baseStyle: ToolStyle = ToolStyle()
+        @State private var cancellables: Set<AnyCancellable> = []
 
         private var previewStyle: ToolStyle {
-            var style = baseStyle
+            var style = ToolStyle()
             if tool.supportColor   { style.color   = UIColor(color) }
             if tool.supportWidth   { style.width   = CGFloat(width) }
             if tool.supportOpacity { style.opacity = CGFloat(opacity) }
@@ -256,22 +256,19 @@ struct ContentView: View {
             .padding(10)
             .onAppear {
                 if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
+                toolManager.presetStylePublisher()
                 if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
-                    applyStyle(style) 
+                    applyStyleFromManager(style) 
                 }
-            }
-            .onReceive(toolManager.presetStylePublisher(for: tool, at: lockedIndex ?? -1)) { latest in
-                guard let latest else { return }
-                if debugToolManager { print("🎨 [StyleDetailsPanel] Reloaded.") }
-                if latest != previewStyle { applyStyle(latest) }
             }
             .onDisappear { 
                 commitChanges()
+                cancellables.removeAll()
             }
         }
 
-        private func applyStyle(_ s: ToolStyle) {
-            baseStyle = s
+        private func applyStyleFromManager(_ s: ToolStyle) {
+            // baseStyle = s
             if tool.supportColor   { color   = s.color?.toColor() ?? .black }
             if tool.supportWidth   { width   = Double(s.width ?? 4) }
             if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
@@ -285,7 +282,6 @@ struct ContentView: View {
                 )
             guard let idx = lockedIndex, updated != toolManager.getStyle(for: tool, at: idx) else { return }
             toolManager.setStyle(for: tool, at: idx, to: updated)
-            baseStyle = updated
         }
         
         struct StyleDetailsPreview: View {
