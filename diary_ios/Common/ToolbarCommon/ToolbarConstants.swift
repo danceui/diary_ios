@@ -34,7 +34,8 @@ struct ToolbarConstants {
     static let popoverGap: CGFloat = 12
     static let iconSize: CGFloat = 30.0
     static let iconPadding: CGFloat = 4.0
-    static let iconSpacing: CGFloat = 4.0
+    static let buttonPadding: CGFloat = 4.0
+    static let buttonSpacing: CGFloat = 4.0
     static let toolbarCornerRadius: CGFloat = 24.0
     static let toolbarBackgroundColor: UIColor = .systemBackground
     static let toolbarButtonColor: UIColor = .systemBlue

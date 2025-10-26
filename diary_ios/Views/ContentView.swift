@@ -12,9 +12,12 @@ private let topPadding = ToolbarConstants.topPadding
 private let toolbarCornerRadius = ToolbarConstants.toolbarCornerRadius
 private let iconSize = ToolbarConstants.iconSize
 private let iconPadding = ToolbarConstants.iconPadding
-private let iconSpacing = ToolbarConstants.iconSpacing
+private let buttonPadding = ToolbarConstants.buttonPadding
+private let buttonSpacing = ToolbarConstants.buttonSpacing
 private let popoverMaxHeight: CGFloat = stylePresetPanelHeight
 private let popoverGap = ToolbarConstants.popoverGap
+
+private let debugBorder = Debuggers.debugBorder
 
 @available(iOS 26.0, *)
 struct ContentView: View {
@@ -53,42 +56,48 @@ struct ContentView: View {
         @State private var showStyleDetails: Bool = false
 
         var body: some View {
-        ZStack(alignment: .topLeading) {
-            HStack(alignment: .top, spacing: popoverGap) {
-                ToolsPanel(
-                    selectedTool: $selectedTool,
-                    showStylePresets: $showStylePresets,
-                    showStyleDetails: $showStyleDetails
-                )
-                .frame(width: panelWidth, height: toolPanelHeight)
-                .background(
-                    RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
-
-                if showStylePresets, selectedTool.supportsPresets {
-                    StylePresetsPanel(
-                        selectedTool: selectedTool,
-                        showStyleDetails: $showStyleDetails
-                    )
-                    .frame(width: panelWidth, height: stylePresetPanelHeight)
+            ZStack(alignment: .topLeading) {
+                HStack(alignment: .top, spacing: popoverGap) {
+                    GlassEffectContainer {
+                        ToolsPanel(
+                            selectedTool: $selectedTool,
+                            showStylePresets: $showStylePresets,
+                            showStyleDetails: $showStyleDetails
+                        )
+                    }
+                    .frame(width: panelWidth, height: toolPanelHeight)
                     .background(
                         RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
                             .fill(.ultraThinMaterial)
                     )
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+
+                    if showStylePresets, selectedTool.supportsPresets {
+                        GlassEffectContainer {
+                            StylePresetsPanel(
+                                selectedTool: selectedTool,
+                                showStyleDetails: $showStyleDetails
+                            )
+                        }
+                        .frame(width: panelWidth, height: stylePresetPanelHeight)
+                        .background(
+                            RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                        )
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    }
                 }
+
+                GlassEffectContainer {
+                    StyleDetailsPanel(
+                        tool: selectedTool
+                    )
+                }
+                .frame(width: styleDetailWidth, height: styleDetailHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .offset(x: calculateOffset())
+                .opacity(showStyleDetails && selectedTool.supportsPresets ? 1 : 0)
             }
-            StyleDetailsContentView(
-                tool: selectedTool
-            )
-            .frame(width: styleDetailWidth, height: styleDetailHeight)
-            .background(
-                RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .offset(x: calculateOffset())
-            .opacity(showStyleDetails && selectedTool.supportsPresets ? 1 : 0)
-        }
         }
 
         private func calculateOffset() -> CGFloat {
@@ -108,9 +117,9 @@ struct ContentView: View {
 
             var body: some View {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: iconSpacing) {
+                    VStack(spacing: buttonSpacing) {
                         ForEach(allTools, id: \.self) { tool in
-                            ToolButtonView(
+                            ToolButton(
                                 tool: tool,
                                 isSelected: selectedTool == tool,
                                 style: toolManager.styleForTool(for: tool)
@@ -125,11 +134,12 @@ struct ContentView: View {
                                     showStyleDetails = false
                                 }
                             }
-                            .padding(iconPadding)
+                            .padding(buttonPadding)
+                            .overlay(Rectangle().stroke(debugBorder ? Color.blue : .clear, lineWidth: 1))
                         }
                     }
-                    .padding(.top, topPadding / 2)
-                    .padding(.bottom, topPadding / 2)
+                    .padding(.vertical, buttonSpacing)
+                    .overlay(Rectangle().stroke(debugBorder ? Color.red : .clear, lineWidth: 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
@@ -146,14 +156,13 @@ struct ContentView: View {
                 let presetIndex = toolManager.presetIndexForTool(for: selectedTool)
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: iconSpacing) {
+                    VStack(spacing: buttonSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
-                            ToolButtonView(
+                            ToolButton(
                                 tool: selectedTool,
                                 isSelected: presetIndex == idx,
                                 style: style
                             ) {
-                                let _ = print("Clicked #\(idx) preset - \(Date())")
                                 if presetIndex == idx {
                                     showStyleDetails.toggle()
                                 } else {
@@ -161,10 +170,12 @@ struct ContentView: View {
                                     showStyleDetails = false
                                 }
                             }
-                            .padding(iconPadding)
+                            .padding(buttonPadding)
+                            .overlay(Rectangle().stroke(debugBorder ? Color.blue : .clear, lineWidth: 1))
                         }
                     }
-                    .padding(.vertical, topPadding / 2)
+                    .padding(.vertical, buttonSpacing)
+                    .overlay(Rectangle().stroke(debugBorder ? Color.red : .clear, lineWidth: 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
@@ -172,7 +183,7 @@ struct ContentView: View {
     }
 
     // MARK: - 3.Style Details Panel
-    struct StyleDetailsContentView: View {
+    struct StyleDetailsPanel: View {
         let tool: Tool
         @EnvironmentObject private var toolManager: ToolManager
 
@@ -270,10 +281,7 @@ struct ContentView: View {
                 }
             }
             .padding(10)
-            .onAppear {
-                loadFromManager()
-                let _ = print("StyleDetailsContentView appeared - \(Date())")
-            }
+            .onAppear { loadFromManager() }
         }
 
         private func loadFromManager() {
@@ -298,7 +306,7 @@ struct ContentView: View {
 
     // MARK: - Tool Button View
     @available(iOS 26.0, *)
-    struct ToolButtonView: View {
+    struct ToolButton: View {
         let tool: Tool
         let isSelected: Bool
         let style: ToolStyle?
@@ -386,7 +394,7 @@ struct ContentView: View {
         
         var body: some View {
             GlassEffectContainer {
-                HStack(spacing: iconSpacing) {
+                HStack(spacing: buttonSpacing) {
                     FunctionButtonView(iconName: "arrow.uturn.backward") {
                     notebookSpreadViewController.undo()
                     }
@@ -416,9 +424,9 @@ struct ContentView: View {
                 .scaledToFit()
                 .frame(width: iconSize, height: iconSize)
                 .scaleEffect(0.7)
-                .padding(iconPadding)
+                .padding(buttonPadding)
             }
-            .padding(iconPadding)
+            .padding(buttonPadding)
         } 
     }
 }
