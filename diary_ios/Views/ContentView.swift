@@ -54,16 +54,16 @@ struct ContentView: View {
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
-        @State private var selectedTool = ToolManager.shared.currentTool
         @State private var showStylePresets: Bool = false
         @State private var showStyleDetails: Bool = false
+        @State private var lockedIndex: Int? = nil
+        @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
             ZStack(alignment: .topLeading) {
                 HStack(alignment: .top, spacing: panelGap) {
                     GlassEffectContainer {
                         ToolsPanel(
-                            selectedTool: $selectedTool,
                             showStylePresets: $showStylePresets,
                             showStyleDetails: $showStyleDetails
                         )
@@ -72,11 +72,11 @@ struct ContentView: View {
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
 
-                    if showStylePresets, selectedTool.supportsPresets {
+                    if showStylePresets, toolManager.currentTool.supportsPresets {
                         GlassEffectContainer {
                             StylePresetsPanel(
-                                selectedTool: selectedTool,
-                                showStyleDetails: $showStyleDetails
+                                showStyleDetails: $showStyleDetails,
+                                lockedIndex: $lockedIndex
                             )
                         }
                         .frame(width: panelWidth, height: stylePresetPanelHeight)
@@ -84,22 +84,28 @@ struct ContentView: View {
                         .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
                 }
-
-                GlassEffectContainer {
-                    StyleDetailsPanel(
-                        tool: selectedTool
-                    )
+                
+                if toolManager.currentTool.supportsPresets, 
+                    let lockedIndex = toolManager.presetIndexForTool(for: toolManager.currentTool),
+                    let style = toolManager.getStyle(for: toolManager.currentTool, at: lockedIndex) {
+                    GlassEffectContainer {
+                        StyleDetailsPanel(
+                            tool: toolManager.currentTool,
+                            lockedIndex: lockedIndex,
+                            initialStyle: style
+                        )
+                    }
+                    .frame(width: styleDetailWidth, height: styleDetailHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .offset(x: calculateOffset())
+                    .opacity(showStyleDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
                 }
-                .frame(width: styleDetailWidth, height: styleDetailHeight)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                .offset(x: calculateOffset())
-                .opacity(showStyleDetails && selectedTool.supportsPresets ? 1 : 0)
             }
         }
 
         private func calculateOffset() -> CGFloat {
             var offset = panelWidth + panelGap
-            if showStylePresets && selectedTool.supportsPresets {
+            if showStylePresets && toolManager.currentTool.supportsPresets {
                 offset += panelWidth + panelGap
             }
             return offset
@@ -107,7 +113,6 @@ struct ContentView: View {
         
         // MARK: - 1.Tools Panel
         struct ToolsPanel: View {
-            @Binding var selectedTool: Tool
             @Binding var showStylePresets: Bool
             @Binding var showStyleDetails: Bool
             @EnvironmentObject private var toolManager: ToolManager
@@ -117,11 +122,10 @@ struct ContentView: View {
                     VStack(spacing: buttonSpacing) {
                         ForEach(allTools, id: \.self) { tool in
                             ToolButtonForToolsPanel(tool: tool) {
-                                if selectedTool == tool {
+                                if toolManager.currentTool == tool {
                                     showStylePresets.toggle()
                                     showStyleDetails = false
                                 } else {
-                                    selectedTool = tool
                                     toolManager.currentTool = tool
                                     showStylePresets = false
                                     showStyleDetails = false
@@ -172,28 +176,37 @@ struct ContentView: View {
 
         // MARK: - 2.Style Presets Panel
         struct StylePresetsPanel: View {
-            let selectedTool: Tool
             @Binding var showStyleDetails: Bool
+            @Binding var lockedIndex: Int?
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
-                let presets = toolManager.presetStyles[selectedTool] ?? []
-                let presetIndex = toolManager.presetIndexForTool(for: selectedTool)
+                let tool = toolManager.currentTool
+                let presets = toolManager.presetStyles[tool] ?? []
+                let presetIndex = toolManager.presetIndexForTool(for: tool)
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: buttonSpacing) {
                         ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
                             ToolButton(
-                                tool: selectedTool,
+                                tool: tool,
                                 isSelected: presetIndex == idx,
                                 style: style
                             ) {
                                 if presetIndex == idx {
-                                    showStyleDetails.toggle()
+                                    if !showStyleDetails {
+                                        lockedIndex = presetIndex
+                                        showStyleDetails = true
+                                    } else {
+                                        showStyleDetails = false
+                                        lockedIndex = nil
+                                    }
                                 } else {
-                                    showStyleDetails = false
-                                    Des
-                                    toolManager.selectPreset(for: selectedTool, index: idx)
+                                    if showStyleDetails {
+                                        showStyleDetails = false
+                                    }
+                                    toolManager.selectPreset(for: tool, index: idx)
+                                    lockedIndex = nil
                                 }
                             }
                             .padding(buttonPadding)
@@ -211,19 +224,26 @@ struct ContentView: View {
     // MARK: - 3.Style Details Panel
     struct StyleDetailsPanel: View {
         let tool: Tool
+        let lockedIndex: Int
+        let initialStyle: ToolStyle
         @EnvironmentObject private var toolManager: ToolManager
 
         // 本地编辑态，仅用于预览
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
-        @State private var baseStyle: ToolStyle = ToolStyle()
-        @State private var editingIndex: Int? = nil
+      
+        init(tool: Tool, lockedIndex: Int, initialStyle: ToolStyle) {
+            self.tool = tool
+            self.lockedIndex = lockedIndex
+            self.initialStyle = initialStyle
+            
+        }
 
         private var previewStyle: ToolStyle {
-            var style = baseStyle
-            if tool.supportColor { style.color = UIColor(color) }
-            if tool.supportWidth { style.width = CGFloat(width) }
+            var style = ToolStyle()
+            if tool.supportColor   { style.color   = UIColor(color) }
+            if tool.supportWidth   { style.width   = CGFloat(width) }
             if tool.supportOpacity { style.opacity = CGFloat(opacity) }
             return style
         }
@@ -314,34 +334,22 @@ struct ContentView: View {
             }
             .padding(10)
             .onAppear {
-                editingIndex = toolManager.presetIndexForTool(for: tool)
                 if debugToolManager { print("🎨 [StyleDetailsPanel] Loading style from manager.") }
-                loadFromManager()
+                previewStyle = initialStyle
             }
             .onDisappear { 
                 commitChanges() 
             }
         }
 
-        private func loadFromManager() {
-            guard let idx = editingIndex,
-              let style = toolManager.getStyle(for: tool, at: idx) else { return }
-            baseStyle = style
-            if tool.supportColor   { color = style.color?.toColor() ?? .black }
-            if tool.supportWidth   { width = Double(style.width ?? 4) }
-            if tool.supportOpacity { opacity = Double(style.opacity ?? 1) }
-        }
-
         private func commitChanges() {
-            guard let idx = editingIndex else { return }
             let updated = ToolStyle(
                 color: UIColor(color),
                 width: CGFloat(width),
                 opacity: CGFloat(opacity)
             )
             // if updated == (toolManager.getStyle(for: tool, at: idx) ?? ToolStyle()) { return }
-            toolManager.setStyle(for: tool, at: idx, to: updated)
-            baseStyle = updated
+            toolManager.setStyle(for: tool, at: lockedIndex, to: updated)
         }
     }
 
