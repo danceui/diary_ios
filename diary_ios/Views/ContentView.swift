@@ -85,14 +85,11 @@ struct ContentView: View {
                     }
                 }
                 
-                if toolManager.currentTool.supportsPresets,
-                    let locked = lockedIndex,
-                    let style = toolManager.getStyle(for: toolManager.currentTool, at: locked) {
+                if toolManager.currentTool.supportsPresets, let locked = lockedIndex {
                     GlassEffectContainer {
                         StyleDetailsPanel(
                             tool: toolManager.currentTool,
-                            lockedIndex: locked,
-                            initialStyle: style
+                            lockedIndex: locked
                         )
                     }
                     .frame(width: styleDetailWidth, height: styleDetailHeight)
@@ -126,7 +123,7 @@ struct ContentView: View {
                                     showStylePresets.toggle()
                                     showStyleDetails = false
                                 } else {
-                                    toolManager.currentTool = tool
+                                    toolManager.selectTool(tool)
                                     showStylePresets = false
                                     showStyleDetails = false
                                 }
@@ -227,23 +224,13 @@ struct ContentView: View {
     struct StyleDetailsPanel: View {
         let tool: Tool
         let lockedIndex: Int
-        let initialStyle: ToolStyle
         @EnvironmentObject private var toolManager: ToolManager
 
         // 本地编辑态，仅用于预览
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
-      
-        // 基底：已提交版本（打开时 = initialStyle；提交后同步为 updated）
-        @State private var baseStyle: ToolStyle
-
-        init(tool: Tool, lockedIndex: Int, initialStyle: ToolStyle) {
-            self.tool = tool
-            self.lockedIndex = lockedIndex
-            self.initialStyle = initialStyle
-            _baseStyle = State(initialValue: initialStyle) // 用父级传入的初值初始化
-        }
+        @State private var baseStyle: ToolStyle = ToolStyle()
 
         private var previewStyle: ToolStyle {
             var style = baseStyle
@@ -339,15 +326,27 @@ struct ContentView: View {
             }
             .padding(10)
             .onAppear {
-                if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
-                // 用 baseStyle 同步控件初值（首次出现时）
-                if tool.supportColor   { color   = baseStyle.color?.toColor() ?? .black }
-                if tool.supportWidth   { width   = Double(baseStyle.width ?? 4) }
-                if tool.supportOpacity { opacity = Double(baseStyle.opacity ?? 1) }
+                if let style = toolManager.getStyle(for: tool, at: lockedIndex) {
+                    applyStyle(style)
+                }
             }
             .onDisappear { 
                 commitChanges()
             }
+            .onReceive(currentLockedStylePublisher()) { latest in
+                guard let latest else { return }
+                if latest != previewStyle {
+                    applyStyle(latest)
+                }
+            }
+            .onDisappear { commitChanges() }
+        }
+
+        private func applyStyle(_ s: ToolStyle) {
+            baseStyle = s
+            if tool.supportColor   { color   = s.color?.toColor() ?? .black }
+            if tool.supportWidth   { width   = Double(s.width ?? 4) }
+            if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
         }
 
         private func commitChanges() {
@@ -356,9 +355,9 @@ struct ContentView: View {
                 width: CGFloat(width),
                 opacity: CGFloat(opacity)
             )
-            // if updated == (toolManager.getStyle(for: tool, at: idx) ?? ToolStyle()) { return }
+            if updated == toolManager.getStyle(for: tool, at: lockedIndex) { return }
             toolManager.setStyle(for: tool, at: lockedIndex, to: updated)
-            baseStyle = updated // 更新基底，保持预览一致
+            baseStyle = updated
         }
     }
 

@@ -75,7 +75,7 @@ protocol ToolObserver: AnyObject {
 class ToolManager: ObservableObject {
     static let shared = ToolManager()
     
-    @Published var currentTool: Tool = .pen
+    @Published private(set) var currentTool: Tool = .pen
     @Published private(set) var presetStyles: [Tool: [ToolStyle]] = [:]
     @Published private(set) var presetIndices: [Tool: Int] = [:]
 
