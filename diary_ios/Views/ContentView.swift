@@ -116,10 +116,6 @@ struct ContentView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: buttonSpacing) {
                         ForEach(allTools, id: \.self) { tool in
-                            // ToolButton(
-                            //     tool: tool,
-                            //     isSelected: selectedTool == tool,
-                            //     style: cachedStyles[tool] ?? nil
                             ToolButtonForToolsPanel(tool: tool) {
                                 if selectedTool == tool {
                                     showStylePresets.toggle()
@@ -196,6 +192,7 @@ struct ContentView: View {
                                     showStyleDetails.toggle()
                                 } else {
                                     showStyleDetails = false
+                                    Des
                                     toolManager.selectPreset(for: selectedTool, index: idx)
                                 }
                             }
