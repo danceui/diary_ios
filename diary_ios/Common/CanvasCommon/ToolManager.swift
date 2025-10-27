@@ -106,31 +106,6 @@ class ToolManager: ObservableObject {
             .eraseToAnyPublisher()
     }
 
-    // 外部监听
-    func stylePublisher(for tool: Tool) -> AnyPublisher<ToolStyle?, Never> {
-        Publishers.CombineLatest($presetStyles, $presetIndices)
-            .map { styles, indices -> ToolStyle? in
-                guard tool.supportsPresets,
-                    let arr = styles[tool],
-                    let idx = indices[tool],
-                    arr.indices.contains(idx) else { return nil }
-                print("📢 [ToolManager] Publisher: New style.")
-                return arr[idx]
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-    }
-
-    func isSelectedPublisher(for tool: Tool) -> AnyPublisher<Bool, Never> {
-        $currentTool
-            .map { t -> Bool in
-                print("📢 [ToolManager] Publisher: New tool.")
-                return t == tool
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-    }
-
     // 外部操作
     func selectTool(_ tool: Tool) { currentTool = tool }
     func selectPreset(for tool: Tool, index: Int) {
@@ -152,7 +127,7 @@ class ToolManager: ObservableObject {
             let idx = presetIndices[tool],
             let arr = presetStyles[tool],
             arr.indices.contains(idx) else { return nil }
-        print("⚒️ [ToolManager] Get current style for \(tool) at #\(idx) preset.")
+        // print("⚒️ [ToolManager] Get current style for \(tool).")
         return arr[idx]
     }
 
@@ -160,7 +135,7 @@ class ToolManager: ObservableObject {
         guard tool.supportsPresets,
             let arr = presetStyles[tool],
             arr.indices.contains(index) else { return nil }
-        print("⚒️ [ToolManager] Get style of #\(index) preset.")
+        print("⚒️ [ToolManager] Get style for \(tool) at #\(index) preset.")
         return arr[index]
     }
 
@@ -172,7 +147,7 @@ class ToolManager: ObservableObject {
 
         arr[index] = updated
         presetStyles[tool] = arr
-        print("⚒️ [ToolManager] Set style for #\(index) preset.")
+        print("⚒️ [ToolManager] Set style for \(tool) at #\(index) preset.")
         return true
     }
 }

@@ -141,32 +141,15 @@ struct ContentView: View {
         struct ToolButtonForToolsPanel: View {
             let tool: Tool
             let action: () -> Void
-            @State private var style: ToolStyle? = nil
-            @State private var isSelected: Bool = false
-            @State private var cancellables: Set<AnyCancellable> = []
             @EnvironmentObject private var toolManager: ToolManager
 
             var body: some View {
                 ToolButton(
                     tool: tool,
-                    isSelected: isSelected,
-                    style: style,
+                    isSelected: toolManager.currentTool == tool,
+                    style: toolManager.styleForTool(for: tool),
                     action: action
                 )
-                .onAppear {
-                    toolManager.stylePublisher(for: tool)
-                        .receive(on: RunLoop.main)
-                        .sink { newStyle in
-                            self.style = newStyle
-                        }
-                        .store(in: &cancellables)
-                    toolManager.isSelectedPublisher(for: tool)
-                        .receive(on: RunLoop.main)
-                        .sink { selected in
-                            self.isSelected = selected
-                        }
-                        .store(in: &cancellables)
-                }
             }
         }
 
@@ -259,18 +242,9 @@ struct ContentView: View {
                 if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
                     applyStyleFromManager(style) 
                 }
-                toolManager.stylePublisher(for: tool)
-                    .receive(on: RunLoop.main)
-                    .sink { newStyle in
-                        if let style = newStyle {
-                            applyStyleFromManager(style)
-                        }
-                    }
-                    .store(in: &cancellables)
             }
             .onDisappear { 
                 commitChanges()
-                cancellables.removeAll()
             }
         }
 
