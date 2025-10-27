@@ -74,7 +74,7 @@ protocol ToolObserver: AnyObject {
 
 class ToolManager: ObservableObject {
     static let shared = ToolManager()
-    
+    private let debugToolManager = Debuggers.debugToolManager
     @Published private(set) var currentTool: Tool = .pen
     @Published private(set) var presetStyles: [Tool: [ToolStyle]] = [:]
     @Published private(set) var presetIndices: [Tool: Int] = [:]
@@ -97,7 +97,7 @@ class ToolManager: ObservableObject {
                     arr.indices.contains(idx) else {
                     return (tool, nil)
                 }
-                print("📢 [ToolManager] Publisher: New tool and style.")
+                if self.debugToolManager { print("📢 [ToolManager] Publisher: New tool \(tool) and style \(idx).") }
                 return (tool, arr[idx])
             }
             .removeDuplicates { lhs, rhs in
@@ -113,7 +113,6 @@ class ToolManager: ObservableObject {
             let arr = presetStyles[tool],
             arr.indices.contains(index) else { return }
         presetIndices[tool] = index
-        print("⚒️ [ToolManager] Selected #\(index) preset.")
     }
 
     // 外部查询
@@ -127,7 +126,8 @@ class ToolManager: ObservableObject {
             let idx = presetIndices[tool],
             let arr = presetStyles[tool],
             arr.indices.contains(idx) else { return nil }
-        // print("⚒️ [ToolManager] Get current style for \(tool).")
+
+        if debugToolManager { print("⚒️ [ToolManager] Get current style for \(tool).") }
         return arr[idx]
     }
 
@@ -135,7 +135,8 @@ class ToolManager: ObservableObject {
         guard tool.supportsPresets,
             let arr = presetStyles[tool],
             arr.indices.contains(index) else { return nil }
-        print("⚒️ [ToolManager] Get style for \(tool) at #\(index) preset.")
+
+        if debugToolManager { print("⚒️ [ToolManager] Get style for \(tool) at #\(index) preset.") }
         return arr[index]
     }
 
@@ -147,7 +148,7 @@ class ToolManager: ObservableObject {
 
         arr[index] = updated
         presetStyles[tool] = arr
-        print("⚒️ [ToolManager] Set style for \(tool) at #\(index) preset.")
+        if debugToolManager { print("⚒️ [ToolManager] Set style for \(tool) at #\(index) preset.") }
         return true
     }
 }
