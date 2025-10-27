@@ -5,8 +5,6 @@ import Combine
 private let toolsPanelHeight = ToolbarConstants.toolsPanelHeight
 private let stylePresetPanelHeight = ToolbarConstants.stylePresetPanelHeight
 private let panelWidth = ToolbarConstants.panelWidth
-private let styleDetailWidth = ToolbarConstants.styleDetailWidth
-private let styleDetailHeight = ToolbarConstants.styleDetailHeight
 private let leadingPadding = ToolbarConstants.leadingPadding
 private let trailingPadding = ToolbarConstants.trailingPadding
 private let topPadding = ToolbarConstants.topPadding
@@ -15,10 +13,12 @@ private let iconSize = ToolbarConstants.iconSize
 private let iconPadding = ToolbarConstants.iconPadding
 private let buttonPadding = ToolbarConstants.buttonPadding
 private let buttonSpacing = ToolbarConstants.buttonSpacing
-private let toolbarFade = ToolbarConstants.toolbarFade
 private let popoverMaxHeight: CGFloat = stylePresetPanelHeight
-private let detailPreviewSize = ToolbarConstants.detailPreviewSize
 private let panelGap = ToolbarConstants.panelGap
+private let fade = ToolbarConstants.fade
+
+private let detailWidth = DetailsPanelConstants.detailWidth
+private let detailHeight = DetailsPanelConstants.detailHeight
 
 private let debugBorder = Debuggers.debugBorder
 private let debugToolManager = Debuggers.debugToolManager
@@ -93,7 +93,7 @@ struct ContentView: View {
                     )
                 }
                 .id(StyleDetailsKey(tool: toolManager.currentTool, index: lockedIndex ?? -1)) 
-                .frame(width: styleDetailWidth, height: styleDetailHeight)
+                .frame(width: detailWidth, height: detailHeight)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 .offset(x: calculateOffset())
                 .opacity(showStyleDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
@@ -107,101 +107,101 @@ struct ContentView: View {
             }
             return offset
         }
-        
-        // MARK: - 1.Tools Panel
-        struct ToolsPanel: View {
-            @Binding var showStylePresets: Bool
-            @Binding var showStyleDetails: Bool
-            @EnvironmentObject private var toolManager: ToolManager
+    }
 
-            var body: some View {
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: buttonSpacing) {
-                        ForEach(allTools, id: \.self) { tool in
-                            ToolButtonForToolsPanel(tool: tool) {
-                                if toolManager.currentTool == tool {
-                                    showStylePresets.toggle()
-                                    showStyleDetails = false
+    // MARK: - 1.Tools Panel
+    struct ToolsPanel: View {
+        @Binding var showStylePresets: Bool
+        @Binding var showStyleDetails: Bool
+        @EnvironmentObject private var toolManager: ToolManager
+
+        var body: some View {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: buttonSpacing) {
+                    ForEach(allTools, id: \.self) { tool in
+                        ToolButtonForToolsPanel(tool: tool) {
+                            if toolManager.currentTool == tool {
+                                showStylePresets.toggle()
+                                showStyleDetails = false
+                            } else {
+                                toolManager.selectTool(tool)
+                                showStylePresets = false
+                                showStyleDetails = false
+                            }
+                        }
+                        .padding(buttonPadding)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
+                    }
+                }
+                .padding(.vertical, 1.5 * buttonSpacing)
+                .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
+            }
+            .mask(VerticalEdgeFadeMask(fade: fade))
+            .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+        }
+    }
+
+    struct ToolButtonForToolsPanel: View {
+        let tool: Tool
+        let action: () -> Void
+        @EnvironmentObject private var toolManager: ToolManager
+
+        var body: some View {
+            ToolButton(
+                tool: tool,
+                isSelected: toolManager.currentTool == tool,
+                style: toolManager.styleForTool(for: tool),
+                action: action
+            )
+        }
+    }
+
+    // MARK: - 2.Style Presets Panel
+    struct StylePresetsPanel: View {
+        @Binding var showStyleDetails: Bool
+        @Binding var lockedIndex: Int?
+        @EnvironmentObject private var toolManager: ToolManager
+
+        var body: some View {
+            let tool = toolManager.currentTool
+            let presets = toolManager.presetStyles[tool] ?? []
+            let presetIndex = toolManager.presetIndexForTool(for: tool)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: buttonSpacing) {
+                    ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
+                        ToolButton(
+                            tool: tool,
+                            isSelected: presetIndex == idx,
+                            style: style
+                        ) {
+                            if presetIndex == idx {
+                                if !showStyleDetails {
+                                    lockedIndex = presetIndex
+                                    showStyleDetails = true
                                 } else {
-                                    toolManager.selectTool(tool)
-                                    showStylePresets = false
+                                    showStyleDetails = false
+                                    lockedIndex = nil
+                                }
+                            } else {
+                                if showStyleDetails {
                                     showStyleDetails = false
                                 }
-                            }
-                            .padding(buttonPadding)
-                            .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
-                        }
-                    }
-                    .padding(.vertical, 1.5 * buttonSpacing)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
-                }
-                .mask(VerticalEdgeFadeMask(fade: toolbarFade))
-                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-            }
-        }
-
-        struct ToolButtonForToolsPanel: View {
-            let tool: Tool
-            let action: () -> Void
-            @EnvironmentObject private var toolManager: ToolManager
-
-            var body: some View {
-                ToolButton(
-                    tool: tool,
-                    isSelected: toolManager.currentTool == tool,
-                    style: toolManager.styleForTool(for: tool),
-                    action: action
-                )
-            }
-        }
-
-        // MARK: - 2.Style Presets Panel
-        struct StylePresetsPanel: View {
-            @Binding var showStyleDetails: Bool
-            @Binding var lockedIndex: Int?
-            @EnvironmentObject private var toolManager: ToolManager
-
-            var body: some View {
-                let tool = toolManager.currentTool
-                let presets = toolManager.presetStyles[tool] ?? []
-                let presetIndex = toolManager.presetIndexForTool(for: tool)
-
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: buttonSpacing) {
-                        ForEach(Array(presets.enumerated()), id: \.offset) { (idx, style) in
-                            ToolButton(
-                                tool: tool,
-                                isSelected: presetIndex == idx,
-                                style: style
-                            ) {
-                                if presetIndex == idx {
-                                    if !showStyleDetails {
-                                        lockedIndex = presetIndex
-                                        showStyleDetails = true
-                                    } else {
-                                        showStyleDetails = false
-                                        lockedIndex = nil
-                                    }
-                                } else {
-                                    if showStyleDetails {
-                                        showStyleDetails = false
-                                    }
-                                    DispatchQueue.main.async {
-                                        toolManager.selectPreset(for: tool, index: idx)
-                                        lockedIndex = nil
-                                    }
+                                DispatchQueue.main.async {
+                                    toolManager.selectPreset(for: tool, index: idx)
+                                    lockedIndex = nil
                                 }
                             }
-                            .padding(buttonPadding)
-                            .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
+                        .padding(buttonPadding)
+                        .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
-                    .padding(.vertical, 1.5 * buttonSpacing)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
-                .mask(VerticalEdgeFadeMask(fade: toolbarFade))
-                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .padding(.vertical, 1.5 * buttonSpacing)
+                .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
             }
+            .mask(VerticalEdgeFadeMask(fade: fade))
+            .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
         }
     }
 
@@ -267,109 +267,6 @@ struct ContentView: View {
             guard let idx = lockedIndex, updated != toolManager.getStyle(for: tool, at: idx) else { return }
             toolManager.setStyle(for: tool, at: idx, to: updated)
         }
-        
-        struct StyleDetailsPreview: View {
-            let tool: Tool
-            let style: ToolStyle
-
-            var body: some View {
-                FancyBrushPreview(tool: tool, style: style)
-                    .frame(width: detailPreviewSize, height: detailPreviewSize)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
-            }
-        }
-
-        struct StyleWidthControl: View {
-            @Binding var width: Double
-            var onCommit: () -> Void
-
-            var body: some View {
-                HStack(spacing: 10) {
-                    Slider(
-                        value: $width,
-                        in: 1...10,
-                        step: 1,
-                        onEditingChanged: { editing in if !editing { onCommit() } }
-                    )
-                    .controlSize(.mini)
-                    .labelsHidden()
-                    .accessibilityLabel("Width")
-                    .frame(maxWidth: .infinity)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-
-                    Text("\(Int(width))")
-                        .monospacedDigit()
-                        .frame(width: 56, alignment: .center)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-                }
-            }
-        }
-
-        struct StyleOpacityControl: View {
-            @Binding var opacity: Double
-            var onCommit: () -> Void
-
-            var body: some View {
-                HStack(spacing: 10) {
-                    Slider(
-                        value: $opacity,
-                        in: 0.1...1,
-                        step: 0.01,
-                        onEditingChanged: { editing in if !editing { onCommit() } }
-                    )
-                    .controlSize(.mini)
-                    .labelsHidden()
-                    .accessibilityLabel("Opacity")
-                    .frame(maxWidth: .infinity)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-
-                    Text("\(Int(round(opacity * 100)))%")
-                        .monospacedDigit()
-                        .frame(width: 56, alignment: .center)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-                }
-            }
-        }
-
-        struct StyleColorPalette: View {
-            @Binding var selectedColor: Color
-            var onCommit: () -> Void
-
-            var body: some View {
-                ScrollView {
-                    VStack(spacing: 10) {
-                        ForEach(PaletteStyle.allCases) { s in
-                            let colors = Palette.colors[s] ?? []
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(colors, id: \.self) { c in
-                                        Button {
-                                            selectedColor = c
-                                            onCommit()
-                                        } label: {
-                                            Circle()
-                                                .fill(c)
-                                                .frame(width: 28, height: 28)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(lineWidth: selectedColor == c ? 3 : 0)
-                                                        .foregroundStyle(.primary.opacity(0.8))
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel("Preset color")
-                                        .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
-                                    }
-                                }
-                            }
-                        }
-                        .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
-                    }
-                    .padding(.vertical, 4)
-                }
-                .padding(4)
-            }
-        }
     }
 
     // MARK: - Tool Button View
@@ -417,47 +314,6 @@ struct ContentView: View {
             return configuration.label
                 .scaleEffect(scale)
                 .animation(.easeOut(duration: 0.04), value: configuration.isPressed)
-        }
-    }
-
-    struct FancyBrushPreview: View {
-        let tool: Tool
-        let style: ToolStyle
-        var body: some View {
-            Canvas { context, size in
-                // Canvas 内容随 .frame(width:) 自适应放大缩小
-                let base = PreviewSVGConstants.baseSize
-                let scale = min(size.width / base, size.height / base)
-                context.scaleBy(x: scale, y: scale)
-
-                let rect = CGRect(x: 0, y: 0, width: base, height: base)
-                let segments = generatePathSegments(in: rect, base: base)
-                let line = generatePathLine(in: rect, base: base)
-
-                switch tool {
-                case .monoline:
-                    drawMonolinePreview(
-                        context: context,
-                        style: style,
-                        segments: segments
-                    )
-                case .pen:
-                    drawPenPreview(
-                        context: context,
-                        style: style,
-                        segments: segments
-                    )
-                case .highlighter:
-                        drawHighlighterPreview(
-                            context: context,
-                            style: style,
-                            line: line
-                        )
-                case .eraser: break
-                case .sticker: break
-                case .lasso: break
-                } 
-            }
         }
     }
 

@@ -6,8 +6,6 @@ import CoreGraphics
 struct ToolbarConstants {
     static let stylePresetPanelHeight: CGFloat = 160.0
     static let panelWidth: CGFloat = 50.0
-    static let styleDetailWidth: CGFloat = 200.0
-    static let styleDetailHeight: CGFloat = 230.0
     static let leadingPadding: CGFloat = 30.0
     static let trailingPadding: CGFloat = 30.0
     static let topPadding: CGFloat = 10.0
@@ -16,33 +14,20 @@ struct ToolbarConstants {
     static let iconPadding: CGFloat = 4.0
     static let buttonPadding: CGFloat = 4.0
     static let buttonSpacing: CGFloat = 4.0
-    static let detailPreviewSize: CGFloat = 60.0
     static let toolbarCornerRadius: CGFloat = 24.0
-    static let toolbarFade: CGFloat = 12.0
+    static let fade: CGFloat = 12.0
 
     static let toolsPanelHeight: CGFloat = 5.5 * (iconSize + 2 * iconPadding + buttonPadding)
 }
 
-struct VerticalEdgeFadeMask: View {
-    var fade: CGFloat = 16  // 渐隐高度
-
-    var body: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [.clear, .black],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: fade)
-
-            Rectangle().fill(.black)
-
-            LinearGradient(
-                colors: [.black, .clear],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: fade)
-        }
-    }
+struct DetailsPanelConstants {
+    static let detailPreviewSize: CGFloat = 60.0
+    static let detailWidth: CGFloat = 200.0
+    static let detailHeight: CGFloat = 260.0
+    static let colorPickerPadding: CGFloat = 4.0
+    static let colorPickerWidth: CGFloat = 160
+    static let colorPickerHeight: CGFloat = 100
+    static let sliderColor: Color = .gray.withOpacity(0.7)
 }
 
 // MARK: - Pen Preview Constants
