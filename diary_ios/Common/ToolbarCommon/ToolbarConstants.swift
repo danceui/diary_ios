@@ -25,8 +25,9 @@ struct DetailsPanelConstants {
     static let detailWidth: CGFloat = 220.0
     static let detailHeight: CGFloat = 290.0
     static let sliderSpacing: CGFloat = 6.0
-    static let sliderTextWidth: CGFloat = 45.0
-    static let sliderColor: Color = .gray.withOpacity(0.7)
+    static let sliderTextWidth: CGFloat = 52.0
+    static let sliderHPadding: CGFloat = 4.0
+    static let sliderColor: Color = .gray
     static let colorPickerButtonSize: CGFloat = 26.0
     static let colorPickerButtonPadding: CGFloat = 4.0
     static let colorPickerButtonCircle: CGFloat = 3.0

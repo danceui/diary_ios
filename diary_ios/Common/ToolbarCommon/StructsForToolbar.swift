@@ -7,6 +7,7 @@ private let sliderColor = DetailsPanelConstants.sliderColor
 private let detailPreviewSize = DetailsPanelConstants.detailPreviewSize
 private let sliderSpacing = DetailsPanelConstants.sliderSpacing
 private let sliderTextWidth = DetailsPanelConstants.sliderTextWidth
+private let sliderHPadding = DetailsPanelConstants.sliderHPadding
 private let colorPickerPadding = DetailsPanelConstants.colorPickerPadding
 private let colorPickerWidth = DetailsPanelConstants.colorPickerWidth
 private let colorPickerHeight = DetailsPanelConstants.colorPickerHeight
@@ -134,11 +135,12 @@ struct StyleWidthControl: View {
             .labelsHidden()
             .accessibilityLabel("Width")
             .frame(maxWidth: .infinity)
+            .padding(.horizontal, colorPickerPadding)
             .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
 
             Text("\(Int(width))")
                 .monospacedDigit()
-                .tint(sliderColor)
+                .foregroundStyle(sliderColor) 
                 .frame(width: sliderTextWidth, alignment: .center)
                 .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
         }
@@ -162,11 +164,12 @@ struct StyleOpacityControl: View {
             .labelsHidden()
             .accessibilityLabel("Opacity")
             .frame(maxWidth: .infinity)
+            .padding(.horizontal, colorPickerPadding)
             .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
 
             Text("\(Int(round(opacity * 100)))%")
                 .monospacedDigit()
-                .tint(sliderColor)
+                .foregroundStyle(sliderColor) 
                 .frame(width: sliderTextWidth, alignment: .center)
                 .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
         }
