@@ -91,6 +91,7 @@ struct ContentView: View {
                         lockedIndex: lockedIndex
                     )
                 }
+                .id("\(toolManager.currentTool)#\(toolManager.presetIndexForTool(for: tool) ?? -1)") 
                 .frame(width: styleDetailWidth, height: styleDetailHeight)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 .offset(x: calculateOffset())
