@@ -4,7 +4,8 @@ import SwiftUI
 private let fade = ToolbarConstants.fade
 
 private let sliderColor = DetailsPanelConstants.sliderColor
-private let detailPreviewSize = DetailsPanelConstants.detailPreviewSize
+private let previewSize = DetailsPanelConstants.previewSize
+private let previewPadding = DetailsPanelConstants.previewPadding
 private let sliderSpacing = DetailsPanelConstants.sliderSpacing
 private let sliderTextWidth = DetailsPanelConstants.sliderTextWidth
 private let sliderHPadding = DetailsPanelConstants.sliderHPadding
@@ -106,6 +107,39 @@ struct HorizontalEdgeFadeMask: View {
 }
 
 // MARK: - Details Panel
+struct CheckerboardBackground: View {
+    var squareSize: CGFloat = 10
+
+    var body: some View {
+        GeometryReader { geo in
+            let cols = Int(geo.size.width / squareSize)
+            let rows = Int(geo.size.height / squareSize)
+            Canvas { context, size in
+                for y in 0..<rows {
+                    for x in 0..<cols {
+                        let isEven = (x + y).isMultiple(of: 2)
+                        let color = isEven
+                            ? Color(.systemGray5).opacity(0.6)
+                            : Color(.systemGray6).opacity(0.6)
+                        context.fill(
+                            Path(
+                                CGRect(
+                                    x: CGFloat(x) * squareSize,
+                                    y: CGFloat(y) * squareSize,
+                                    width: squareSize,
+                                    height: squareSize
+                                )
+                            ),
+                            with: .color(color)
+                        )
+                    }
+                }
+            }
+        }
+        .clipped()
+    }
+}
+
 @available(iOS 26.0, *)
 struct StyleDetailsPreview: View {
     let tool: Tool
@@ -113,7 +147,13 @@ struct StyleDetailsPreview: View {
 
     var body: some View {
         FancyBrushPreview(tool: tool, style: style)
-            .frame(width: detailPreviewSize, height: detailPreviewSize)
+            .frame(width: previewSize, height: previewSize)
+            .padding(previewPadding)
+            .background(
+                CheckerboardBackground(squareSize: 8)
+                    .frame(width: 240, height: 100)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
     }
 }
