@@ -15,6 +15,7 @@ private let iconSize = ToolbarConstants.iconSize
 private let iconPadding = ToolbarConstants.iconPadding
 private let buttonPadding = ToolbarConstants.buttonPadding
 private let buttonSpacing = ToolbarConstants.buttonSpacing
+private let toolbarFade = ToolbarConstants.toolbarFade
 private let popoverMaxHeight: CGFloat = stylePresetPanelHeight
 private let detailPreviewSize = ToolbarConstants.detailPreviewSize
 private let panelGap = ToolbarConstants.panelGap
@@ -131,10 +132,10 @@ struct ContentView: View {
                             .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
                     }
-                    .padding(.vertical, 2 * buttonSpacing)
+                    .padding(.vertical, topPadding / 2)
                     .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
-                .mask(VerticalEdgeFadeMask(fade: buttonSpacing))
+                .mask(VerticalEdgeFadeMask(fade: toolbarFade))
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
@@ -195,10 +196,10 @@ struct ContentView: View {
                             .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
                     }
-                    .padding(.vertical, 2 * buttonSpacing)
+                    .padding(.vertical, topPadding / 2)
                     .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
-                .mask(VerticalEdgeFadeMask(fade: buttonSpacing))
+                .mask(VerticalEdgeFadeMask(fade: toolbarFade))
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }

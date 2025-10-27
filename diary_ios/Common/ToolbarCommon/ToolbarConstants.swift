@@ -19,6 +19,7 @@ struct ToolbarConstants {
     static let detailPreviewSize: CGFloat = 60.0
     static let toolsPanelHeight: CGFloat = 5.5 * (iconSize + 2 * iconPadding + buttonPadding)
     static let toolbarCornerRadius: CGFloat = 24.0
+    static let toolbarFade: CGFloat = 14.0
     static let toolbarBackgroundColor: UIColor = .systemBackground
     static let toolbarButtonColor: UIColor = .systemBlue
     static let toolbarButtonSelectedColor: UIColor = .systemGreen
