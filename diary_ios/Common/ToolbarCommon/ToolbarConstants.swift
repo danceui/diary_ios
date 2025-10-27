@@ -10,19 +10,17 @@ struct ToolbarConstants {
     static let styleDetailHeight: CGFloat = 230.0
     static let leadingPadding: CGFloat = 30.0
     static let trailingPadding: CGFloat = 30.0
-    static let topPadding: CGFloat = 12.0
+    static let topPadding: CGFloat = 10.0
     static let panelGap: CGFloat = 12
     static let iconSize: CGFloat = 30.0
     static let iconPadding: CGFloat = 4.0
     static let buttonPadding: CGFloat = 4.0
     static let buttonSpacing: CGFloat = 4.0
     static let detailPreviewSize: CGFloat = 60.0
-    static let toolsPanelHeight: CGFloat = 5.5 * (iconSize + 2 * iconPadding + buttonPadding)
     static let toolbarCornerRadius: CGFloat = 24.0
-    static let toolbarFade: CGFloat = 14.0
-    static let toolbarBackgroundColor: UIColor = .systemBackground
-    static let toolbarButtonColor: UIColor = .systemBlue
-    static let toolbarButtonSelectedColor: UIColor = .systemGreen
+    static let toolbarFade: CGFloat = 12.0
+
+    static let toolsPanelHeight: CGFloat = 5.5 * (iconSize + 2 * iconPadding + buttonPadding)
 }
 
 struct VerticalEdgeFadeMask: View {
