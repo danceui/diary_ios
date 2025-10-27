@@ -121,7 +121,9 @@ class ToolManager: ObservableObject {
 
     func presetStylePublisher() -> AnyPublisher<Void, Never> {
         Publishers.CombineLatest($currentTool, $presetIndices)
-            .map { _ in () }
+            .map { tool, indices in
+                print("[ToolManager] \(tool) + \(indices )")
+            }
             .eraseToAnyPublisher()
     }
 

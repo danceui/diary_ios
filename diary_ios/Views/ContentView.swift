@@ -256,7 +256,12 @@ struct ContentView: View {
             .padding(10)
             .onAppear {
                 if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
-                toolManager.presetStylePublisher()
+                if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
+                    applyStyleFromManager(style) 
+                }
+            }
+            .onReceive(toolManager.presetStylePublisher()) { _ in
+                if debugToolManager { print("🎨 [StyleDetailsPanel] Reloaded.") }
                 if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
                     applyStyleFromManager(style) 
                 }
