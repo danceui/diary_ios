@@ -72,24 +72,28 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - 切换工具
     func toolDidChange(tool: Tool, style: ToolStyle?) {
-        removeCurrentLayers()
         if tool.isDrawing {
             if currentHandwritingLayer == nil {
+                removeCurrentLayers()
                 createNewHandwritingLayer()
+            } else {
+                currentHandwritingLayer?.setTool(tool: tool, style: style)
             }
-            currentHandwritingLayer?.setTool(tool: tool, style: style)
         } else if tool.isEraser {
             if currentEraserLayer == nil {
+                removeCurrentLayers()
                 createNewEraserLayer()
             }
             // currentEraserLayer?.setTool(tool: tool)
         } else if tool.isSticker {
             if currentStickerLayer == nil {
+                removeCurrentLayers()
                 createNewStickerLayer()
             }
             // currentStickerLayer?.setTool(tool: tool)
         } else if tool.isLasso {
             if currentLassoLayer == nil {
+                removeCurrentLayers()
                 createNewLassoLayer()
             }
             // currentLassoLayer?.setTool(tool: tool)
