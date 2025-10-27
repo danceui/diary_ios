@@ -8,6 +8,7 @@ private let detailPreviewSize = DetailsPanelConstants.detailPreviewSize
 private let colorPickerPadding = DetailsPanelConstants.colorPickerPadding
 private let colorPickerWidth = DetailsPanelConstants.colorPickerWidth
 private let colorPickerHeight = DetailsPanelConstants.colorPickerHeight
+private let colorPickerFade = DetailsPanelConstants.colorPickerFade
 
 private let debugBorder = Debuggers.debugBorder
 
@@ -85,7 +86,7 @@ struct HorizontalEdgeFadeMask: View {
                 colors: [.clear, .black],
                 startPoint: .leading, endPoint: .trailing
             )
-            .frame(height: fade)
+            .frame(width: fade)
 
             Rectangle().fill(.black)
 
@@ -93,7 +94,7 @@ struct HorizontalEdgeFadeMask: View {
                 colors: [.black, .clear],
                 startPoint: .leading, endPoint: .trailing
             )
-            .frame(height: fade)
+            .frame(width: fade)
         }
     }
 }
@@ -195,15 +196,16 @@ struct StyleColorPalette: View {
                                 .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
                             }
                         }
-                        // .padding(.horizontal, colorPickerPadding)
+                        .padding(.horizontal, colorPickerPadding)
                     }
-                    // .mask(HorizontalEdgeFadeMask(fade: fade))
+                    .mask(HorizontalEdgeFadeMask(fade: fade))
+                    Divider()
                 }
-                .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
             }
-            // .padding(.vertical, colorPickerPadding)
+            .padding(.vertical, colorPickerPadding)
+            .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
         }
-        // .frame(width: colorPickerWidth, height: colorPickerHeight)
         .mask(VerticalEdgeFadeMask(fade: fade))
+        .frame(width: colorPickerWidth, height: colorPickerHeight)
     }
 }

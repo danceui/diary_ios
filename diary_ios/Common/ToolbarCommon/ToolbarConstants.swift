@@ -23,10 +23,11 @@ struct ToolbarConstants {
 struct DetailsPanelConstants {
     static let detailPreviewSize: CGFloat = 60.0
     static let detailWidth: CGFloat = 200.0
-    static let detailHeight: CGFloat = 260.0
-    static let colorPickerPadding: CGFloat = 4.0
-    static let colorPickerWidth: CGFloat = 160
+    static let detailHeight: CGFloat = 290.0
+    static let colorPickerPadding: CGFloat = 12.0
+    static let colorPickerWidth: CGFloat = 180
     static let colorPickerHeight: CGFloat = 100
+    static let colorPickerFade: CGFloat = 8.0
     static let sliderColor: Color = .gray.withOpacity(0.7)
 }
 
