@@ -131,9 +131,10 @@ struct ContentView: View {
                             .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
                     }
-                    .padding(.vertical, buttonSpacing)
+                    .padding(.vertical, 2 * buttonSpacing)
                     .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
+                .mask(VerticalEdgeFadeMask(fade: buttonSpacing))
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
@@ -194,9 +195,10 @@ struct ContentView: View {
                             .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
                     }
-                    .padding(.vertical, buttonSpacing)
+                    .padding(.vertical, 2 * buttonSpacing)
                     .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
+                .mask(VerticalEdgeFadeMask(fade: buttonSpacing))
                 .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
             }
         }
@@ -455,7 +457,6 @@ struct ContentView: View {
                 case .lasso: break
                 } 
             }
-            .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
         }
     }
 

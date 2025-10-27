@@ -2,6 +2,51 @@ import UIKit
 import SwiftUI
 import CoreGraphics
 
+// MARK: - Toolbar Constants
+struct ToolbarConstants {
+    static let stylePresetPanelHeight: CGFloat = 160.0
+    static let panelWidth: CGFloat = 50.0
+    static let styleDetailWidth: CGFloat = 200.0
+    static let styleDetailHeight: CGFloat = 230.0
+    static let leadingPadding: CGFloat = 30.0
+    static let trailingPadding: CGFloat = 30.0
+    static let topPadding: CGFloat = 10.0
+    static let panelGap: CGFloat = 12
+    static let iconSize: CGFloat = 30.0
+    static let iconPadding: CGFloat = 4.0
+    static let buttonPadding: CGFloat = 4.0
+    static let buttonSpacing: CGFloat = 4.0
+    static let detailPreviewSize: CGFloat = 60.0
+    static let toolsPanelHeight: CGFloat = 5.5 * (iconSize + 2 * iconPadding + buttonPadding)
+    static let toolbarCornerRadius: CGFloat = 24.0
+    static let toolbarBackgroundColor: UIColor = .systemBackground
+    static let toolbarButtonColor: UIColor = .systemBlue
+    static let toolbarButtonSelectedColor: UIColor = .systemGreen
+}
+
+struct VerticalEdgeFadeMask: View {
+    var fade: CGFloat = 16  // 渐隐高度
+
+    var body: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [.clear, .black],
+                startPoint: .top, endPoint: .bottom
+            )
+            .frame(height: fade)
+
+            Rectangle().fill(.black)
+
+            LinearGradient(
+                colors: [.black, .clear],
+                startPoint: .top, endPoint: .bottom
+            )
+            .frame(height: fade)
+        }
+    }
+}
+
+// MARK: - Pen Preview Constants
 struct BezierSegment {
     let p0, c1, c2, p3: CGPoint
 }
@@ -22,28 +67,6 @@ struct PreviewSVGConstants {
     static let baseLine: (start: CGPoint, end: CGPoint) = (start: CGPoint(x: 5.5, y: 15.0), end: CGPoint(x: 19.0, y: 8.0))
 }
 
-struct ToolbarConstants {
-    static let toolsPanelHeight: CGFloat = 260.0
-    static let stylePresetPanelHeight: CGFloat = 160.0
-    static let panelWidth: CGFloat = 50.0
-    static let styleDetailWidth: CGFloat = 200.0
-    static let styleDetailHeight: CGFloat = 230.0
-    static let leadingPadding: CGFloat = 30.0
-    static let trailingPadding: CGFloat = 30.0
-    static let topPadding: CGFloat = 10.0
-    static let panelGap: CGFloat = 12
-    static let iconSize: CGFloat = 30.0
-    static let iconPadding: CGFloat = 4.0
-    static let buttonPadding: CGFloat = 4.0
-    static let buttonSpacing: CGFloat = 4.0
-    static let detailPreviewSize: CGFloat = 60.0
-    static let toolbarCornerRadius: CGFloat = 24.0
-    static let toolbarBackgroundColor: UIColor = .systemBackground
-    static let toolbarButtonColor: UIColor = .systemBlue
-    static let toolbarButtonSelectedColor: UIColor = .systemGreen
-}
-
-// MARK: - Pen Preview Constants
 struct PenPreviewConstants {
     static let minPressure: CGFloat = 0.45
     static let maxPressure: CGFloat = 0.75
