@@ -91,7 +91,7 @@ struct ContentView: View {
                         lockedIndex: lockedIndex
                     )
                 }
-                .id("\(toolManager.currentTool)#\(toolManager.presetIndexForTool(for: tool) ?? -1)") 
+                .id(StyleDetailsKey(tool: toolManager.currentTool, index: lockedIndex ?? -1)) 
                 .frame(width: styleDetailWidth, height: styleDetailHeight)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 .offset(x: calculateOffset())
@@ -229,7 +229,6 @@ struct ContentView: View {
         @State private var color: Color = .black
         @State private var width: Double = 4
         @State private var opacity: Double = 1
-        @State private var cancellables: Set<AnyCancellable> = []
 
         private var previewStyle: ToolStyle {
             var style = ToolStyle()

@@ -38,6 +38,10 @@ struct Palette {
     ]
 }
 
+struct StyleDetailsKey: Hashable {
+    let tool: Tool
+    let index: Int
+}
 extension Color {
     /// Hex like 0xRRGGBB
     init(hex: UInt32) {
