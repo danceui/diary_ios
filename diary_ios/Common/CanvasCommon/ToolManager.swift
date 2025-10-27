@@ -97,6 +97,7 @@ class ToolManager: ObservableObject {
                     arr.indices.contains(idx) else {
                     return (tool, nil)
                 }
+                print("📢 [ToolManager] Publisher: New tool and style.")
                 return (tool, arr[idx])
             }
             .removeDuplicates { lhs, rhs in
@@ -113,23 +114,19 @@ class ToolManager: ObservableObject {
                     let arr = styles[tool],
                     let idx = indices[tool],
                     arr.indices.contains(idx) else { return nil }
+                print("📢 [ToolManager] Publisher: New style.")
                 return arr[idx]
             }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
 
-    func presetStylePublisher() -> AnyPublisher<Void, Never> {
-        Publishers.CombineLatest($currentTool, $presetIndices)
-            .map { tool, indices in
-                print("[ToolManager] \(tool) + \(indices )")
-            }
-            .eraseToAnyPublisher()
-    }
-
     func isSelectedPublisher(for tool: Tool) -> AnyPublisher<Bool, Never> {
         $currentTool
-            .map { $0 == tool }
+            .map { t -> Bool in
+                print("📢 [ToolManager] Publisher: New tool.")
+                return t == tool
+            }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

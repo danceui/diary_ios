@@ -259,12 +259,14 @@ struct ContentView: View {
                 if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
                     applyStyleFromManager(style) 
                 }
-            }
-            .onReceive(toolManager.presetStylePublisher()) { _ in
-                if debugToolManager { print("🎨 [StyleDetailsPanel] Reloaded.") }
-                if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
-                    applyStyleFromManager(style) 
-                }
+                toolManager.stylePublisher(for: tool)
+                    .receive(on: RunLoop.main)
+                    .sink { newStyle in
+                        if let style = newStyle {
+                            applyStyleFromManager(style)
+                        }
+                    }
+                    .store(in: &cancellables)
             }
             .onDisappear { 
                 commitChanges()
