@@ -22,13 +22,19 @@ struct ToolbarConstants {
 
 struct DetailsPanelConstants {
     static let detailPreviewSize: CGFloat = 60.0
-    static let detailWidth: CGFloat = 200.0
+    static let detailWidth: CGFloat = 220.0
     static let detailHeight: CGFloat = 290.0
-    static let colorPickerPadding: CGFloat = 12.0
-    static let colorPickerWidth: CGFloat = 180
+    static let sliderSpacing: CGFloat = 6.0
+    static let sliderTextWidth: CGFloat = 45.0
+    static let sliderColor: Color = .gray.withOpacity(0.7)
+    static let colorPickerButtonSize: CGFloat = 26.0
+    static let colorPickerButtonPadding: CGFloat = 4.0
+    static let colorPickerButtonCircle: CGFloat = 3.0
+    static let colorPickerPadding: CGFloat = 10.0
+    static let colorPickerSpacing: CGFloat = 6.0
+    static let colorPickerWidth: CGFloat = detailWidth - 20
     static let colorPickerHeight: CGFloat = 100
     static let colorPickerFade: CGFloat = 8.0
-    static let sliderColor: Color = .gray.withOpacity(0.7)
 }
 
 // MARK: - Pen Preview Constants

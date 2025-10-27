@@ -5,10 +5,15 @@ private let fade = ToolbarConstants.fade
 
 private let sliderColor = DetailsPanelConstants.sliderColor
 private let detailPreviewSize = DetailsPanelConstants.detailPreviewSize
+private let sliderSpacing = DetailsPanelConstants.sliderSpacing
+private let sliderTextWidth = DetailsPanelConstants.sliderTextWidth
 private let colorPickerPadding = DetailsPanelConstants.colorPickerPadding
 private let colorPickerWidth = DetailsPanelConstants.colorPickerWidth
 private let colorPickerHeight = DetailsPanelConstants.colorPickerHeight
 private let colorPickerFade = DetailsPanelConstants.colorPickerFade
+private let colorPickerButtonSize = DetailsPanelConstants.colorPickerButtonSize
+private let colorPickerButtonPadding = DetailsPanelConstants.colorPickerButtonPadding
+private let colorPickerSpacing = DetailsPanelConstants.colorPickerSpacing
 
 private let debugBorder = Debuggers.debugBorder
 
@@ -117,7 +122,7 @@ struct StyleWidthControl: View {
     var onCommit: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: sliderSpacing) {
             Slider(
                 value: $width,
                 in: 1...10,
@@ -133,7 +138,8 @@ struct StyleWidthControl: View {
 
             Text("\(Int(width))")
                 .monospacedDigit()
-                .frame(width: 56, alignment: .center)
+                .tint(sliderColor)
+                .frame(width: sliderTextWidth, alignment: .center)
                 .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
         }
     }
@@ -144,7 +150,7 @@ struct StyleOpacityControl: View {
     var onCommit: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: sliderSpacing) {
             Slider(
                 value: $opacity,
                 in: 0.1...1,
@@ -160,7 +166,8 @@ struct StyleOpacityControl: View {
 
             Text("\(Int(round(opacity * 100)))%")
                 .monospacedDigit()
-                .frame(width: 56, alignment: .center)
+                .tint(sliderColor)
+                .frame(width: sliderTextWidth, alignment: .center)
                 .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
         }
     }
@@ -172,11 +179,11 @@ struct StyleColorPalette: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
-            VStack(spacing: 10) {
+            VStack(spacing: colorPickerSpacing) {
                 ForEach(PaletteStyle.allCases) { s in
                     let colors = Palette.colors[s] ?? []
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
+                        HStack(spacing: colorPickerSpacing) {
                             ForEach(colors, id: \.self) { c in
                                 Button {
                                     selectedColor = c
@@ -184,11 +191,10 @@ struct StyleColorPalette: View {
                                 } label: {
                                     Circle()
                                         .fill(c)
-                                        .frame(width: 28, height: 28)
+                                        .frame(width: colorPickerButtonSize, height: colorPickerButtonSize)
+                                        .padding(colorPickerButtonPadding)
                                         .overlay(
-                                            Circle()
-                                                .stroke(lineWidth: selectedColor == c ? 3 : 0)
-                                                .foregroundStyle(.primary.opacity(0.8))
+                                            Circle().strokeBorder(c.opacity(0.8), lineWidth: selectedColor == c ? 3 : 0)
                                         )
                                 }
                                 .buttonStyle(.plain)

@@ -1,6 +1,6 @@
 import SwiftUI
 
 struct Debuggers {
-    static let debugBorder = false
+    static let debugBorder = true
     static let debugToolManager = true
 }
