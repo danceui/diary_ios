@@ -63,9 +63,9 @@ struct PreviewSVGConstants {
 }
 
 struct PenPreviewConstants {
-    static let minPressure: CGFloat = 0.45
+    static let minPressure: CGFloat = 0.35
     static let maxPressure: CGFloat = 0.75
-    static let minPx: CGFloat = 0.5
+    static let minPx: CGFloat = 0.3
     static let segmentSteps = [18, 16, 16, 18, 22]
     static let segmentStepSums = [18, 34, 50, 68, 90]
     static let totalSteps = 90

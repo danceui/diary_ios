@@ -52,7 +52,7 @@ private func buildPenRibbonCGPath(
             let L  = max(1e-6, hypot(dx, dy))
             let nx = -dy / L, ny = dx / L
 
-            // 全局进度（用于你的 taper/pressure）
+            // 全局进度
             let gStep = PenPreviewConstants.segmentStepSums[segIndex] - steps + i
             let gT = CGFloat(gStep) / CGFloat(max(1, totalSteps - 1))
             let r = max(PenPreviewConstants.minPx, (width * bellPressure(t: gT)) / 2)
