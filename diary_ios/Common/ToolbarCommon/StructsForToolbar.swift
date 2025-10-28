@@ -62,13 +62,19 @@ struct FancyBrushPreview: View {
 }
 
 // MARK: - ScrollView Fade Mask
-struct VerticalEdgeFadeMask: View {
+struct VerticalEdgeFade: View {
     var fade: CGFloat
 
     var body: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [.clear, .black],
+                colors: [
+                    Color.black.opacity(0),      // 完全透明
+                    Color.black.opacity(0.383),
+                    Color.black.opacity(0.707),
+                    Color.black.opacity(0.924),
+                    Color.black                  // 完全不透明
+                ],
                 startPoint: .top, endPoint: .bottom
             )
             .frame(height: fade)
@@ -76,7 +82,13 @@ struct VerticalEdgeFadeMask: View {
             Rectangle().fill(.black)
 
             LinearGradient(
-                colors: [.black, .clear],
+                colors: [
+                    Color.black, // 完全不透明
+                    Color.black.opacity(0.924),
+                    Color.black.opacity(0.707),
+                    Color.black.opacity(0.383),
+                    Color.black.opacity(0) // 底部完全不透明
+                ],
                 startPoint: .top, endPoint: .bottom
             )
             .frame(height: fade)
@@ -84,13 +96,19 @@ struct VerticalEdgeFadeMask: View {
     }
 }
 
-struct HorizontalEdgeFadeMask: View {
+struct HorizontalEdgeFade: View {
     var fade: CGFloat
 
     var body: some View {
         HStack(spacing: 0) {
             LinearGradient(
-                colors: [.clear, .black],
+                colors: [
+                    Color.black.opacity(0),      // 完全透明
+                    Color.black.opacity(0.383),
+                    Color.black.opacity(0.707),
+                    Color.black.opacity(0.924),
+                    Color.black                  // 完全不透明
+                ],
                 startPoint: .leading, endPoint: .trailing
             )
             .frame(width: fade)
@@ -98,7 +116,13 @@ struct HorizontalEdgeFadeMask: View {
             Rectangle().fill(.black)
 
             LinearGradient(
-                colors: [.black, .clear],
+                colors: [
+                    Color.black, // 完全不透明
+                    Color.black.opacity(0.924),
+                    Color.black.opacity(0.707),
+                    Color.black.opacity(0.383),
+                    Color.black.opacity(0) // 底部完全不透明
+                ],
                 startPoint: .leading, endPoint: .trailing
             )
             .frame(width: fade)
@@ -247,14 +271,14 @@ struct StyleColorPalette: View {
                         }
                         .padding(.horizontal, colorPickerPadding)
                     }
-                    .mask(HorizontalEdgeFadeMask(fade: fade))
+                    .mask(HorizontalEdgeFade(fade: fade))
                     Divider()
                 }
             }
             .padding(.vertical, colorPickerPadding)
             .overlay(Rectangle().stroke(debugBorder ? Color.orange.withOpacity(0.5) : .clear, lineWidth: 1))
         }
-        .mask(VerticalEdgeFadeMask(fade: fade))
+        .mask(VerticalEdgeFade(fade: fade))
         .frame(width: colorPickerWidth, height: colorPickerHeight)
     }
 }

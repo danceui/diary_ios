@@ -136,7 +136,7 @@ struct ContentView: View {
                 .padding(.vertical, 1.5 * buttonSpacing)
                 .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
             }
-            .mask(VerticalEdgeFadeMask(fade: fade))
+            .mask(VerticalEdgeFade(fade: fade))
             .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
         }
     }
@@ -200,7 +200,7 @@ struct ContentView: View {
                 .padding(.vertical, 1.5 * buttonSpacing)
                 .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
             }
-            .mask(VerticalEdgeFadeMask(fade: fade))
+            .mask(VerticalEdgeFade(fade: fade))
             .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
         }
     }
