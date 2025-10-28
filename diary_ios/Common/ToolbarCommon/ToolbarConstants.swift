@@ -24,7 +24,9 @@ struct DetailsPanelConstants {
     static let detailWidth: CGFloat = 220.0
     static let detailHeight: CGFloat = 290.0
     static let previewSize: CGFloat = 60.0
-    static let previewPadding: CGFloat = 4.0
+    static let previewHPadding: CGFloat = 10.0
+    static let previewVPadding: CGFloat = 4.0
+    static let previewBackgroundSquareSize: CGFloat = 16.0
     static let sliderSpacing: CGFloat = 6.0
     static let sliderTextWidth: CGFloat = 52.0
     static let sliderHPadding: CGFloat = 4.0

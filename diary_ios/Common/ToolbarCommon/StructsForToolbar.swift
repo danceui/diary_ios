@@ -5,7 +5,9 @@ private let fade = ToolbarConstants.fade
 
 private let sliderColor = DetailsPanelConstants.sliderColor
 private let previewSize = DetailsPanelConstants.previewSize
-private let previewPadding = DetailsPanelConstants.previewPadding
+private let previewHPadding = DetailsPanelConstants.previewHPadding
+private let previewVPadding = DetailsPanelConstants.previewVPadding
+private let previewBackgroundSquareSize = DetailsPanelConstants.previewBackgroundSquareSize
 private let sliderSpacing = DetailsPanelConstants.sliderSpacing
 private let sliderTextWidth = DetailsPanelConstants.sliderTextWidth
 private let sliderHPadding = DetailsPanelConstants.sliderHPadding
@@ -61,7 +63,7 @@ struct FancyBrushPreview: View {
     }
 }
 
-// MARK: - ScrollView Fade Mask
+// MARK: - Effect For Details Panel
 struct VerticalEdgeFade: View {
     var fade: CGFloat
 
@@ -130,9 +132,8 @@ struct HorizontalEdgeFade: View {
     }
 }
 
-// MARK: - Details Panel
 struct CheckerboardBackground: View {
-    var squareSize: CGFloat = 10
+    var squareSize: CGFloat
 
     var body: some View {
         GeometryReader { geo in
@@ -160,25 +161,25 @@ struct CheckerboardBackground: View {
                 }
             }
         }
-        .clipped()
     }
 }
 
+// MARK: - Details Panel
 @available(iOS 26.0, *)
 struct StyleDetailsPreview: View {
     let tool: Tool
     let style: ToolStyle
 
     var body: some View {
-        FancyBrushPreview(tool: tool, style: style)
-            .frame(width: previewSize, height: previewSize)
-            .padding(previewPadding)
-            .background(
-                CheckerboardBackground(squareSize: 8)
-                    .frame(width: 240, height: 100)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
+        ZStack {
+            FancyBrushPreview(tool: tool, style: style)
+                .frame(width: previewSize, height: previewSize)
+                .padding(.vertical, previewVPadding)
+                .padding(.horizontal, previewHPadding)
+                .background(CheckerboardBackground(squareSize: previewBackgroundSquareSize))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(Rectangle().stroke(debugBorder ? Color.green.withOpacity(0.5) : .clear, lineWidth: 1))
+        }
     }
 }
 
