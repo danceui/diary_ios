@@ -57,10 +57,9 @@ struct ContentView: View {
 // MARK: - Drawing Toolbar
 struct DrawingToolbar: View {
     let notebookSpreadViewController: NotebookSpreadViewController
-    // 用路由替代原来的 showStylePresets / showStyleDetails / lockedIndex
     @StateObject private var menu = MenuStore()
-    // 工具按钮锚点缓存
     @State private var toolAnchors: [Tool: Anchor<CGRect>] = [:]
+    @State private var presetAnchors: [PresetID: Anchor<CGRect>] = [:]
     @EnvironmentObject private var toolManager: ToolManager
 
     var body: some View {
@@ -82,7 +81,7 @@ struct DrawingToolbar: View {
                                 }
                             } else {
                                 toolManager.selectTool(tool)
-                                menu.route = tool.supportsPresets ? .presets(tool: tool) : .toolsOnly
+                                if case .presets = menu.route { menu.backToTools() }
                             }
                         }
                     )
@@ -93,6 +92,7 @@ struct DrawingToolbar: View {
             }
             // 汇总所有工具按钮锚点
             .onPreferenceChange(ToolAnchorKey.self) { toolAnchors = $0 }
+            .onPreferenceChange(PresetAnchorKey.self) { presetAnchors = $0 }
             overlayPanels
         }
     }
@@ -131,10 +131,10 @@ struct DrawingToolbar: View {
                     )
                 }
                 .frame(width: panelWidth, height: stylePresetPanelHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 .position(presetsPos)
                 .opacity(isPresetsVisible ? 1 : 0)
                 .allowsHitTesting(isPresetsVisible)
-                .animation(.snappy, value: isPresetsVisible)
                 .zIndex(10)
 
                 // ---------- 三级：Style Details ----------
@@ -143,9 +143,9 @@ struct DrawingToolbar: View {
                     return false
                 }()
 
-                let detailsPos = positionForPanel(
+                let detailsPos = positionForDetailsPanel(
                     proxy: proxy,
-                    extraX: (isPresetsVisible ? (panelWidth + panelGap) : 0)
+                    defaultXExtra: (isPresetsVisible ? (panelWidth + panelGap) : 0)
                 )
 
                 GlassEffectContainer {
@@ -154,10 +154,10 @@ struct DrawingToolbar: View {
                     )
                 }
                 .frame(width: detailWidth, height: detailHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 .position(detailsPos)
                 .opacity(isDetailsVisible ? 1 : 0)
                 .allowsHitTesting(isDetailsVisible)
-                .animation(.snappy, value: isDetailsVisible)
                 .zIndex(20)
             }
         }
@@ -183,6 +183,29 @@ struct DrawingToolbar: View {
         let x = rect.maxX + panelGap + (panelWidth/2) + extraX
         let y = min(max(rect.midY, rect.height/2 + 8), proxy.size.height - rect.height/2 - 8)
         return CGPoint(x: x, y: y)
+    }
+
+    private func positionForDetailsPanel(proxy: GeometryProxy, defaultXExtra: CGFloat) -> CGPoint {
+        if case .details(let tool, let idx) = menu.route,
+        let anchor = presetAnchors[PresetID(tool: tool, index: idx)] {
+            let r = proxy[anchor]
+            // 紧贴 preset cell 右侧
+            let x = r.maxX + panelGap + detailWidth / 2
+            let y = min(max(r.midY, detailHeight/2 + 8),
+                        proxy.size.height - detailHeight/2 - 8)
+            return CGPoint(x: x, y: y)
+        }
+        // 回退：用当前工具按钮的锚点 + （如果二级在场）额外水平偏移
+        if let tool = currentTool, let a = toolAnchors[tool] {
+            let r = proxy[a]
+            let x = r.maxX + panelGap + detailWidth/2 + defaultXExtra
+            let y = min(max(r.midY, detailHeight/2 + 8),
+                        proxy.size.height - detailHeight/2 - 8)
+            return CGPoint(x: x, y: y)
+        }
+        // 实在没有锚点时的兜底
+        return CGPoint(x: panelWidth + panelGap + detailWidth/2 + defaultXExtra,
+                    y: topPadding + detailHeight/2)
     }
 }
 
@@ -228,8 +251,8 @@ struct ToolButtonForToolsPanel: View {
     }
 }
 
-@available(iOS 26.0, *)
 // MARK: - 2.Style Presets Panel
+@available(iOS 26.0, *)
 struct StylePresetsPanel: View {
     var onPresetTap: (Int) -> Void 
     @EnvironmentObject private var toolManager: ToolManager
@@ -250,6 +273,7 @@ struct StylePresetsPanel: View {
                         onPresetTap(idx) 
                     }
                     .padding(buttonPadding)
+                    .anchorPreference(key: PresetAnchorKey.self, value: .bounds) { [PresetID(tool: tool, index: idx): $0] }
                     .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
             }

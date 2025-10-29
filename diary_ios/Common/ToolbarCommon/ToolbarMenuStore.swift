@@ -32,3 +32,15 @@ struct ToolAnchorKey: PreferenceKey {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }
+
+struct PresetID: Hashable {
+    let tool: Tool
+    let index: Int
+}
+
+struct PresetAnchorKey: PreferenceKey {
+    static var defaultValue: [PresetID: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [PresetID: Anchor<CGRect>], nextValue: () -> [PresetID: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
