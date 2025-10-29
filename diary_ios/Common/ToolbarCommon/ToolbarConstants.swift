@@ -2,6 +2,12 @@ import UIKit
 import SwiftUI
 import CoreGraphics
 
+// MARK: - Debuggers
+struct Debuggers {
+    static let debugBorder = false
+    static let debugToolManager = true
+}
+
 // MARK: - Toolbar Constants
 struct ToolbarConstants {
     static let stylePresetPanelHeight: CGFloat = 160.0
