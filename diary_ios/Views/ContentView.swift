@@ -61,51 +61,39 @@ struct ContentView: View {
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
-            ZStack(alignment: .topLeading) {
-                HStack(alignment: .top, spacing: panelGap) {
-                    GlassEffectContainer {
-                        ToolsPanel(
-                            showStylePresets: $showStylePresets,
-                            showStyleDetails: $showStyleDetails
-                        )
-                    }
-                    .frame(width: panelWidth, height: toolsPanelHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-
-                    if showStylePresets, toolManager.currentTool.supportsPresets {
-                        GlassEffectContainer {
-                            StylePresetsPanel(
-                                showStyleDetails: $showStyleDetails,
-                                lockedIndex: $lockedIndex
-                            )
-                        }
-                        .frame(width: panelWidth, height: stylePresetPanelHeight)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                        .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                    }
-                }
-                
+            HStack(alignment: .top, spacing: panelGap) {
                 GlassEffectContainer {
-                    StyleDetailsPanel(
-                        tool: toolManager.currentTool,
-                        lockedIndex: lockedIndex
+                    ToolsPanel(
+                        showStylePresets: $showStylePresets,
+                        showStyleDetails: $showStyleDetails
                     )
                 }
-                .id(StyleDetailsKey(tool: toolManager.currentTool, index: lockedIndex ?? -1)) 
-                .frame(width: detailWidth, height: detailHeight)
+                .frame(width: panelWidth, height: toolsPanelHeight)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                .offset(x: calculateOffset())
-                .opacity(showStyleDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
-            }
-        }
+                .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
 
-        private func calculateOffset() -> CGFloat {
-            var offset = panelWidth + panelGap
-            if showStylePresets && toolManager.currentTool.supportsPresets {
-                offset += panelWidth + panelGap
+                if showStylePresets, toolManager.currentTool.supportsPresets {
+                    GlassEffectContainer {
+                        StylePresetsPanel(
+                            showStyleDetails: $showStyleDetails,
+                            lockedIndex: $lockedIndex
+                        )
+                    }
+                    .frame(width: panelWidth, height: stylePresetPanelHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                }
+
+                if showStyleDetails && toolManager.currentTool.supportsPresets {
+                    GlassEffectContainer {
+                        StyleDetailsPanel(tool: toolManager.currentTool,
+                        lockedIndex: lockedIndex) 
+                    }
+                    .frame(width: detailWidth, height: detailHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                }
             }
-            return offset
         }
     }
 
