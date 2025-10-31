@@ -11,18 +11,17 @@ final class MenuStore: ObservableObject {
     @Published var route: MenuRoute = .toolsOnly
 
     func openPresets(for tool: Tool) {
-        withAnimation(.snappy) { route = .presets(tool: tool) }
+        route = .presets(tool: tool)
     }
     func openDetails(for tool: Tool, index: Int) {
-        withAnimation(.snappy) { route = .details(tool: tool, presetIndex: index) }
+        route = .details(tool: tool, presetIndex: index)
     }
     func closeDetailsToPresets() {
-        if case .details(let t, _) = route {
-            withAnimation(.snappy) { route = .presets(tool: t) }
-        }
+        guard case .details(let t, _) = route else { return }
+        withAnimation(.snappy) { route = .presets(tool: t) }
     }
     func backToTools() {
-        withAnimation(.snappy) { route = .toolsOnly }
+        route = .toolsOnly
     }
 }
 

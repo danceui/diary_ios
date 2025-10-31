@@ -80,8 +80,6 @@ struct DrawingToolbar: View {
                                     menu.openPresets(for: tool)
                                 }
                             } else {
-                                if case .details = menu.route { menu.closeDetailsToPresets() }
-                                if case .presets = menu.route { menu.backToTools() }
                                 toolManager.selectTool(tool)
                             }
                         }
@@ -161,8 +159,7 @@ struct DrawingToolbar: View {
                     .frame(width: detailWidth, height: detailHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .position(detailsPos)
-                    .opacity(isDetailsVisible ? 1 : 0)
-                    .allowsHitTesting(isDetailsVisible)
+                    .id(PresetID(tool: t, index: idx)) 
                     .zIndex(20)
                 }
             }
@@ -215,8 +212,8 @@ struct DrawingToolbar: View {
     }
 }
 
-@available(iOS 26.0, *)
 // MARK: - 1.Tools Panel
+@available(iOS 26.0, *)
 struct ToolsPanel: View {
     var onToolTap: (Tool) -> Void 
     @EnvironmentObject private var toolManager: ToolManager
