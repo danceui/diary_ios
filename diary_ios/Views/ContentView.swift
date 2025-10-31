@@ -107,73 +107,72 @@ struct DrawingToolbar: View {
 
     @ViewBuilder
     private var overlayPanels: some View {
-        GeometryReader { proxy in
+        GeometryReader { proxy in 
             ZStack {
-                // Style Presets
+                // ---------- 二级：Style Presets ----------
                 let isPresetsVisible = {
                     if case .presets(let t) = menu.route { return t.supportsPresets }
                     if case .details(let t, _) = menu.route { return t.supportsPresets } 
                     return false
                 }()
-                let presetsPos = positionForPanel(proxy: proxy, extraX: 0)
 
-                GlassEffectContainer {
-                    StylePresetsPanel(
-                        tool: routedTool ?? .pen,
-                        onPresetTap: { idx in
-                            guard let tool = routedTool else { return }
-                            let currentIndex = toolManager.presetIndexForTool(for: tool)
-                            if currentIndex == idx {
-                                switch menu.route {
-                                case .details(let t, let i) where t == tool && i == idx:
+                if isPresetsVisible, case .presets(let t) = menu.route {
+                    let presetsPos = positionForPanel(proxy: proxy, extraX: 0)
+
+                    GlassEffectContainer {
+                        StylePresetsPanel(
+                            tool: t,
+                            onPresetTap: { idx in
+                                let currentIndex = toolManager.presetIndexForTool(for: t)
+                                if currentIndex == idx {
+                                    switch menu.route {
+                                    case .details(let tt, let i) where tt == t && i == idx:
+                                        menu.closeDetailsToPresets()
+                                    default:
+                                        menu.openDetails(for: t, index: idx)
+                                    }
+                                } else {
+                                    toolManager.selectPreset(for: t, index: idx)
                                     menu.closeDetailsToPresets()
-                                default:
-                                    menu.openDetails(for: tool, index: idx)
                                 }
-                            } else {
-                                toolManager.selectPreset(for: tool, index: idx)
-                                menu.closeDetailsToPresets()
                             }
-                        }
-                    )
+                        )
+                    }
+                    .frame(width: panelWidth, height: stylePresetPanelHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .position(presetsPos)
+                    .id(t)
+                    .zIndex(10)
                 }
-                .frame(width: panelWidth, height: stylePresetPanelHeight)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                .position(presetsPos)
-                .opacity(isPresetsVisible ? 1 : 0)  
-                .allowsHitTesting(isPresetsVisible)
-                .zIndex(10)
 
-                // Style Details
-                let details: (tool: Tool, index: Int)? = {
-                    if case .details(let t, let i) = menu.route { return (t, i) }
-                    return nil
+                // ---------- 三级：Style Details ----------
+                let isDetailsVisible = {
+                    if case .details = menu.route { return true }
+                    return false
                 }()
-                func isDetailsVisible() -> Bool { return {details != nil} }
 
-                let detailsPos = positionForDetailsPanel(
-                    proxy: proxy,
-                    defaultXExtra: (isPresetsVisible ? (panelWidth + panelGap) : 0)
-                )
 
-                GlassEffectContainer {
-                    StyleDetailsPanel(
-                        tool: details?.tool ?? (routedTool ?? .pen),
-                        lockedIndex: details?.index ?? 0,
-                        isVisible: isDetailsVisible()
+                if isDetailsVisible, case .details(let t, let idx) = menu.route {
+                    let detailsPos = positionForDetailsPanel(
+                        proxy: proxy,
+                        defaultXExtra: (isPresetsVisible ? (panelWidth + panelGap) : 0)
                     )
+
+                    GlassEffectContainer {
+                        StyleDetailsPanel(
+                            tool: t,
+                            lockedIndex: idx
+                        )
+                    }
+                    .frame(width: detailWidth, height: detailHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .position(detailsPos)
+                    .id(PresetID(tool: t, index: idx)) 
+                    .zIndex(20)
                 }
-                .frame(width: detailWidth, height: detailHeight)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                .position(detailsPos)
-                // .id(PresetID(tool: tool, index: idx))
-                .opacity(isDetailsVisible() ? 1 : 0)
-                .allowsHitTesting(isDetailsVisible())
-                .zIndex(20)
             }
         }
     }
-
     
     // 计算面板中心点（基于被选工具按钮的锚点）
     private func positionForPanel(proxy: GeometryProxy, extraX: CGFloat) -> CGPoint {
@@ -281,9 +280,9 @@ struct StylePresetsPanel: View {
 struct StyleDetailsPanel: View {
     let tool: Tool
     let lockedIndex: Int
-    let isVisible: Bool
-
     @EnvironmentObject private var toolManager: ToolManager
+
+    // 本地编辑态，仅用于预览
     @State private var color: Color = .black
     @State private var width: Double = 4
     @State private var opacity: Double = 1
@@ -307,9 +306,6 @@ struct StyleDetailsPanel: View {
         .onAppear { syncFromManager() }
         .onChange(of: tool)        { _, _ in syncFromManager() }
         .onChange(of: lockedIndex) { _, _ in syncFromManager() }
-        .onChange(of: isVisible) { _, new in
-            if new { syncFromManager() } else { commitChanges() }
-        }
         .onDisappear { commitChanges() }
     }
 
