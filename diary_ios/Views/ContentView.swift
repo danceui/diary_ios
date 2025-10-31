@@ -97,88 +97,87 @@ struct DrawingToolbar: View {
         }
     }
 
-    @ViewBuilder
-    private var overlayPanels: some View {
-        GeometryReader { proxy in 
-            ZStack {
-                let tool = currentTool
-                // ---------- 二级：Style Presets ----------
-                let isPresetsVisible = {
-                    if case .presets(let t) = menu.route { return t.supportsPresets }
-                    if case .details(let t, _) = menu.route { return t.supportsPresets } 
-                    return false
-                }()
-
-                if isPresetsVisible, let t = tool {
-                    let presetsPos = positionForPanel(proxy: proxy, extraX: 0)
-
-                    GlassEffectContainer {
-                        StylePresetsPanel(
-                            tool: t,
-                            onPresetTap: { idx in
-                                let currentIndex = toolManager.presetIndexForTool(for: t)
-                                if currentIndex == idx {
-                                    switch menu.route {
-                                    case .details(let tt, let i) where tt == t && i == idx:
-                                        menu.closeDetailsToPresets()
-                                    default:
-                                        menu.openDetails(for: t, index: idx)
-                                    }
-                                } else {
-                                    toolManager.selectPreset(for: t, index: idx)
-                                    menu.closeDetailsToPresets()
-                                }
-                            }
-                        )
-                    }
-                    .frame(width: panelWidth, height: stylePresetPanelHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    .position(presetsPos)
-                    .id(t)
-                    .zIndex(10)
-                }
-
-                // ---------- 三级：Style Details ----------
-                let isDetailsVisible = {
-                    if case .details = menu.route { return true }
-                    return false
-                }()
-
-
-                if isDetailsVisible, case .details(let t, let idx) = menu.route {
-                    let detailsPos = positionForDetailsPanel(
-                        proxy: proxy,
-                        defaultXExtra: (isPresetsVisible ? (panelWidth + panelGap) : 0)
-                    )
-
-                    GlassEffectContainer {
-                        StyleDetailsPanel(
-                            tool: t,
-                            lockedIndex: idx
-                        )
-                    }
-                    .frame(width: detailWidth, height: detailHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    .position(detailsPos)
-                    .id(PresetID(tool: t, index: idx)) 
-                    .zIndex(20)
-                }
-            }
-        }
-    }
-
-    // 当前路由里的工具（如果存在）
-    private var currentTool: Tool? {
+    private var routedTool: Tool? {
         switch menu.route {
         case .presets(let t): return t
         case .details(let t, _): return t
         default: return toolManager.currentTool
         }
     }
+
+    @ViewBuilder
+    private var overlayPanels: some View {
+        GeometryReader { proxy in
+            ZStack {
+                // Style Presets
+                let isPresetsVisible = {
+                    if case .presets(let t) = menu.route { return t.supportsPresets }
+                    if case .details(let t, _) = menu.route { return t.supportsPresets } 
+                    return false
+                }()
+                let presetsPos = positionForPanel(proxy: proxy, extraX: 0)
+
+                GlassEffectContainer {
+                    StylePresetsPanel(
+                        tool: routedTool ?? .pen,
+                        onPresetTap: { idx in
+                            guard let tool = routedTool else { return }
+                            let currentIndex = toolManager.presetIndexForTool(for: tool)
+                            if currentIndex == idx {
+                                switch menu.route {
+                                case .details(let t, let i) where t == tool && i == idx:
+                                    menu.closeDetailsToPresets()
+                                default:
+                                    menu.openDetails(for: tool, index: idx)
+                                }
+                            } else {
+                                toolManager.selectPreset(for: tool, index: idx)
+                                menu.closeDetailsToPresets()
+                            }
+                        }
+                    )
+                }
+                .frame(width: panelWidth, height: stylePresetPanelHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .position(presetsPos)
+                .opacity(isPresetsVisible ? 1 : 0)  
+                .allowsHitTesting(isPresetsVisible)
+                .zIndex(10)
+
+                // Style Details
+                let details: (tool: Tool, index: Int)? = {
+                    if case .details(let t, let i) = menu.route { return (t, i) }
+                    return nil
+                }()
+                func isDetailsVisible() -> Bool { return {details != nil} }
+
+                let detailsPos = positionForDetailsPanel(
+                    proxy: proxy,
+                    defaultXExtra: (isPresetsVisible ? (panelWidth + panelGap) : 0)
+                )
+
+                GlassEffectContainer {
+                    StyleDetailsPanel(
+                        tool: details?.tool ?? (routedTool ?? .pen),
+                        lockedIndex: details?.index ?? 0,
+                        isVisible: isDetailsVisible()
+                    )
+                }
+                .frame(width: detailWidth, height: detailHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .position(detailsPos)
+                // .id(PresetID(tool: tool, index: idx))
+                .opacity(isDetailsVisible() ? 1 : 0)
+                .allowsHitTesting(isDetailsVisible())
+                .zIndex(20)
+            }
+        }
+    }
+
     
     // 计算面板中心点（基于被选工具按钮的锚点）
     private func positionForPanel(proxy: GeometryProxy, extraX: CGFloat) -> CGPoint {
-        guard let tool = currentTool,
+        guard let tool = routedTool,
               let anchor = toolAnchors[tool] else {
             // 找不到锚点时，退化到左上角偏移（不阻塞）
             return CGPoint(x: panelWidth + panelGap + extraX + panelWidth/2, y: topPadding + stylePresetPanelHeight/2)
@@ -200,7 +199,7 @@ struct DrawingToolbar: View {
             return CGPoint(x: x, y: y)
         }
         // 回退：用当前工具按钮的锚点 + （如果二级在场）额外水平偏移
-        if let tool = currentTool, let a = toolAnchors[tool] {
+        if let tool = routedTool, let a = toolAnchors[tool] {
             let r = proxy[a]
             let x = r.maxX + panelGap + detailWidth/2 + defaultXExtra
             let y = min(max(r.midY, detailHeight/2 + 8),
@@ -282,9 +281,9 @@ struct StylePresetsPanel: View {
 struct StyleDetailsPanel: View {
     let tool: Tool
     let lockedIndex: Int
-    @EnvironmentObject private var toolManager: ToolManager
+    let isVisible: Bool
 
-    // 本地编辑态，仅用于预览
+    @EnvironmentObject private var toolManager: ToolManager
     @State private var color: Color = .black
     @State private var width: Double = 4
     @State private var opacity: Double = 1
@@ -308,6 +307,9 @@ struct StyleDetailsPanel: View {
         .onAppear { syncFromManager() }
         .onChange(of: tool)        { _, _ in syncFromManager() }
         .onChange(of: lockedIndex) { _, _ in syncFromManager() }
+        .onChange(of: isVisible) { _, new in
+            if new { syncFromManager() } else { commitChanges() }
+        }
         .onDisappear { commitChanges() }
     }
 
