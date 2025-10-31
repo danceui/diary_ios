@@ -53,8 +53,8 @@ struct ContentView: View {
     }
 }
 
-@available(iOS 26.0, *)
 // MARK: - Drawing Toolbar
+@available(iOS 26.0, *)
 struct DrawingToolbar: View {
     let notebookSpreadViewController: NotebookSpreadViewController
     @StateObject private var menu = MenuStore()
@@ -81,6 +81,7 @@ struct DrawingToolbar: View {
                                 }
                             } else {
                                 toolManager.selectTool(tool)
+                                menu.backToTools()
                             }
                         }
                     )
@@ -124,8 +125,8 @@ struct DrawingToolbar: View {
                                         menu.openDetails(for: t, index: idx)
                                     }
                                 } else {
-                                    if case .details = menu.route { menu.closeDetailsToPresets() }
                                     toolManager.selectPreset(for: t, index: idx)
+                                    menu.closeDetailsToPresets()
                                 }
                             }
                         )
