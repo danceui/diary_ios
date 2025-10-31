@@ -61,38 +61,44 @@ struct ContentView: View {
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
-            HStack(alignment: .top, spacing: panelGap) {
-                GlassEffectContainer {
-                    ToolsPanel(
-                        showStylePresets: $showStylePresets,
-                        showStyleDetails: $showStyleDetails
-                    )
-                }
-                .frame(width: panelWidth, height: toolsPanelHeight)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-
-                if showStylePresets, toolManager.currentTool.supportsPresets {
+            ZStack(alignment: .topLeading) {
+                HStack(alignment: .top, spacing: panelGap) {
                     GlassEffectContainer {
-                        StylePresetsPanel(
-                            showStyleDetails: $showStyleDetails,
-                            lockedIndex: $lockedIndex
+                        ToolsPanel(
+                            showStylePresets: $showStylePresets,
+                            showStyleDetails: $showStyleDetails
                         )
                     }
-                    .frame(width: panelWidth, height: stylePresetPanelHeight)
+                    .frame(width: panelWidth, height: toolsPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                }
 
-                if showStyleDetails && toolManager.currentTool.supportsPresets {
-                    GlassEffectContainer {
-                        StyleDetailsPanel(tool: toolManager.currentTool,
-                        lockedIndex: lockedIndex) 
+                    if showStylePresets, toolManager.currentTool.supportsPresets {
+                        GlassEffectContainer {
+                            StylePresetsPanel(
+                                showStyleDetails: $showStyleDetails,
+                                lockedIndex: $lockedIndex
+                            )
+                        }
+                        .frame(width: panelWidth, height: stylePresetPanelHeight)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
+                }
+                // if showStyleDetails && toolManager.currentTool.supportsPresets {
+                    GlassEffectContainer {
+                        StyleDetailsPanel(
+                            tool: toolManager.currentTool ?? .pen,
+                            lockedIndex: lockedIndex
+                        ) 
+                    }
+                    .id(StyleDetailsKey(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
                     .frame(width: detailWidth, height: detailHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .offset(x: 2*(panelWidth + panelGap))
+                    .opacity(showStyleDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
                     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                }
+                // }
             }
         }
     }
@@ -107,7 +113,11 @@ struct ContentView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: buttonSpacing) {
                     ForEach(allTools, id: \.self) { tool in
-                        ToolButtonForToolsPanel(tool: tool) {
+                        ToolButton(
+                            tool: tool,
+                            isSelected: toolManager.currentTool == tool,
+                            style: toolManager.styleForTool(for: tool)
+                        ) {
                             if toolManager.currentTool == tool {
                                 showStylePresets.toggle()
                                 showStyleDetails = false
@@ -126,21 +136,6 @@ struct ContentView: View {
             }
             .mask(VerticalEdgeFade(fade: fade))
             .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-        }
-    }
-
-    struct ToolButtonForToolsPanel: View {
-        let tool: Tool
-        let action: () -> Void
-        @EnvironmentObject private var toolManager: ToolManager
-
-        var body: some View {
-            ToolButton(
-                tool: tool,
-                isSelected: toolManager.currentTool == tool,
-                style: toolManager.styleForTool(for: tool),
-                action: action
-            )
         }
     }
 

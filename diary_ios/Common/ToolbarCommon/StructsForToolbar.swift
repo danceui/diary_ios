@@ -303,3 +303,8 @@ struct PresetAnchorKey: PreferenceKey {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }
+
+struct StyleDetailsKey: Hashable {
+    let tool: Tool
+    let index: Int
+}
