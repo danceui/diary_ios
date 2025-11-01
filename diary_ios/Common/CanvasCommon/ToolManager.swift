@@ -68,21 +68,9 @@ struct ToolStyle: Hashable {
 }
 
 struct ToolPreset: Identifiable, Hashable {
+    let id: UUID()
     var tool: Tool
-    var index: Int
-    var style: ToolStyle
-    // 用 tool+index 作为稳定 id，便于 ForEach
-    var id: String { "\(tool)#\(index)" }
-    // 只按 tool+index 判等，忽略 style
-    static func == (lhs: ToolPreset, rhs: ToolPreset) -> Bool {
-        lhs.tool == rhs.tool && lhs.index == rhs.index
-    }
-
-    // 只按 tool+index 参与哈希
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(tool)
-        hasher.combine(index)
-    }
+    var style: ToolStylea
 }
 
 protocol ToolObserver: AnyObject {

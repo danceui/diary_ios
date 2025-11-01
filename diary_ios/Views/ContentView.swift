@@ -75,8 +75,8 @@ struct ContentView: View {
                     if showPresets, toolManager.currentTool.supportsPresets {
                         GlassEffectContainer {
                             PresetsPanel(
-                                showDetails: $showDetails
-//                                lockedIndex: $lockedIndex
+                                showDetails: $showDetails,
+                                lockedIndex: $lockedIndex
                             )
                         }
                         .frame(width: panelWidth, height: stylePresetPanelHeight)
@@ -93,9 +93,9 @@ struct ContentView: View {
                     //     .frame(width: detailWidth, height: detailHeight)
                     //     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     //     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                        // .id(PresetID(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
-                        // .offset(x: 2*(panelWidth + panelGap))
-                        // .opacity(showDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
+                    //     // .id(PresetID(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
+                    //     // .offset(x: 2*(panelWidth + panelGap))
+                    //     // .opacity(showDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
                     // }
                 }
             }
@@ -138,6 +138,7 @@ struct ContentView: View {
     // MARK: - 2.Style Presets Panel
     struct PresetsPanel: View {
         @Binding var showDetails: Bool
+        @Binding var lockedIndex: Int?
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
@@ -154,11 +155,11 @@ struct ContentView: View {
                         ) {
                             if presetIndex == preset.index {
                                 if !showDetails {
-                                    // lockedIndex = presetIndex
+                                    lockedIndex = presetIndex
                                     showDetails = true
                                 } else {
                                     showDetails = false
-                                    // lockedIndex = nil
+                                    lockedIndex = nil
                                 }
                             } else {
                                 if showDetails {
@@ -166,7 +167,7 @@ struct ContentView: View {
                                 }
                                 DispatchQueue.main.async {
                                     toolManager.selectPreset(for: tool, index: preset.index)
-//                                    lockedIndex = nil
+                                    lockedIndex = nil
                                 }
                             }
                         }
