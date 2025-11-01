@@ -21,6 +21,7 @@ private func bellPressure(t: CGFloat) -> CGFloat {
     return max(PenPreviewConstants.minPressure + base * (PenPreviewConstants.maxPressure - PenPreviewConstants.minPressure), PenPreviewConstants.minPx)
 }
 
+@available(iOS 26.0, *)
 private func buildPenRibbonCGPath(
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)],
     width: CGFloat

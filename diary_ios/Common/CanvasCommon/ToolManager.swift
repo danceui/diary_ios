@@ -1,11 +1,12 @@
 import UIKit
 import Combine
 
-enum Tool {
+enum Tool: String, CaseIterable, Identifiable {
     case pen, highlighter, monoline
     case eraser
     case sticker
     case lasso
+    var id: String { rawValue } // 稳定 ID
 
     var isDrawing: Bool { self == .pen || self == .highlighter || self == .monoline }
     var isSticker: Bool { self == .sticker }
@@ -60,7 +61,7 @@ enum Tool {
     }
 }
 
-let allTools: [Tool] = [.pen, .monoline, .highlighter, .eraser, .sticker, .lasso]
+// let allTools: [Tool] = [.pen, .monoline, .highlighter, .eraser, .sticker, .lasso]
 
 struct ToolStyle: Hashable {
     var color: UIColor?
@@ -81,7 +82,7 @@ class ToolManager: ObservableObject {
 
     // 初始化默认预设
     private init() {
-        for tool in allTools where tool.supportsPresets {
+        for tool in Tool.allCases where tool.supportsPresets {
             presetStyles[tool] = tool.presetStyles
             presetIndices[tool] = 0
         }
@@ -121,7 +122,7 @@ class ToolManager: ObservableObject {
         return presetIndices[tool]
     }
 
-    func styleForTool(for tool: Tool) -> ToolStyle? {
+    func getStyle(for tool: Tool) -> ToolStyle? {
         guard tool.supportsPresets,
             let idx = presetIndices[tool],
             let arr = presetStyles[tool],

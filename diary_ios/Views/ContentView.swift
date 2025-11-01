@@ -55,8 +55,8 @@ struct ContentView: View {
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
         let notebookSpreadViewController: NotebookSpreadViewController
-        @State private var showStylePresets: Bool = false
-        @State private var showStyleDetails: Bool = false
+        @State private var showPresets: Bool = false
+        @State private var showDetails: Bool = false
         @State private var lockedIndex: Int? = nil
         @EnvironmentObject private var toolManager: ToolManager
 
@@ -65,18 +65,18 @@ struct ContentView: View {
                 HStack(alignment: .top, spacing: panelGap) {
                     GlassEffectContainer {
                         ToolsPanel(
-                            showStylePresets: $showStylePresets,
-                            showStyleDetails: $showStyleDetails
+                            showPresets: $showPresets,
+                            showDetails: $showDetails
                         )
                     }
                     .frame(width: panelWidth, height: toolsPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
 
-                    if showStylePresets, toolManager.currentTool.supportsPresets {
+                    if showPresets, toolManager.currentTool.supportsPresets {
                         GlassEffectContainer {
                             StylePresetsPanel(
-                                showStyleDetails: $showStyleDetails,
+                                showDetails: $showDetails,
                                 lockedIndex: $lockedIndex
                             )
                         }
@@ -84,47 +84,47 @@ struct ContentView: View {
                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                         .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
-                }
-                // if showStyleDetails && toolManager.currentTool.supportsPresets {
-                    GlassEffectContainer {
-                        StyleDetailsPanel(
-                            tool: toolManager.currentTool ?? .pen,
-                            lockedIndex: lockedIndex
-                        ) 
+                    if showDetails, toolManager.currentTool.supportsPresets {
+                        GlassEffectContainer {
+                            StyleDetailsPanel(
+                                tool: toolManager.currentTool ?? .pen,
+                                lockedIndex: lockedIndex
+                            ) 
+                        }
+                        .frame(width: detailWidth, height: detailHeight)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                        // .id(PresetID(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
+                        // .offset(x: 2*(panelWidth + panelGap))
+                        // .opacity(showDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
                     }
-                    .id(PresetID(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
-                    .frame(width: detailWidth, height: detailHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    .offset(x: 2*(panelWidth + panelGap))
-                    .opacity(showStyleDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
-                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                // }
+                }
             }
         }
     }
 
     // MARK: - 1.Tools Panel
     struct ToolsPanel: View {
-        @Binding var showStylePresets: Bool
-        @Binding var showStyleDetails: Bool
+        @Binding var showPresets: Bool
+        @Binding var showDetails: Bool
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: buttonSpacing) {
-                    ForEach(allTools, id: \.self) { tool in
+                    ForEach(Tool.allCases) { tool in
                         ToolButton(
                             tool: tool,
                             isSelected: toolManager.currentTool == tool,
-                            style: toolManager.styleForTool(for: tool)
+                            style: toolManager.getStyle(for: tool)
                         ) {
                             if toolManager.currentTool == tool {
-                                showStylePresets.toggle()
-                                showStyleDetails = false
+                                showPresets.toggle()
+                                showDetails = false
                             } else {
                                 toolManager.selectTool(tool)
-                                showStylePresets = false
-                                showStyleDetails = false
+                                showPresets = false
+                                showDetails = false
                             }
                         }
                         .padding(buttonPadding)
@@ -141,7 +141,7 @@ struct ContentView: View {
 
     // MARK: - 2.Style Presets Panel
     struct StylePresetsPanel: View {
-        @Binding var showStyleDetails: Bool
+        @Binding var showDetails: Bool
         @Binding var lockedIndex: Int?
         @EnvironmentObject private var toolManager: ToolManager
 
@@ -159,16 +159,16 @@ struct ContentView: View {
                             style: style
                         ) {
                             if presetIndex == idx {
-                                if !showStyleDetails {
+                                if !showDetails {
                                     lockedIndex = presetIndex
-                                    showStyleDetails = true
+                                    showDetails = true
                                 } else {
-                                    showStyleDetails = false
+                                    showDetails = false
                                     lockedIndex = nil
                                 }
                             } else {
-                                if showStyleDetails {
-                                    showStyleDetails = false
+                                if showDetails {
+                                    showDetails = false
                                 }
                                 DispatchQueue.main.async {
                                     toolManager.selectPreset(for: tool, index: idx)
