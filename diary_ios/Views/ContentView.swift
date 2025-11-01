@@ -65,8 +65,7 @@ struct ContentView: View {
                 HStack(alignment: .top, spacing: panelGap) {
                     GlassEffectContainer {
                         ToolsPanel(
-                            showPresets: $showPresets,
-                            showDetails: $showDetails
+                            showPresets: $showPresets
                         )
                     }
                     .frame(width: panelWidth, height: toolsPanelHeight)
@@ -75,7 +74,7 @@ struct ContentView: View {
 
                     if showPresets, toolManager.currentTool.supportsPresets {
                         GlassEffectContainer {
-                            StylePresetsPanel(
+                            PresetsPanel(
                                 showDetails: $showDetails,
                                 lockedIndex: $lockedIndex
                             )
@@ -106,7 +105,6 @@ struct ContentView: View {
     // MARK: - 1.Tools Panel
     struct ToolsPanel: View {
         @Binding var showPresets: Bool
-        @Binding var showDetails: Bool
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
@@ -120,11 +118,9 @@ struct ContentView: View {
                         ) {
                             if toolManager.currentTool == tool {
                                 showPresets.toggle()
-                                showDetails = false
                             } else {
                                 toolManager.selectTool(tool)
                                 showPresets = false
-                                showDetails = false
                             }
                         }
                         .padding(buttonPadding)
@@ -140,7 +136,7 @@ struct ContentView: View {
     }
 
     // MARK: - 2.Style Presets Panel
-    struct StylePresetsPanel: View {
+    struct PresetsPanel: View {
         @Binding var showDetails: Bool
         @Binding var lockedIndex: Int?
         @EnvironmentObject private var toolManager: ToolManager
