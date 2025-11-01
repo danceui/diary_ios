@@ -285,6 +285,11 @@ struct StyleColorPalette: View {
 }
 
 // MARK: - AnchorKey
+struct PresetID: Hashable {
+    let tool: Tool
+    let index: Int
+}
+
 struct ToolAnchorKey: PreferenceKey {
     static var defaultValue: [Tool: Anchor<CGRect>] = [:]
     static func reduce(value: inout [Tool: Anchor<CGRect>], nextValue: () -> [Tool: Anchor<CGRect>]) {
@@ -292,19 +297,9 @@ struct ToolAnchorKey: PreferenceKey {
     }
 }
 
-struct PresetID: Hashable {
-    let tool: Tool
-    let index: Int
-}
-
 struct PresetAnchorKey: PreferenceKey {
     static var defaultValue: [PresetID: Anchor<CGRect>] = [:]
     static func reduce(value: inout [PresetID: Anchor<CGRect>], nextValue: () -> [PresetID: Anchor<CGRect>]) {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
-}
-
-struct StyleDetailsKey: Hashable {
-    let tool: Tool
-    let index: Int
 }

@@ -2,6 +2,7 @@ import UIKit
 import SwiftUI
 @available(iOS 26.0, *)
 
+// MARK: - Pen Preview
 func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint) -> CGPoint {
     let oneMinusT = 1 - t
     let a = oneMinusT * oneMinusT * oneMinusT
@@ -14,14 +15,12 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
     return CGPoint(x: x, y: y)
 }
 
-// MARK: - Pen Preview
 private func bellPressure(t: CGFloat) -> CGFloat {
     let clampedT = max(0.0, min(1.0, t))
     let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
     return max(PenPreviewConstants.minPressure + base * (PenPreviewConstants.maxPressure - PenPreviewConstants.minPressure), PenPreviewConstants.minPx)
 }
 
-@available(iOS 26.0, *)
 private func buildPenRibbonCGPath(
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)],
     width: CGFloat
