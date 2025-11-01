@@ -87,16 +87,13 @@ struct ContentView: View {
                     if showDetails, toolManager.currentTool.supportsPresets {
                         GlassEffectContainer {
                             StyleDetailsPanel(
-                                tool: toolManager.currentTool ?? .pen,
+                                tool: toolManager.currentTool,
                                 lockedID: lockedID
                             ) 
                         }
                         .frame(width: detailWidth, height: detailHeight)
                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                         .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                        // .id(PresetID(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
-                        // .offset(x: 2*(panelWidth + panelGap))
-                        // .opacity(showDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
                     }
                 }
             }

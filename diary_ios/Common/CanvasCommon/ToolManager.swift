@@ -83,18 +83,15 @@ final class ToolManager: ObservableObject {
     @Published private(set) var currentTool: Tool = .pen
     @Published private(set) var presets: [Tool: [ToolPreset]] = [:]
     @Published private(set) var selectedPresetID: [Tool: UUID] = [:]
+    var currentPresets: [ToolPreset] { presets[currentTool] ?? [] }
 
     private init() {
         for t in Tool.allCases where t.supportsPresets {
-            let list = t.presets.map { style in
-                ToolPreset(tool: t, style: style)
-            }
+            let list = t.presets.map { style in ToolPreset(tool: t, style: style) }
             presets[t] = list
             selectedPresetID[t] = list.first?.id
         }
     }
-
-    var currentPresets: [ToolPreset] { presets[currentTool] ?? [] }
 
     // 合成 publisher
     var toolAndStyle: AnyPublisher<(Tool, ToolStyle?), Never> {
@@ -104,7 +101,6 @@ final class ToolManager: ObservableObject {
                     let arr = styles[tool],
                     let id = selected[tool],
                     let preset = arr.first(where: { $0.id == id }) else { return (tool, nil) }
-//                if self.debugToolManager { print("📢 [ToolManager] Publisher: New tool \(tool) and style \(idx).") }
                 return (tool, preset.style)
             }
             .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
@@ -113,6 +109,7 @@ final class ToolManager: ObservableObject {
 
     // 外部操作
     func selectTool(_ tool: Tool) { currentTool = tool }
+    
     func selectPreset(for tool: Tool, id: UUID) {
         guard let arr = presets[tool], arr.contains(where: { $0.id == id }) else { return }
         selectedPresetID[tool] = id
