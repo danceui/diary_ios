@@ -339,6 +339,6 @@ struct ContentView: View {
                 .padding(buttonPadding)
             }
             .padding(buttonPadding)
-        } 
+        }
     }
 }
