@@ -68,9 +68,9 @@ struct ToolStyle: Hashable {
 }
 
 struct ToolPreset: Identifiable, Hashable {
-    let id: UUID()
+    let id = UUID()
     var tool: Tool
-    var style: ToolStylea
+    var style: ToolStyle
 }
 
 protocol ToolObserver: AnyObject {
@@ -82,73 +82,60 @@ final class ToolManager: ObservableObject {
     private let debugToolManager = Debuggers.debugToolManager
     @Published private(set) var currentTool: Tool = .pen
     @Published private(set) var presets: [Tool: [ToolPreset]] = [:]
-    @Published private(set) var selectedIndex: [Tool: Int] = [:]
+    @Published private(set) var selectedPresetID: [Tool: UUID] = [:]
 
     private init() {
         for t in Tool.allCases where t.supportsPresets {
-            let p = t.presets.enumerated().map { (i, style) in
-                ToolPreset(tool: t, index: i, style: style)
+            let list = t.presets.map { style in
+                ToolPreset(tool: t, style: style)
             }
-            presets[t] = p
-            selectedIndex[t] = 0
+            presets[t] = list
+            selectedPresetID[t] = list.first?.id
         }
     }
 
+    var currentPresets: [ToolPreset] { presets[currentTool] ?? [] }
+
     // 合成 publisher
     var toolAndStyle: AnyPublisher<(Tool, ToolStyle?), Never> {
-        Publishers.CombineLatest3($currentTool, $presets, $selectedIndex)
-            .map { tool, styles, indices -> (Tool, ToolStyle?) in
+        Publishers.CombineLatest3($currentTool, $presets, $selectedPresetID)
+            .map { tool, styles, selected -> (Tool, ToolStyle?) in
                 guard tool.supportsPresets,
                     let arr = styles[tool],
-                    let idx = indices[tool],
-                    arr.indices.contains(idx) else { return (tool, nil) }
-                if self.debugToolManager { print("📢 [ToolManager] Publisher: New tool \(tool) and style \(idx).") }
-                return (tool, arr[idx].style)
+                    let id = selected[tool],
+                    let preset = arr.first(where: { $0.id == id }) else { return (tool, nil) }
+//                if self.debugToolManager { print("📢 [ToolManager] Publisher: New tool \(tool) and style \(idx).") }
+                return (tool, preset.style)
             }
-            .removeDuplicates { lhs, rhs in
-                lhs.0 == rhs.0 && lhs.1 == rhs.1
-            }
+            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
             .eraseToAnyPublisher()
     }
 
     // 外部操作
     func selectTool(_ tool: Tool) { currentTool = tool }
-    func selectPreset(for tool: Tool, index: Int) {
-        guard tool.supportsPresets,
-            let arr = presets[tool],
-            arr.indices.contains(index) else { return }
-        selectedIndex[tool] = index
+    func selectPreset(for tool: Tool, id: UUID) {
+        guard let arr = presets[tool], arr.contains(where: { $0.id == id }) else { return }
+        selectedPresetID[tool] = id
     }
 
     // 外部查询
     func getStyle(for tool: Tool) -> ToolStyle? {
-        guard tool.supportsPresets,
-            let idx = selectedIndex[tool],
-            let arr = presets[tool],
-            arr.indices.contains(idx) else { return nil }
-
-        // if debugToolManager { print("⚒️ [ToolManager] Get current style for \(tool).") }
-        return arr[idx].style
+        guard let id = selectedPresetID[tool],
+              let p = presets[tool]?.first(where: { $0.id == id }) else { return nil }
+        return p.style
     }
 
-    func getStyle(for tool: Tool, at index: Int) -> ToolStyle? {
-        guard tool.supportsPresets,
-            let arr = presets[tool],
-            arr.indices.contains(index) else { return nil }
-
-        if debugToolManager { print("⚒️ [ToolManager] Get style for \(tool) at #\(index) preset.") }
-        return arr[index].style
+    func getStyle(for tool: Tool, id: UUID) -> ToolStyle? {
+        guard let id = selectedPresetID[tool],
+              let p = presets[tool]?.first(where: { $0.id == id }) else { return nil }
+        return p.style
     }
 
     @discardableResult
-    func setStyle(for tool: Tool, at index: Int, to updated: ToolStyle) -> Bool {
-        guard tool.supportsPresets,
-            var arr = presets[tool],
-            arr.indices.contains(index) else { return false}
-
-        arr[index].style = updated
+    func setStyle(for tool: Tool, id: UUID, to updated: ToolStyle) -> Bool {
+        guard var arr = presets[tool], let i = arr.firstIndex(where: { $0.id == id }) else { return false }
+        arr[i].style = updated
         presets[tool] = arr
-        if debugToolManager { print("⚒️ [ToolManager] Set style for \(tool) at #\(index) preset.") }
         return true
     }
 }

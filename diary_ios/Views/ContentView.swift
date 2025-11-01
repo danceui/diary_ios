@@ -57,7 +57,7 @@ struct ContentView: View {
         let notebookSpreadViewController: NotebookSpreadViewController
         @State private var showPresets: Bool = false
         @State private var showDetails: Bool = false
-        @State private var lockedIndex: Int? = nil
+        @State private var lockedID: UUID? = nil
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
@@ -65,7 +65,8 @@ struct ContentView: View {
                 HStack(alignment: .top, spacing: panelGap) {
                     GlassEffectContainer {
                         ToolsPanel(
-                            showPresets: $showPresets
+                            showPresets: $showPresets,
+                            showDetails: $showDetails,
                         )
                     }
                     .frame(width: panelWidth, height: toolsPanelHeight)
@@ -76,27 +77,27 @@ struct ContentView: View {
                         GlassEffectContainer {
                             PresetsPanel(
                                 showDetails: $showDetails,
-                                lockedIndex: $lockedIndex
+                                lockedID: $lockedID
                             )
                         }
                         .frame(width: panelWidth, height: stylePresetPanelHeight)
                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                         .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
-                    // if showDetails, toolManager.currentTool.supportsPresets {
-                    //     GlassEffectContainer {
-                    //         StyleDetailsPanel(
-                    //             tool: toolManager.currentTool ?? .pen,
-                    //             lockedIndex: lockedIndex
-                    //         ) 
-                    //     }
-                    //     .frame(width: detailWidth, height: detailHeight)
-                    //     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    //     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                    //     // .id(PresetID(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
-                    //     // .offset(x: 2*(panelWidth + panelGap))
-                    //     // .opacity(showDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
-                    // }
+                    if showDetails, toolManager.currentTool.supportsPresets {
+                        GlassEffectContainer {
+                            StyleDetailsPanel(
+                                tool: toolManager.currentTool ?? .pen,
+                                lockedID: lockedID
+                            ) 
+                        }
+                        .frame(width: detailWidth, height: detailHeight)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                        .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                        // .id(PresetID(tool: toolManager.currentTool ?? .pen, index: lockedIndex ?? -1)) 
+                        // .offset(x: 2*(panelWidth + panelGap))
+                        // .opacity(showDetails && toolManager.currentTool.supportsPresets ? 1 : 0)
+                    }
                 }
             }
         }
@@ -105,6 +106,7 @@ struct ContentView: View {
     // MARK: - 1.Tools Panel
     struct ToolsPanel: View {
         @Binding var showPresets: Bool
+        @Binding var showDetails: Bool
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
@@ -115,7 +117,8 @@ struct ContentView: View {
                             tool: tool,
                             isSelected: toolManager.currentTool == tool,
                             style: toolManager.getStyle(for: tool)
-                        ) {
+                        ) { 
+                            showDetails = false
                             if toolManager.currentTool == tool {
                                 showPresets.toggle()
                             } else {
@@ -138,36 +141,37 @@ struct ContentView: View {
     // MARK: - 2.Style Presets Panel
     struct PresetsPanel: View {
         @Binding var showDetails: Bool
-        @Binding var lockedIndex: Int?
+        @Binding var lockedID: UUID?
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
             let tool = toolManager.currentTool
-            let presets = toolManager.presets[tool] ?? []
-            let presetIndex = toolManager.selectedIndex[tool] ?? -1
+            let presets = toolManager.currentPresets
+            let selectedID = toolManager.selectedPresetID[tool]
+
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: buttonSpacing) {
                     ForEach(presets) { preset in
                         ToolButton(
                             tool: tool,
-                            isSelected: presetIndex == preset.index,
+                            isSelected: selectedID == preset.id,
                             style: preset.style
                         ) {
-                            if presetIndex == preset.index {
+                            if selectedID == preset.id {
                                 if !showDetails {
-                                    lockedIndex = presetIndex
+                                    lockedID = selectedID
                                     showDetails = true
                                 } else {
                                     showDetails = false
-                                    lockedIndex = nil
+                                    lockedID = nil
                                 }
                             } else {
                                 if showDetails {
                                     showDetails = false
                                 }
                                 DispatchQueue.main.async {
-                                    toolManager.selectPreset(for: tool, index: preset.index)
-                                    lockedIndex = nil
+                                    toolManager.selectPreset(for: tool, id: preset.id)
+                                    lockedID = nil
                                 }
                             }
                         }
@@ -184,68 +188,88 @@ struct ContentView: View {
     }
 
     // MARK: - 3.Style Details Panel
-    // struct StyleDetailsPanel: View {
-    //     let tool: Tool
-    //     let lockedIndex: Int?
-    //     @EnvironmentObject private var toolManager: ToolManager
+    struct StyleDetailsPanel: View {
+        let tool: Tool
+        let lockedID: UUID?
+        @EnvironmentObject private var toolManager: ToolManager
 
-    //     // 本地编辑态，仅用于预览
-    //     @State private var color: Color = .black
-    //     @State private var width: Double = 4
-    //     @State private var opacity: Double = 1
+        // 本地编辑态，仅用于预览
+        @State private var color: Color = .black
+        @State private var width: Double = 4
+        @State private var opacity: Double = 1
 
-    //     private var previewStyle: ToolStyle {
-    //         var style = ToolStyle()
-    //         if tool.supportColor   { style.color   = UIColor(color) }
-    //         if tool.supportWidth   { style.width   = CGFloat(width) }
-    //         if tool.supportOpacity { style.opacity = CGFloat(opacity) }
-    //         return style
-    //     }
+        private var previewStyle: ToolStyle {
+            var style = ToolStyle()
+            if tool.supportColor   { style.color   = UIColor(color) }
+            if tool.supportWidth   { style.width   = CGFloat(width) }
+            if tool.supportOpacity { style.opacity = CGFloat(opacity) }
+            return style
+        }
 
-    //     var body: some View {
-    //         VStack(spacing: 12) {
-    //             if tool == .monoline || tool == .pen || tool == .highlighter {
-    //                 StyleDetailsPreview(tool: tool, style: previewStyle)
-    //             }
-    //             if tool.supportWidth {
-    //                 StyleWidthControl(width: $width) { commitChanges() }
-    //             }
-    //             if tool.supportOpacity {
-    //                 StyleOpacityControl(opacity: $opacity) { commitChanges() }
-    //             }
-    //             if tool.supportColor {
-    //                 StyleColorPalette(selectedColor: $color) { commitChanges() }
-    //             }
-    //         }
-    //         .padding(10)
-    //         .onAppear {
-    //             if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
-    //             if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
-    //                 applyStyleFromManager(style) 
-    //             }
-    //         }
-    //         .onDisappear { 
-    //             commitChanges()
-    //         }
-    //     }
+        var body: some View {
+            VStack(spacing: 12) {
+                if tool == .monoline || tool == .pen || tool == .highlighter {
+                    StyleDetailsPreview(tool: tool, style: previewStyle)
+                }
+                if tool.supportWidth {
+                    StyleWidthControl(width: $width) { commitChanges() }
+                }
+                if tool.supportOpacity {
+                    StyleOpacityControl(opacity: $opacity) { commitChanges() }
+                }
+                if tool.supportColor {
+                    StyleColorPalette(selectedColor: $color) { commitChanges() }
+                }
+            }
+            .padding(10)
+            // .onAppear {
+            //     if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
+            //     if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
+            //         applyStyleFromManager(style) 
+            //     }
+            // }
+            .onAppear { loadFromManager() }
+            .onChange(of: lockedID) { _ in loadFromManager() }
+            .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
+            .onDisappear { 
+                commitChanges()
+            }
+        }
 
-    //     private func applyStyleFromManager(_ s: ToolStyle) {
-    //         // baseStyle = s
-    //         if tool.supportColor   { color   = s.color?.toColor() ?? .black }
-    //         if tool.supportWidth   { width   = Double(s.width ?? 4) }
-    //         if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
-    //     }
+        // private func applyStyleFromManager(_ s: ToolStyle) {
+        //     // baseStyle = s
+        //     if tool.supportColor   { color   = s.color?.toColor() ?? .black }
+        //     if tool.supportWidth   { width   = Double(s.width ?? 4) }
+        //     if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
+        // }
 
-    //     private func commitChanges() {
-    //         let updated = ToolStyle(
-    //                 color: UIColor(color),
-    //                 width: CGFloat(width),
-    //                 opacity: CGFloat(opacity)
-    //             )
-    //         guard let idx = lockedIndex, updated != toolManager.getStyle(for: tool, at: idx) else { return }
-    //         toolManager.setStyle(for: tool, at: idx, to: updated)
-    //     }
-    // }
+        private func loadFromManager() {
+            // 优先使用 lockedID；否则回退到当前选中预设
+            let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
+            guard let id = effectiveID,
+                let style = toolManager.getStyle(for: tool, id: id) else { return }
+            apply(style)
+        }
+
+        private func apply(_ s: ToolStyle) {
+            if tool.supportColor   { color   = s.color?.toColor() ?? .black }
+            if tool.supportWidth   { width   = Double(s.width ?? 4) }
+            if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
+        }
+
+        private func commitChanges() {
+            let updated = ToolStyle(
+                    color: UIColor(color),
+                    width: CGFloat(width),
+                    opacity: CGFloat(opacity)
+                )
+            // guard let idx = lockedIndex, updated != toolManager.getStyle(for: tool, at: idx) else { return }
+            // toolManager.setStyle(for: tool, at: idx, to: updated)
+            let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
+            guard let id = effectiveID else { return }
+            toolManager.setStyle(for: tool, id: id, to: updated)
+        }
+    }
 
     // MARK: - Tool Button View
     @available(iOS 26.0, *)
