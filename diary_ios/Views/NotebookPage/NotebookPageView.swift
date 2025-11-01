@@ -121,7 +121,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         guard !isObservingTool else { return }
         let manager = ToolManager.shared
 
-        self.toolDidChange(tool: manager.currentTool, style: manager.styleForTool(for: manager.currentTool))
+        self.toolDidChange(tool: manager.currentTool, style: manager.getStyle(for: manager.currentTool))
 
         manager.toolAndStyle
             .receive(on: RunLoop.main)
