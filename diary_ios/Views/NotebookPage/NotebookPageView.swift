@@ -50,6 +50,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             if currentHandwritingLayer == nil {
                 removeCurrentLayers()
                 createNewHandwritingLayer()
+                currentHandwritingLayer?.setTool(tool: tool, style: style)
             } else {
                 currentHandwritingLayer?.setTool(tool: tool, style: style)
             }
