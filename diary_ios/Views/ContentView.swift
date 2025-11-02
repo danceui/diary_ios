@@ -24,16 +24,16 @@ private let debugBorder = Debuggers.debugBorder
 
 @available(iOS 26.0, *)
 struct ContentView: View {
-    private let notebookSpreadViewController = NotebookSpreadViewController()
+    private let notebookPageViewController = NotebookPageViewController()
     @StateObject private var toolManager = ToolManager.shared
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            NotebookPageViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
+            NotebookPageViewContainer(notebookPageViewController: notebookPageViewController).ignoresSafeArea()
             // 左侧工具栏
             VStack {
                 Spacer()
-                DrawingToolbar(notebookSpreadViewController: notebookSpreadViewController)
+                DrawingToolbar(notebookPageViewController: notebookPageViewController)
                     .environmentObject(toolManager) // 这会把 toolManager 放进环境中，所有后代都能访问，但谁不声明就不会订阅，因此不会被动重算。
                     .padding(.leading, leadingPadding)
                 Spacer()
@@ -41,7 +41,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading) 
             // 右上角功能按钮栏
             VStack {
-                FunctionToolbar(notebookSpreadViewController: notebookSpreadViewController)
+                FunctionToolbar(notebookPageViewController: notebookPageViewController)
                     .padding(.top, topPadding)
                     .padding(.trailing, trailingPadding)
                 Spacer()
@@ -53,7 +53,7 @@ struct ContentView: View {
 
     // MARK: - Drawing Toolbar
     struct DrawingToolbar: View {
-        let notebookSpreadViewController: NotebookSpreadViewController
+        let notebookPageViewController: NotebookPageViewController
         @State private var showPresets: Bool = false
         @State private var showDetails: Bool = false
         @State private var lockedID: UUID? = nil
@@ -305,19 +305,19 @@ struct ContentView: View {
 
     // MARK: - Function Toolbar
     struct FunctionToolbar: View {
-        let notebookSpreadViewController: NotebookSpreadViewController
+        let notebookPageViewController: NotebookPageViewController
         
         var body: some View {
             GlassEffectContainer {
                 HStack(spacing: buttonSpacing) {
                     FunctionButtonView(iconName: "arrow.uturn.backward") {
-                    notebookSpreadViewController.undo()
+                    notebookPageViewController.undo()
                     }
                     FunctionButtonView(iconName: "arrow.uturn.forward") {
-                        notebookSpreadViewController.redo()
+                        notebookPageViewController.redo()
                     }
                     FunctionButtonView(iconName: "plus.square.on.square") {
-                        notebookSpreadViewController.addNewPagePair()
+                        notebookPageViewController.addNewPagePair()
                     }
                 }
                 .padding(.leading, topPadding / 2)
