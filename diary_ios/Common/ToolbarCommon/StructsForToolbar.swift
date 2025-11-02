@@ -70,13 +70,7 @@ struct VerticalEdgeFade: View {
     var body: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [
-                    Color.black.opacity(0),      // 完全透明
-                    Color.black.opacity(0.383),
-                    Color.black.opacity(0.707),
-                    Color.black.opacity(0.924),
-                    Color.black                  // 完全不透明
-                ],
+                colors: [Color.black.opacity(0), Color.black.opacity(0.383), Color.black.opacity(0.707), Color.black.opacity(0.924), Color.black],
                 startPoint: .top, endPoint: .bottom
             )
             .frame(height: fade)
@@ -84,13 +78,7 @@ struct VerticalEdgeFade: View {
             Rectangle().fill(.black)
 
             LinearGradient(
-                colors: [
-                    Color.black, // 完全不透明
-                    Color.black.opacity(0.924),
-                    Color.black.opacity(0.707),
-                    Color.black.opacity(0.383),
-                    Color.black.opacity(0) // 底部完全不透明
-                ],
+                colors: [Color.black, Color.black.opacity(0.924), Color.black.opacity(0.707), Color.black.opacity(0.383), Color.black.opacity(0)],
                 startPoint: .top, endPoint: .bottom
             )
             .frame(height: fade)
@@ -104,13 +92,7 @@ struct HorizontalEdgeFade: View {
     var body: some View {
         HStack(spacing: 0) {
             LinearGradient(
-                colors: [
-                    Color.black.opacity(0),      // 完全透明
-                    Color.black.opacity(0.383),
-                    Color.black.opacity(0.707),
-                    Color.black.opacity(0.924),
-                    Color.black                  // 完全不透明
-                ],
+                colors: [Color.black.opacity(0), Color.black.opacity(0.383), Color.black.opacity(0.707), Color.black.opacity(0.924), Color.black],
                 startPoint: .leading, endPoint: .trailing
             )
             .frame(width: fade)
@@ -118,13 +100,7 @@ struct HorizontalEdgeFade: View {
             Rectangle().fill(.black)
 
             LinearGradient(
-                colors: [
-                    Color.black, // 完全不透明
-                    Color.black.opacity(0.924),
-                    Color.black.opacity(0.707),
-                    Color.black.opacity(0.383),
-                    Color.black.opacity(0) // 底部完全不透明
-                ],
+                colors: [Color.black, Color.black.opacity(0.924), Color.black.opacity(0.707), Color.black.opacity(0.383), Color.black.opacity(0)],
                 startPoint: .leading, endPoint: .trailing
             )
             .frame(width: fade)

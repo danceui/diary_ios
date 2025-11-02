@@ -123,9 +123,9 @@ func drawPenPreview(
     style: BrushStyle,
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
-    let color = style.color?.toColor() ?? .black
-    let width = style.width ?? 2.0
-    let opacity = style.opacity ?? 1.0
+    let color = style.color.toColor()
+    let width = style.width
+    let opacity = style.opacity
     let key = PenPreviewPathKey(width: width)
 
     // 命中缓存就直接用；未命中则构建一次带状路径
@@ -141,9 +141,9 @@ func drawMonolinePreview(
     style: BrushStyle,
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
-    let color = style.color?.toColor() ?? .yellow
-    let width = style.width ?? 12.0
-    let baseOpacity = style.opacity ?? 0.35
+    let color = style.color.toColor()
+    let width = style.width
+    let baseOpacity = style.opacity
 
     var path = Path()
     path.move(to: segments[0].0)
@@ -161,9 +161,9 @@ func drawHighlighterPreview(
     style: BrushStyle,
     line: (CGPoint, CGPoint)
 ) {
-    let color = style.color?.toColor() ?? .yellow
-    let width = style.width ?? 12.0
-    let baseOpacity = style.opacity ?? 0.35
+    let color = style.color.toColor()
+    let width = style.width
+    let baseOpacity = style.opacity
 
     var path = Path()
     path.move(to: line.0)
@@ -187,5 +187,5 @@ func drawHighlighterPreview(
 
 // MARK: - 
 func styleEquals(_ a: BrushStyle, _ b: BrushStyle) -> Bool {
-    return a.color == b.color && a.width == b.width && abs((a.opacity ?? 1) - (b.opacity ?? 1) ?? 1) < 0.001
+    return a.color == b.color && a.width == b.width && abs(a.opacity - b.opacity) < 0.001
 }

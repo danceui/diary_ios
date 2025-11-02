@@ -72,7 +72,7 @@ struct ContentView: View {
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
 
-                    if showPresets, toolManager.currentTool.supportsPresets {
+                    if showPresets, toolManager.currentTool.isBrush {
                         GlassEffectContainer {
                             PresetsPanel(
                                 showDetails: $showDetails,
@@ -83,7 +83,7 @@ struct ContentView: View {
                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                         .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
-                    if showDetails, toolManager.currentTool.supportsPresets {
+                    if showDetails, toolManager.currentTool.isBrush {
                         GlassEffectContainer {
                             StyleDetailsPanel(
                                 tool: toolManager.currentTool,
@@ -195,25 +195,19 @@ struct ContentView: View {
         @State private var opacity: Double = 1
 
         private var previewStyle: BrushStyle {
-            var style = BrushStyle()
-            if tool.supportColor   { style.color   = UIColor(color) }
-            if tool.supportWidth   { style.width   = CGFloat(width) }
-            if tool.supportOpacity { style.opacity = CGFloat(opacity) }
-            return style
+            BrushStyle(
+                color: UIColor(color),
+                width: CGFloat(width),
+                opacity: CGFloat(opacity)
+            )
         }
 
         var body: some View {
             VStack(spacing: 12) {
-                if tool == .monoline || tool == .pen || tool == .highlighter {
+                if tool.isBrush {
                     StyleDetailsPreview(tool: tool, style: previewStyle)
-                }
-                if tool.supportWidth {
                     StyleWidthControl(width: $width) { commitChanges() }
-                }
-                if tool.supportOpacity {
                     StyleOpacityControl(opacity: $opacity) { commitChanges() }
-                }
-                if tool.supportColor {
                     StyleColorPalette(selectedColor: $color) { commitChanges() }
                 }
             }
@@ -227,28 +221,30 @@ struct ContentView: View {
             }
         }
 
+        private func apply(_ s: BrushStyle) {
+            color = s.color.toColor()
+            width = Double(s.width)
+            opacity = Double(s.opacity)
+        }
+
         private func loadFromManager() {
+            guard tool.isBrush else { return }
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
             guard let id = effectiveID,
                 let style = toolManager.getBrushStyle(for: tool, id: id) else { return }
             apply(style)
         }
 
-        private func apply(_ s: BrushStyle) {
-            if tool.supportColor   { color   = s.color?.toColor() ?? .black }
-            if tool.supportWidth   { width   = Double(s.width ?? 4) }
-            if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
-        }
-
         private func commitChanges() {
+            guard tool.isBrush else { return }
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
             guard let id = effectiveID else { return }
-            let old = toolManager.getBrushStyle(for: tool, id: id) ?? BrushStyle()
-            var updated = old
-            if tool.supportColor   { updated.color   = UIColor(color) }
-            if tool.supportWidth   { updated.width   = CGFloat(width) }
-            if tool.supportOpacity { updated.opacity = CGFloat(opacity) }
-            guard !styleEquals(updated, old) else { return }
+            let updated = BrushStyle(
+                color: UIColor(color),
+                width: CGFloat(width),
+                opacity: CGFloat(opacity)
+            )
+            if let old = toolManager.getBrushStyle(for: tool, id: id), old == updated { return }
             toolManager.setBrushStyle(for: tool, id: id, to: updated)
         }
     }
@@ -274,7 +270,6 @@ struct ContentView: View {
                 }
                 .frame(width: iconSize, height: iconSize)
                 .padding(iconPadding)
-                .foregroundColor(style?.color?.toColor() ?? (isSelected ? .blue : .gray))
                 .background(
                     RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous)
                     .fill(Color.black.opacity(isSelected ? 0.12 : 0.05))

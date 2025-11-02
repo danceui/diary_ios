@@ -8,15 +8,10 @@ enum Tool: String, CaseIterable, Identifiable {
     case lasso
     var id: String { rawValue } // 稳定 ID
 
-    var isBrush: Bool { self == .pen || self == .highlighter || self == .monoline }
+    var isBrush: Bool { self == .pen || self == .monoline || self == .highlighter }
     var isSticker: Bool { self == .sticker }
     var isEraser: Bool { self == .eraser }
     var isLasso: Bool { self == .lasso }
-
-    var supportColor: Bool { self == .pen || self == .highlighter || self == .monoline }
-    var supportWidth: Bool { self == .pen || self == .highlighter || self == .monoline || self == .eraser }
-    var supportOpacity: Bool { self == .pen || self == .highlighter || self == .monoline }
-    var supportsPresets: Bool { self == .pen || self == .highlighter || self == .monoline }
 
     var iconName: String {
         switch self {
@@ -43,17 +38,17 @@ enum Tool: String, CaseIterable, Identifiable {
                 BrushStyle(color: UIColor.blue, width: 4, opacity: 0.8),
                 BrushStyle(color: UIColor.red, width: 6, opacity: 0.6)
             ]
-        case .highlighter:
-            return [
-                BrushStyle(color: UIColor.black, width: 4, opacity: 0.5),
-                BrushStyle(color: UIColor.green, width: 6, opacity: 0.4),
-                BrushStyle(color: UIColor.orange, width: 8, opacity: 0.6)
-            ]
         case .monoline:
             return [
                 BrushStyle(color: UIColor.black, width: 4, opacity: 1.0),
                 BrushStyle(color: UIColor.gray, width: 6, opacity: 0.8),
                 BrushStyle(color: UIColor.red, width: 8, opacity: 0.6)
+            ]
+        case .highlighter:
+            return [
+                BrushStyle(color: UIColor.black, width: 4, opacity: 0.5),
+                BrushStyle(color: UIColor.green, width: 6, opacity: 0.4),
+                BrushStyle(color: UIColor.orange, width: 8, opacity: 0.6)
             ]
         default:
             return nil
@@ -73,7 +68,7 @@ struct BrushStyle: Hashable, Equatable {
     }
 }
 
-struct ToolPreset: Identifiable, Hashable {
+struct BrushPreset: Identifiable, Hashable {
     let id = UUID()
     var tool: Tool
     var style: BrushStyle
@@ -87,14 +82,14 @@ final class ToolManager: ObservableObject {
     static let shared = ToolManager()
     private let debugToolManager = Debuggers.debugToolManager
     @Published private(set) var currentTool: Tool = .pen
-    @Published private(set) var presets: [Tool: [ToolPreset]] = [:]
+    @Published private(set) var presets: [Tool: [BrushPreset]] = [:]
     @Published private(set) var selectedPresetID: [Tool: UUID] = [:]
-    var currentPresets: [ToolPreset] { presets[currentTool] ?? [] }
+    var currentPresets: [BrushPreset] { presets[currentTool] ?? [] }
 
     private init() {
         for t in Tool.allCases {
             guard t.isBrush, let defaultPresets = t.brushPresets else { continue }
-            let list = defaultPresets.map { ToolPreset(tool: t, style: $0) }
+            let list = defaultPresets.map { BrushPreset(tool: t, style: $0) }
             presets[t] = list
             selectedPresetID[t] = list.first?.id
         }
