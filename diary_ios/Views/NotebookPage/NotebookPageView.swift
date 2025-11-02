@@ -4,11 +4,7 @@ import Combine
 
 @available(iOS 16.0, *)
 class NotebookPageView: UIView, PKCanvasViewDelegate {
-    private let pageRole: PageRole
-    private let isLeft: Bool
-    var pageIndex: Int
     private(set) var lastEditedTimestamp: Date?
-
     private var containerView = UIView()
     private var currentHandwritingLayer: HandwritingLayer?
     private var currentStickerLayer: StickerLayer?
@@ -28,10 +24,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - 初始化
-    init(role: PageRole = .normal, isLeft: Bool = true, leftPageIndex: Int = 0, initialData: Data? = nil) {
-        self.pageRole = role
-        self.isLeft = isLeft
-        self.pageIndex = isLeft ? leftPageIndex : leftPageIndex + 1
+    init(initialData: Data? = nil) {
         super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
         setupView()
     }
@@ -52,22 +45,10 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     }
     
     private func setupView() {
-        backgroundColor = backgroundColorForRole(pageRole)
+        backgroundColor = normalBackgroundColor
         layer.cornerRadius = pageCornerRadius
-        layer.maskedCorners = isLeft ? leftMaskedCorners : rightMaskedCorners
         layer.masksToBounds = true
-        if pageRole == .normal { addSubview(containerView) }
-    }
-
-    private func backgroundColorForRole(_ role: PageRole) -> UIColor {
-        switch role {
-        case .normal:
-            return normalBackgroundColor
-        case .cover, .back:
-            return coverBackgroundColor
-        case .empty:
-            return .clear
-        }
+        addSubview(containerView)
     }
 
     // MARK: - 切换工具
@@ -105,7 +86,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         // currentHandwritingLayer 和 currentStickerLayer 是实际显示层
         currentHandwritingLayer = nil
         currentStickerLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared CurrentHandwritingLayer and CurrentStickerLayer.")
+        print("🗑️ Cleared CurrentHandwritingLayer and CurrentStickerLayer.")
 
         // currentEraserLayer 和 currentLassoLayer 只是手势响应层
         currentEraserLayer?.removeFromSuperview()
@@ -113,7 +94,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
         currentLassoLayer?.removeFromSuperview()
         currentLassoLayer = nil
-        print("[P\(pageIndex)] 🗑️ Cleared and removed CurrentEraserLayer and CurrentLassoLayer.")
+        print("🗑️ Cleared and removed CurrentEraserLayer and CurrentLassoLayer.")
     }
 
     // MARK: - 监听工具
@@ -131,14 +112,14 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
             .store(in: &cancellables)
 
         isObservingTool = true
-        print("[P\(pageIndex)] 👂 Tool listener activated.")
+        print("👂 Tool listener activated.")
     }
 
     func deactivateToolListener() {
         guard isObservingTool else { return }
         cancellables.removeAll()
         isObservingTool = false
-        print("[P\(pageIndex)] ❌ Tool listener deactivated.")
+        print("❌ Tool listener deactivated.")
     }
 
     // MARK: - Undo/Redo
@@ -148,7 +129,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         redoStack.removeAll()
         lastEditedTimestamp = Date()
         updateLayerIndexedStrokeInfo()
-        print("[P\(pageIndex)] 🕹️ Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+        print("🕹️ Added new command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func undo() {
@@ -156,7 +137,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         command.undo()
         redoStack.append(command)
         updateLayerIndexedStrokeInfo()
-        print("[P\(pageIndex)] 🕹️ UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+        print("🕹️ UndoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     func redo() {
@@ -164,16 +145,12 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
         command.execute()
         undoStack.append(command)
         updateLayerIndexedStrokeInfo()
-        print("[P\(pageIndex)] 🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
+        print("🕹️ RedoStack pops command. undoStack.count = \(undoStack.count), redoStack.count = \(redoStack.count).")
     }
 
     // MARK: - Page 常量
-    private let pageCornerRadius = PageConstants.pageCornerRadius
     private let inset = LassoConstants.inset
-    private let leftMaskedCorners: CACornerMask = PageConstants.leftMaskedCorners
-    private let rightMaskedCorners: CACornerMask = PageConstants.rightMaskedCorners
     private let normalBackgroundColor: UIColor = PageConstants.normalBackgroundColor
-    private let coverBackgroundColor: UIColor = PageConstants.coverBackgroundColor
 }
 
 // MARK: - Handwriting Layer 回调
@@ -189,7 +166,7 @@ extension NotebookPageView {
         } else {
             containerView.addSubview(newLayer)
         }
-        print("[P\(pageIndex)] ✏️ Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
+        print("✏️ Created handwriting layer. handwritingLayers.count = \(handwritingLayers.count).")
     }
 
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
@@ -215,7 +192,7 @@ extension NotebookPageView {
         } else {
             containerView.addSubview(newLayer)
         }
-        print("[P\(pageIndex)] ⭐️ Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
+        print("⭐️ Created sticker layer. stickerLayers.count = \(stickerLayers.count).")
     }
 
     private func handleStickerAdded(stickerView: StickerView) {
@@ -233,7 +210,7 @@ extension NotebookPageView: EraserLayerDelegate {
         newLayer.eraseDelegate = self
         currentEraserLayer = newLayer
         containerView.addSubview(newLayer)
-        print("[P\(pageIndex)] 🫧 Created eraser layer")
+        print("🫧 Created eraser layer")
     }
 
     func applyEraser(eraserLocation: CGPoint, eraserSize: CGFloat) {
@@ -268,7 +245,7 @@ extension NotebookPageView: EraserLayerDelegate {
             } else {
                 pendingEraseInfo.append(LayerStrokes(layer: layer, indexedStrokes: indexedErased))
             }
-            // printLayerStrokesInfo(eraseInfo: pendingEraseInfo, context: "[P\(pageIndex)] 🧩 Erasing Strokes")
+            // printLayerStrokesInfo(eraseInfo: pendingEraseInfo, context: "🧩 Erasing Strokes")
         }
     }
 
@@ -302,7 +279,7 @@ extension NotebookPageView {
         newLayer.onDuplicate = { [weak self] in self?.handleDuplicate() }
         containerView.addSubview(newLayer)
         currentLassoLayer = newLayer
-        print("[P\(pageIndex)] ⛓️‍💥 Created lasso layer")
+        print("⛓️‍💥 Created lasso layer")
     }
 
     // MARK: - Lasso触摸处理
@@ -326,7 +303,7 @@ extension NotebookPageView {
         // 如果有笔画被选中，按笔画范围更新套索路径
         if !lassoStrokesInfo.isEmpty {
             updateLassoPathForStrokes(strokesInfo: lassoStrokesInfo, in: lassoLayer)
-            printLayerStrokesInfo(info: lassoStrokesInfo, context: "[P\(pageIndex)] 🧩 Selected Strokes")
+            printLayerStrokesInfo(info: lassoStrokesInfo, context: "🧩 Selected Strokes")
         } else {
             lassoLayer.removeLassoPath()
         }
@@ -347,7 +324,7 @@ extension NotebookPageView {
                         lassoStickerInfo = LayerSticker(layer: layer, indexedStickerView: indexed)
                         guard let stickerInfo = lassoStickerInfo else { return }
                         updateLassoPathForSticker(stickerInfo: stickerInfo, in: lassoLayer)
-                        print("[P\(pageIndex)] ⭐️ Selected sticker \(view.sticker.id)")
+                        print("⭐️ Selected sticker \(view.sticker.id)")
                         return
                     }
                 }

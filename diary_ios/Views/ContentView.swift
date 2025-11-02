@@ -29,7 +29,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            NotebookViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
+            NotebookPageViewContainer(notebookSpreadViewController: notebookSpreadViewController).ignoresSafeArea()
             // 左侧工具栏
             VStack {
                 Spacer()
