@@ -36,12 +36,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     override func layoutSubviews() {
         super.layoutSubviews()
         containerView.frame = bounds
-        for layer in handwritingLayers {
-            layer.frame = bounds
-        }
-        for layer in stickerLayers {
-            layer.frame = bounds
-        }
     }
     
     private func setupView() {
