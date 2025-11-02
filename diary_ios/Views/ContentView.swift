@@ -112,7 +112,7 @@ struct ContentView: View {
                         ToolButton(
                             tool: tool,
                             isSelected: toolManager.currentTool == tool,
-                            style: toolManager.getStyle(for: tool)
+                            style: toolManager.getBrushStyle(for: tool)
                         ) {
                             showDetails = false
                             if toolManager.currentTool == tool {
@@ -144,7 +144,7 @@ struct ContentView: View {
             let tool = toolManager.currentTool
             let presets = toolManager.currentPresets
             let selectedID = toolManager.selectedPresetID[tool]
-
+            
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: buttonSpacing) {
                     ForEach(presets) { preset in
@@ -194,8 +194,8 @@ struct ContentView: View {
         @State private var width: Double = 4
         @State private var opacity: Double = 1
 
-        private var previewStyle: ToolStyle {
-            var style = ToolStyle()
+        private var previewStyle: BrushStyle {
+            var style = BrushStyle()
             if tool.supportColor   { style.color   = UIColor(color) }
             if tool.supportWidth   { style.width   = CGFloat(width) }
             if tool.supportOpacity { style.opacity = CGFloat(opacity) }
@@ -221,6 +221,7 @@ struct ContentView: View {
             .onAppear { loadFromManager() }
             .onChange(of: lockedID) { _ in loadFromManager() }
             .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
+            .onChange(of: toolManager.currentTool) { _ in loadFromManager() }
             .onDisappear { 
                 commitChanges()
             }
@@ -229,11 +230,11 @@ struct ContentView: View {
         private func loadFromManager() {
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
             guard let id = effectiveID,
-                let style = toolManager.getStyle(for: tool, id: id) else { return }
+                let style = toolManager.getBrushStyle(for: tool, id: id) else { return }
             apply(style)
         }
 
-        private func apply(_ s: ToolStyle) {
+        private func apply(_ s: BrushStyle) {
             if tool.supportColor   { color   = s.color?.toColor() ?? .black }
             if tool.supportWidth   { width   = Double(s.width ?? 4) }
             if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
@@ -242,13 +243,13 @@ struct ContentView: View {
         private func commitChanges() {
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
             guard let id = effectiveID else { return }
-            let old = toolManager.getStyle(for: tool, id: id) ?? ToolStyle()
+            let old = toolManager.getBrushStyle(for: tool, id: id) ?? BrushStyle()
             var updated = old
             if tool.supportColor   { updated.color   = UIColor(color) }
             if tool.supportWidth   { updated.width   = CGFloat(width) }
             if tool.supportOpacity { updated.opacity = CGFloat(opacity) }
             guard !styleEquals(updated, old) else { return }
-            toolManager.setStyle(for: tool, id: id, to: updated)
+            toolManager.setBrushStyle(for: tool, id: id, to: updated)
         }
     }
 
@@ -257,7 +258,7 @@ struct ContentView: View {
     struct ToolButton: View {
         let tool: Tool
         let isSelected: Bool
-        let style: ToolStyle?
+        let style: BrushStyle?
         let action: () -> Void
 
         var body: some View {

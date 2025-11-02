@@ -120,7 +120,7 @@ private func buildPenRibbonCGPath(
 @available(iOS 26.0, *)
 func drawPenPreview(
     context: GraphicsContext,
-    style: ToolStyle,
+    style: BrushStyle,
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
     let color = style.color?.toColor() ?? .black
@@ -138,7 +138,7 @@ func drawPenPreview(
 // MARK: - Monoline Preview
 func drawMonolinePreview(
     context: GraphicsContext,
-    style: ToolStyle,
+    style: BrushStyle,
     segments: [(CGPoint, CGPoint, CGPoint, CGPoint)]
 ) {
     let color = style.color?.toColor() ?? .yellow
@@ -158,7 +158,7 @@ func drawMonolinePreview(
 // MARK: - Highlighter Preview
 func drawHighlighterPreview(
     context: GraphicsContext,
-    style: ToolStyle,
+    style: BrushStyle,
     line: (CGPoint, CGPoint)
 ) {
     let color = style.color?.toColor() ?? .yellow
@@ -186,6 +186,6 @@ func drawHighlighterPreview(
 }
 
 // MARK: - 
-func styleEquals(_ a: ToolStyle, _ b: ToolStyle) -> Bool {
+func styleEquals(_ a: BrushStyle, _ b: BrushStyle) -> Bool {
     return a.color == b.color && a.width == b.width && abs((a.opacity ?? 1) - (b.opacity ?? 1) ?? 1) < 0.001
 }

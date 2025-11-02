@@ -29,7 +29,7 @@ class HandwritingLayer: PKCanvasView {
     }
     
     // MARK: - 切换工具
-    func setTool(tool: Tool, style: ToolStyle?) {
+    func setTool(tool: Tool, style: BrushStyle?) {
         let color = style?.color ?? UIColor.black
         let finalColor: UIColor
         if let opacity = style?.opacity {

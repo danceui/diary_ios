@@ -24,7 +24,7 @@ private let debugBorder = Debuggers.debugBorder
 @available(iOS 26.0, *)
 struct FancyBrushPreview: View {
     let tool: Tool
-    let style: ToolStyle
+    let style: BrushStyle
     var body: some View {
         Canvas { context, size in
             // Canvas 内容随 .frame(width:) 自适应放大缩小
@@ -168,7 +168,7 @@ struct CheckerboardBackground: View {
 @available(iOS 26.0, *)
 struct StyleDetailsPreview: View {
     let tool: Tool
-    let style: ToolStyle
+    let style: BrushStyle
 
     var body: some View {
         ZStack {

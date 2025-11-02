@@ -2,13 +2,13 @@ import UIKit
 import Combine
 
 enum Tool: String, CaseIterable, Identifiable {
-    case pen, highlighter, monoline
+    case pen, monoline, highlighter
     case eraser
     case sticker
     case lasso
     var id: String { rawValue } // 稳定 ID
 
-    var isDrawing: Bool { self == .pen || self == .highlighter || self == .monoline }
+    var isBrush: Bool { self == .pen || self == .highlighter || self == .monoline }
     var isSticker: Bool { self == .sticker }
     var isEraser: Bool { self == .eraser }
     var isLasso: Bool { self == .lasso }
@@ -35,46 +35,52 @@ enum Tool: String, CaseIterable, Identifiable {
         }
     }
 
-    var presets: [ToolStyle] {
+    var brushPresets: [BrushStyle]? {
         switch self {
         case .pen:
             return [
-                ToolStyle(color: UIColor.black, width: 2, opacity: 1.0),
-                ToolStyle(color: UIColor.blue, width: 4, opacity: 0.8),
-                ToolStyle(color: UIColor.red, width: 6, opacity: 0.6)
+                BrushStyle(color: UIColor.black, width: 2, opacity: 1.0),
+                BrushStyle(color: UIColor.blue, width: 4, opacity: 0.8),
+                BrushStyle(color: UIColor.red, width: 6, opacity: 0.6)
             ]
         case .highlighter:
             return [
-                ToolStyle(color: UIColor.black, width: 4, opacity: 0.5),
-                ToolStyle(color: UIColor.green, width: 6, opacity: 0.4),
-                ToolStyle(color: UIColor.orange, width: 8, opacity: 0.6)
+                BrushStyle(color: UIColor.black, width: 4, opacity: 0.5),
+                BrushStyle(color: UIColor.green, width: 6, opacity: 0.4),
+                BrushStyle(color: UIColor.orange, width: 8, opacity: 0.6)
             ]
         case .monoline:
             return [
-                ToolStyle(color: UIColor.black, width: 4, opacity: 1.0),
-                ToolStyle(color: UIColor.gray, width: 6, opacity: 0.8),
-                ToolStyle(color: UIColor.red, width: 8, opacity: 0.6)
+                BrushStyle(color: UIColor.black, width: 4, opacity: 1.0),
+                BrushStyle(color: UIColor.gray, width: 6, opacity: 0.8),
+                BrushStyle(color: UIColor.red, width: 8, opacity: 0.6)
             ]
         default:
-            return []
+            return nil
         }
     }
 }
 
-struct ToolStyle: Hashable {
-    var color: UIColor?
-    var width: CGFloat?
-    var opacity: CGFloat?
+struct BrushStyle: Hashable, Equatable {
+    var color: UIColor
+    var width: CGFloat
+    var opacity: CGFloat
+
+    static func == (lhs: BrushStyle, rhs: BrushStyle) -> Bool {
+        lhs.width == rhs.width &&
+        lhs.opacity == rhs.opacity &&
+        lhs.color == rhs.color
+    }
 }
 
 struct ToolPreset: Identifiable, Hashable {
     let id = UUID()
     var tool: Tool
-    var style: ToolStyle
+    var style: BrushStyle
 }
 
 protocol ToolObserver: AnyObject {
-    func toolDidChange(tool: Tool, style: ToolStyle?)
+    func toolDidChange(tool: Tool, style: BrushStyle?)
 }
 
 final class ToolManager: ObservableObject {
@@ -86,51 +92,55 @@ final class ToolManager: ObservableObject {
     var currentPresets: [ToolPreset] { presets[currentTool] ?? [] }
 
     private init() {
-        for t in Tool.allCases where t.supportsPresets {
-            let list = t.presets.map { style in ToolPreset(tool: t, style: style) }
+        for t in Tool.allCases {
+            guard t.isBrush, let defaultPresets = t.brushPresets else { continue }
+            let list = defaultPresets.map { ToolPreset(tool: t, style: $0) }
             presets[t] = list
             selectedPresetID[t] = list.first?.id
         }
     }
 
     // 合成 publisher
-    var toolAndStyle: AnyPublisher<(Tool, ToolStyle?), Never> {
+    var toolAndStyle: AnyPublisher<(Tool, BrushStyle?), Never> {
         Publishers.CombineLatest3($currentTool, $presets, $selectedPresetID)
-            .map { tool, styles, selected -> (Tool, ToolStyle?) in
-                guard tool.supportsPresets,
-                    let arr = styles[tool],
+            .map { tool, presets, selected -> (Tool, BrushStyle?) in
+                guard tool.isBrush,
+                    let arr = presets[tool],
                     let id = selected[tool],
                     let preset = arr.first(where: { $0.id == id }) else { return (tool, nil) }
                 return (tool, preset.style)
             }
-            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+            .removeDuplicates { (lhs, rhs) in lhs.0 == rhs.0 && lhs.1 == rhs.1 }
             .eraseToAnyPublisher()
     }
 
-    // 外部操作
+    // Actions
     func selectTool(_ tool: Tool) { currentTool = tool }
     
     func selectPreset(for tool: Tool, id: UUID) {
-        guard let arr = presets[tool], arr.contains(where: { $0.id == id }) else { return }
+        guard tool.isBrush, let arr = presets[tool], arr.contains(where: { $0.id == id }) else { return }
         selectedPresetID[tool] = id
     }
 
-    // 外部查询
-    func getStyle(for tool: Tool) -> ToolStyle? {
-        guard let id = selectedPresetID[tool],
+    // Queries
+    func getBrushStyle(for tool: Tool) -> BrushStyle? {
+        guard tool.isBrush,
+              let id = selectedPresetID[tool],
               let p = presets[tool]?.first(where: { $0.id == id }) else { return nil }
         return p.style
     }
 
-    func getStyle(for tool: Tool, id: UUID) -> ToolStyle? {
-        guard let id = selectedPresetID[tool],
+    func getBrushStyle(for tool: Tool, id: UUID) -> BrushStyle? {
+        guard tool.isBrush,
               let p = presets[tool]?.first(where: { $0.id == id }) else { return nil }
         return p.style
     }
 
     @discardableResult
-    func setStyle(for tool: Tool, id: UUID, to updated: ToolStyle) -> Bool {
-        guard var arr = presets[tool], let i = arr.firstIndex(where: { $0.id == id }) else { return false }
+    func setBrushStyle(for tool: Tool, id: UUID, to updated: BrushStyle) -> Bool {
+        guard tool.isBrush,
+              var arr = presets[tool],
+              let i = arr.firstIndex(where: { $0.id == id }) else { return false }
         arr[i].style = updated
         presets[tool] = arr
         if debugToolManager { print("🎛️ [ToolManager] Set style for \(tool).") }
