@@ -70,27 +70,30 @@ struct ContentView: View {
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                 .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
 
-                if showPresets {
-                    GlassEffectContainer {
-                        PresetsPanel(
-                            showDetails: $showDetails,
-                            lockedID: $lockedID
-                        )
-                    }
-                    .frame(width: panelWidth, height: stylePresetPanelHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                // if showPresets {
+                GlassEffectContainer {
+                    PresetsPanel(
+                        showDetails: $showDetails,
+                        lockedID: $lockedID
+                    )
                 }
-                if showDetails {
-                    GlassEffectContainer {
-                        StyleDetailsPanel(
-                            lockedID: lockedID
-                        ) 
-                    }
-                    .frame(width: detailWidth, height: detailHeight)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                .frame(width: panelWidth, height: stylePresetPanelHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .opacity(showPresets ? 1 : 0)
+                .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                // }
+                
+                // if showDetails {
+                GlassEffectContainer {
+                    StyleDetailsPanel(
+                        lockedID: lockedID
+                    ) 
                 }
+                .frame(width: detailWidth, height: detailHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .opacity(showDetails ? 1 : 0)
+                .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                // }
             }
         }
     }
