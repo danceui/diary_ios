@@ -34,7 +34,7 @@ struct ContentView: View {
             VStack {
                 Spacer()
                 DrawingToolbar(notebookSpreadViewController: notebookSpreadViewController)
-                    .environmentObject(toolManager)
+                    .environmentObject(toolManager) // 这会把 toolManager 放进环境中，所有后代都能访问，但谁不声明就不会订阅，因此不会被动重算。
                     .padding(.leading, leadingPadding)
                 Spacer()
             }
@@ -57,43 +57,39 @@ struct ContentView: View {
         @State private var showPresets: Bool = false
         @State private var showDetails: Bool = false
         @State private var lockedID: UUID? = nil
-        @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
-            ZStack(alignment: .topLeading) {
-                HStack(alignment: .top, spacing: panelGap) {
+            HStack(alignment: .top, spacing: panelGap) {
+                GlassEffectContainer {
+                    ToolsPanel(
+                        showPresets: $showPresets,
+                        showDetails: $showDetails,
+                    )
+                }
+                .frame(width: panelWidth, height: toolsPanelHeight)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+
+                if showPresets {
                     GlassEffectContainer {
-                        ToolsPanel(
-                            showPresets: $showPresets,
+                        PresetsPanel(
                             showDetails: $showDetails,
+                            lockedID: $lockedID
                         )
                     }
-                    .frame(width: panelWidth, height: toolsPanelHeight)
+                    .frame(width: panelWidth, height: stylePresetPanelHeight)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
                     .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-
-                    if showPresets, toolManager.currentTool.isBrush {
-                        GlassEffectContainer {
-                            PresetsPanel(
-                                showDetails: $showDetails,
-                                lockedID: $lockedID
-                            )
-                        }
-                        .frame(width: panelWidth, height: stylePresetPanelHeight)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                        .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
+                }
+                if showDetails {
+                    GlassEffectContainer {
+                        StyleDetailsPanel(
+                            lockedID: lockedID
+                        ) 
                     }
-                    if showDetails, toolManager.currentTool.isBrush {
-                        GlassEffectContainer {
-                            StyleDetailsPanel(
-                                tool: toolManager.currentTool,
-                                lockedID: lockedID
-                            ) 
-                        }
-                        .frame(width: detailWidth, height: detailHeight)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
-                        .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
-                    }
+                    .frame(width: detailWidth, height: detailHeight)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+                    .overlay(Rectangle().stroke(debugBorder ? Color.black.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
             }
         }
@@ -141,53 +137,57 @@ struct ContentView: View {
         @EnvironmentObject private var toolManager: ToolManager
 
         var body: some View {
-            let tool = toolManager.currentTool
-            let presets = toolManager.currentPresets
-            let selectedID = toolManager.selectedPresetID[tool]
-            
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: buttonSpacing) {
-                    ForEach(presets) { preset in
-                        ToolButton(
-                            tool: tool,
-                            isSelected: selectedID == preset.id,
-                            style: preset.style
-                        ) {
-                            if selectedID == preset.id {
-                                if !showDetails {
-                                    lockedID = selectedID
-                                    showDetails = true
+            if toolManager.currentTool.isBrush {
+                let tool = toolManager.currentTool
+                let presets = toolManager.currentPresets
+                let selectedID = toolManager.selectedPresetID[tool]
+                
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: buttonSpacing) {
+                        ForEach(presets) { preset in
+                            ToolButton(
+                                tool: tool,
+                                isSelected: selectedID == preset.id,
+                                style: preset.style
+                            ) {
+                                if selectedID == preset.id {
+                                    if !showDetails {
+                                        lockedID = selectedID
+                                        showDetails = true
+                                    } else {
+                                        showDetails = false
+                                        lockedID = nil
+                                    }
                                 } else {
-                                    showDetails = false
-                                    lockedID = nil
-                                }
-                            } else {
-                                if showDetails {
-                                    showDetails = false
-                                }
-                                DispatchQueue.main.async {
-                                    toolManager.selectPreset(for: tool, id: preset.id)
-                                    lockedID = nil
+                                    if showDetails {
+                                        showDetails = false
+                                    }
+                                    DispatchQueue.main.async {
+                                        toolManager.selectPreset(for: tool, id: preset.id)
+                                        lockedID = nil
+                                    }
                                 }
                             }
+                            .padding(buttonPadding)
+                            .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                         }
-                        .padding(buttonPadding)
-                        .overlay(Rectangle().stroke(debugBorder ? Color.blue.withOpacity(0.5) : .clear, lineWidth: 1))
                     }
+                    .padding(.vertical, 1.5 * buttonSpacing)
+                    .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
                 }
-                .padding(.vertical, 1.5 * buttonSpacing)
-                .overlay(Rectangle().stroke(debugBorder ? Color.red.withOpacity(0.5) : .clear, lineWidth: 1))
+                .mask(VerticalEdgeFade(fade: fade))
+                .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
+            } else {
+                EmptyView()
             }
-            .mask(VerticalEdgeFade(fade: fade))
-            .clipShape(RoundedRectangle(cornerRadius: toolbarCornerRadius, style: .continuous))
         }
     }
 
     // MARK: - 3.Style Details Panel
     struct StyleDetailsPanel: View {
-        let tool: Tool
         let lockedID: UUID?
         @EnvironmentObject private var toolManager: ToolManager
+        private var tool: Tool { toolManager.currentTool }
 
         // 本地编辑态，仅用于预览
         @State private var color: Color = .black
@@ -203,21 +203,25 @@ struct ContentView: View {
         }
 
         var body: some View {
-            VStack(spacing: 12) {
-                if tool.isBrush {
-                    StyleDetailsPreview(tool: tool, style: previewStyle)
-                    StyleWidthControl(width: $width) { commitChanges() }
-                    StyleOpacityControl(opacity: $opacity) { commitChanges() }
-                    StyleColorPalette(selectedColor: $color) { commitChanges() }
+            if tool.isBrush {
+                VStack(spacing: 12) {
+                    if tool.isBrush {
+                        StyleDetailsPreview(tool: tool, style: previewStyle)
+                        StyleWidthControl(width: $width) { commitChanges() }
+                        StyleOpacityControl(opacity: $opacity) { commitChanges() }
+                        StyleColorPalette(selectedColor: $color) { commitChanges() }
+                    }
                 }
-            }
-            .padding(10)
-            .onAppear { loadFromManager() }
-            .onChange(of: lockedID) { _ in loadFromManager() }
-            .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
-            .onChange(of: toolManager.currentTool) { _ in loadFromManager() }
-            .onDisappear { 
-                commitChanges()
+                .padding(10)
+                .onAppear { loadFromManager() }
+                .onChange(of: lockedID) { _ in loadFromManager() }
+                .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
+                .onChange(of: toolManager.currentTool) { _ in loadFromManager() }
+                .onDisappear { 
+                    commitChanges()
+                }
+            } else {
+                EmptyView()
             }
         }
 
