@@ -311,13 +311,10 @@ struct ContentView: View {
             GlassEffectContainer {
                 HStack(spacing: buttonSpacing) {
                     FunctionButtonView(iconName: "arrow.uturn.backward") {
-                    notebookPageViewController.undo()
+                        notebookPageViewController.undo()
                     }
                     FunctionButtonView(iconName: "arrow.uturn.forward") {
                         notebookPageViewController.redo()
-                    }
-                    FunctionButtonView(iconName: "plus.square.on.square") {
-                        notebookPageViewController.addNewPagePair()
                     }
                 }
                 .padding(.leading, topPadding / 2)

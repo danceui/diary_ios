@@ -25,7 +25,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - 初始化
     init(initialData: Data? = nil) {
-        super.init(frame: CGRect(origin: .zero, size: PageConstants.pageSize.size))
+        super.init(frame: CGRect(origin: .zero, size: CGSize(width: 595, height: 842)))
         setupView()
     }
 
@@ -46,7 +46,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     
     private func setupView() {
         backgroundColor = normalBackgroundColor
-        layer.cornerRadius = pageCornerRadius
         layer.masksToBounds = true
         addSubview(containerView)
     }
@@ -150,7 +149,7 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
 
     // MARK: - Page 常量
     private let inset = LassoConstants.inset
-    private let normalBackgroundColor: UIColor = PageConstants.normalBackgroundColor
+    private let normalBackgroundColor: UIColor = UIColor(red: 0.96, green: 0.94, blue: 0.88, alpha: 1)
 }
 
 // MARK: - Handwriting Layer 回调
