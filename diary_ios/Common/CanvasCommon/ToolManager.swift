@@ -133,6 +133,7 @@ final class ToolManager: ObservableObject {
         guard var arr = presets[tool], let i = arr.firstIndex(where: { $0.id == id }) else { return false }
         arr[i].style = updated
         presets[tool] = arr
+        if debugToolManager { print("🎛️ [ToolManager] Set style for \(tool).") }
         return true
     }
 }

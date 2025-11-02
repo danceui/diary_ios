@@ -21,7 +21,6 @@ private let detailWidth = DetailsPanelConstants.detailWidth
 private let detailHeight = DetailsPanelConstants.detailHeight
 
 private let debugBorder = Debuggers.debugBorder
-private let debugToolManager = Debuggers.debugToolManager
 
 @available(iOS 26.0, *)
 struct ContentView: View {
@@ -241,13 +240,14 @@ struct ContentView: View {
         }
 
         private func commitChanges() {
-            let updated = ToolStyle(
-                    color: UIColor(color),
-                    width: CGFloat(width),
-                    opacity: CGFloat(opacity)
-                )
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
             guard let id = effectiveID else { return }
+            let old = toolManager.getStyle(for: tool, id: id) ?? ToolStyle()
+            var updated = old
+            if tool.supportColor   { updated.color   = UIColor(color) }
+            if tool.supportWidth   { updated.width   = CGFloat(width) }
+            if tool.supportOpacity { updated.opacity = CGFloat(opacity) }
+            guard !styleEquals(updated, old) else { return }
             toolManager.setStyle(for: tool, id: id, to: updated)
         }
     }

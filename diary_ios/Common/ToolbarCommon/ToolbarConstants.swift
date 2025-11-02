@@ -5,6 +5,7 @@ import CoreGraphics
 // MARK: - Debuggers
 struct Debuggers {
     static let debugBorder = false
+    static let debugToolManager = true
 }
 
 // MARK: - Toolbar Constants

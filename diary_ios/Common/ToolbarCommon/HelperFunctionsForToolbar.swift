@@ -2,7 +2,7 @@ import UIKit
 import SwiftUI
 @available(iOS 26.0, *)
 
-// MARK: - Pen Preview
+// MARK: - Bezier Paths
 func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint) -> CGPoint {
     let oneMinusT = 1 - t
     let a = oneMinusT * oneMinusT * oneMinusT
@@ -15,6 +15,34 @@ func cubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint)
     return CGPoint(x: x, y: y)
 }
 
+func generatePathSegments(in rect: CGRect, base: CGFloat) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
+    let sx = rect.width / base
+    let sy = rect.height / base
+    let s = min(sx, sy)
+    let dx = rect.minX + (rect.width  - base * s) * 0.5
+    let dy = rect.minY + (rect.height - base * s) * 0.5
+
+    func convert(_ p: CGPoint) -> CGPoint {
+        CGPoint(x: p.x * s + dx, y: p.y * s + dy)
+    }
+    return PreviewSVGConstants.baseSegments.map { seg in
+        (convert(seg.p0), convert(seg.c1), convert(seg.c2), convert(seg.p3))
+    }
+}
+
+func generatePathLine(in rect: CGRect, base: CGFloat) -> (start: CGPoint, end: CGPoint) {
+    let sx = rect.width / base
+    let sy = rect.height / base
+    let s = min(sx, sy)
+    let dx = rect.minX + (rect.width  - base * s) * 0.5
+    let dy = rect.minY + (rect.height - base * s) * 0.5
+
+    let start = CGPoint(x: PreviewSVGConstants.baseLine.start.x * s + dx, y: PreviewSVGConstants.baseLine.start.y * s + dy)
+    let end = CGPoint(x: PreviewSVGConstants.baseLine.end.x * s + dx, y: PreviewSVGConstants.baseLine.end.y * s + dy)
+    return (start: start, end: end)
+}
+
+// MARK: - Pen Preview
 private func bellPressure(t: CGFloat) -> CGFloat {
     let clampedT = max(0.0, min(1.0, t))
     let base = 1.0 - pow((clampedT - 0.5) * 2, 2.0)
@@ -157,35 +185,7 @@ func drawHighlighterPreview(
     }
 }
 
-
-func generatePathSegments(in rect: CGRect, base: CGFloat) -> [(CGPoint, CGPoint, CGPoint, CGPoint)] {
-    let sx = rect.width / base
-    let sy = rect.height / base
-    let s = min(sx, sy)
-    let dx = rect.minX + (rect.width  - base * s) * 0.5
-    let dy = rect.minY + (rect.height - base * s) * 0.5
-
-    func convert(_ p: CGPoint) -> CGPoint {
-        CGPoint(x: p.x * s + dx, y: p.y * s + dy)
-    }
-    return PreviewSVGConstants.baseSegments.map { seg in
-        (convert(seg.p0), convert(seg.c1), convert(seg.c2), convert(seg.p3))
-    }
-}
-
-func generatePathLine(in rect: CGRect, base: CGFloat) -> (start: CGPoint, end: CGPoint) {
-    let sx = rect.width / base
-    let sy = rect.height / base
-    let s = min(sx, sy)
-    let dx = rect.minX + (rect.width  - base * s) * 0.5
-    let dy = rect.minY + (rect.height - base * s) * 0.5
-
-    let start = CGPoint(x: PreviewSVGConstants.baseLine.start.x * s + dx, y: PreviewSVGConstants.baseLine.start.y * s + dy)
-    let end = CGPoint(x: PreviewSVGConstants.baseLine.end.x * s + dx, y: PreviewSVGConstants.baseLine.end.y * s + dy)
-    return (start: start, end: end)
-}
-
-func styleEquals(_ a: ToolStyle?, _ b: ToolStyle) -> Bool {
-    guard let a = a else { return false }
+// MARK: - 
+func styleEquals(_ a: ToolStyle, _ b: ToolStyle) -> Bool {
     return a.color == b.color && a.width == b.width && abs((a.opacity ?? 1) - (b.opacity ?? 1) ?? 1) < 0.001
 }
