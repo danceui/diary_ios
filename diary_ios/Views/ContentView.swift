@@ -114,7 +114,7 @@ struct ContentView: View {
                             tool: tool,
                             isSelected: toolManager.currentTool == tool,
                             style: toolManager.getStyle(for: tool)
-                        ) { 
+                        ) {
                             showDetails = false
                             if toolManager.currentTool == tool {
                                 showPresets.toggle()
@@ -219,12 +219,6 @@ struct ContentView: View {
                 }
             }
             .padding(10)
-            // .onAppear {
-            //     if debugToolManager { print("🎨 [StyleDetailsPanel] Appeared.") }
-            //     if let idx = lockedIndex, let style = toolManager.getStyle(for: tool, at: idx) { 
-            //         applyStyleFromManager(style) 
-            //     }
-            // }
             .onAppear { loadFromManager() }
             .onChange(of: lockedID) { _ in loadFromManager() }
             .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
@@ -233,15 +227,7 @@ struct ContentView: View {
             }
         }
 
-        // private func applyStyleFromManager(_ s: ToolStyle) {
-        //     // baseStyle = s
-        //     if tool.supportColor   { color   = s.color?.toColor() ?? .black }
-        //     if tool.supportWidth   { width   = Double(s.width ?? 4) }
-        //     if tool.supportOpacity { opacity = Double(s.opacity ?? 1) }
-        // }
-
         private func loadFromManager() {
-            // 优先使用 lockedID；否则回退到当前选中预设
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
             guard let id = effectiveID,
                 let style = toolManager.getStyle(for: tool, id: id) else { return }
@@ -260,8 +246,6 @@ struct ContentView: View {
                     width: CGFloat(width),
                     opacity: CGFloat(opacity)
                 )
-            // guard let idx = lockedIndex, updated != toolManager.getStyle(for: tool, at: idx) else { return }
-            // toolManager.setStyle(for: tool, at: idx, to: updated)
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
             guard let id = effectiveID else { return }
             toolManager.setStyle(for: tool, id: id, to: updated)
