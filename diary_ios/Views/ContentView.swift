@@ -86,7 +86,7 @@ struct ContentView: View {
                 // if showDetails {
                 GlassEffectContainer {
                     StyleDetailsPanel(
-                        lockedID: lockedID
+                        lockedID: $lockedID
                     ) 
                 }
                 .frame(width: detailWidth, height: detailHeight)
@@ -153,8 +153,10 @@ struct ContentView: View {
                                 isSelected: selectedID == preset.id,
                                 style: preset.style
                             ) {
+                                print("Tool \(tool) has preset id \(preset.id)")
                                 if selectedID == preset.id {
                                     if !showDetails {
+                                        print("New lockedID set = \(selectedID)")
                                         lockedID = selectedID
                                         showDetails = true
                                     } else {
@@ -188,7 +190,7 @@ struct ContentView: View {
 
     // MARK: - 3.Style Details Panel
     struct StyleDetailsPanel: View {
-        let lockedID: UUID?
+        @Binding var lockedID: UUID?
         @EnvironmentObject private var toolManager: ToolManager
         private var tool: Tool { toolManager.currentTool }
 
@@ -218,8 +220,8 @@ struct ContentView: View {
                 .padding(10)
                 .onAppear { loadFromManager() }
                 .onChange(of: lockedID) { _ in loadFromManager() }
-                .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
-                .onChange(of: toolManager.currentTool) { _ in loadFromManager() }
+                // .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
+                // .onChange(of: toolManager.currentTool) { _ in loadFromManager() }
                 .onDisappear { 
                     commitChanges()
                 }
@@ -237,6 +239,7 @@ struct ContentView: View {
         private func loadFromManager() {
             guard tool.isBrush else { return }
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
+            print("Load toolstyle for \(tool) \(effectiveID)")
             guard let id = effectiveID,
                 let style = toolManager.getBrushStyle(for: tool, id: id) else { return }
             apply(style)
