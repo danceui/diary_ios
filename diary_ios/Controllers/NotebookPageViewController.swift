@@ -4,7 +4,12 @@ import UIKit
 class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
     private(set) var pageID: UUID?
     private var scrollView = UIScrollView()
-    private let pageView: NotebookPageView
+
+    private let contentView = UIView() // 真正被缩放/平移的容器
+    private let pageView: NotebookPageView // 绘图视图
+    private var canvasSize = CGSize(width: 4096, height: 4096)
+    private let expandThreshold: CGFloat = 800 // 触边自动扩展阈值
+    private let expandStep: CGFloat = 2048 // 触边自动扩展步长
 
     // MARK: - Initialization
     init(initialData: Data? = nil) {
@@ -23,7 +28,9 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        centerCanvasIfNeeded()
+        // 旋转/尺寸变化后，确保最小缩放和居中合理
+        updateMinZoomToFitIfNeeded()
+        centerToMiddleIfWanted()
     }
 
     private func setupScrollView() {
@@ -32,7 +39,7 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.maximumZoomScale = 4.0
-        scrollView.minimumZoomScale = 0.5
+        scrollView.minimumZoomScale = 0.05 // 为了能看清画布，min 要允许很小
 
         view.addSubview(scrollView)
         scrollView.frame = view.bounds
@@ -40,49 +47,102 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
     }
 
     private func setupCanvas() {
-        // 让 pageView 初始尺寸等于“纸张”大小（你在 init 里已用 PageConstants 定了）
-        pageView.frame = CGRect(origin: .zero, size: pageView.bounds.size)
-        scrollView.addSubview(pageView)
-        scrollView.contentSize = pageView.bounds.size
-
+        // contentView 作为被缩放的容器
+        contentView.frame = CGRect(origin: .zero, size: canvasSize)
+        scrollView.addSubview(contentView)
+        scrollView.contentSize = canvasSize
+        // 让 pageView 覆盖整个画布
+        pageView.frame = contentView.bounds
+        pageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        contentView.addSubview(pageView)
         pageView.activateToolListener()
-        resetZoomToFit()
+        // 初次缩放与居中
+        updateMinZoomToFitIfNeeded()
+        centerToMiddle()
+        addDoubleTapToReset()
     }
 
-    private func resetZoomToFit() {
-        // 让画布尽量贴合宽度，同时保留最小/最大缩放范围
+    private func updateMinZoomToFitIfNeeded() {
         let inset: CGFloat = 16
-        let wScale = (scrollView.bounds.width  - inset * 2) / pageView.bounds.width
-        let hScale = (scrollView.bounds.height - inset * 2) / pageView.bounds.height
-        let fitScale = max(min(wScale, hScale), scrollView.minimumZoomScale)
-        scrollView.minimumZoomScale = min(scrollView.minimumZoomScale, fitScale)
-        scrollView.setZoomScale(fitScale, animated: false)
-        centerCanvasIfNeeded()
+        let wScale = (scrollView.bounds.width  - inset * 2) / contentView.bounds.width
+        let hScale = (scrollView.bounds.height - inset * 2) / contentView.bounds.height
+        let fitScale = min(wScale, hScale)
+        // 允许看全就行，但不要小于一个安全下限
+        let newMin = max(min(fitScale, 1.0), 0.02)
+        if abs(scrollView.minimumZoomScale - newMin) > 0.001 {
+            scrollView.minimumZoomScale = newMin
+            if scrollView.zoomScale < newMin {
+                scrollView.setZoomScale(newMin, animated: false)
+            }
+        }
     }
 
-    private func centerCanvasIfNeeded() {
-        let boundsSize = scrollView.bounds.size
-        var frameToCenter = pageView.frame
+    private func centerToMiddle() {
+        let visibleW = scrollView.bounds.width  / scrollView.zoomScale
+        let visibleH = scrollView.bounds.height / scrollView.zoomScale
+        let offsetX = max((scrollView.contentSize.width  - visibleW) * 0.5, 0)
+        let offsetY = max((scrollView.contentSize.height - visibleH) * 0.5, 0)
+        scrollView.setContentOffset(CGPoint(x: offsetX, y: offsetY), animated: false)
+    }
 
-        frameToCenter.origin.x = frameToCenter.size.width  < boundsSize.width
-            ? (boundsSize.width  - frameToCenter.size.width)  / 2 : 0
-        frameToCenter.origin.y = frameToCenter.size.height < boundsSize.height
-            ? (boundsSize.height - frameToCenter.size.height) / 2 : 0
+    private func centerToMiddleIfWanted() {
+        let visibleW = scrollView.bounds.width  / scrollView.zoomScale
+        let visibleH = scrollView.bounds.height / scrollView.zoomScale
+        let contentW = scrollView.contentSize.width
+        let contentH = scrollView.contentSize.height
+        if contentW < visibleW * 1.2 || contentH < visibleH * 1.2 {
+            centerToMiddle()
+        }
+    }
 
-        pageView.frame = frameToCenter
+    private func addDoubleTapToReset() {
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        scrollView.addGestureRecognizer(doubleTap)
+    }
+
+    @objc private func handleDoubleTap(_ gr: UITapGestureRecognizer) {
+        updateMinZoomToFitIfNeeded()
+        centerToMiddle()
+    }
+
+    // MARK: - Auto Expand
+    private func autoExpandIfNeeded() {
+        let scale = scrollView.zoomScale
+        let visibleW = scrollView.bounds.width  / scale
+        let visibleH = scrollView.bounds.height / scale
+        let rightEdge = scrollView.contentOffset.x + visibleW
+        let bottomEdge = scrollView.contentOffset.y + visibleH
+
+        var needResize = false
+        var newSize = scrollView.contentSize
+
+        if rightEdge > newSize.width - expandThreshold {
+            newSize.width += expandStep
+            needResize = true
+        }
+        if bottomEdge > newSize.height - expandThreshold {
+            newSize.height += expandStep
+            needResize = true
+        }
+
+        if needResize {
+            scrollView.contentSize = newSize
+            canvasSize = newSize
+            // 扩展 contentView / pageView 尺寸（保持原点不变，只往右/下长）
+            var f = contentView.frame
+            f.size = newSize
+            contentView.frame = f
+            pageView.frame = contentView.bounds
+        }
     }
 
     // MARK: - UIScrollViewDelegate（缩放）
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { pageView }
-    func scrollViewDidZoom(_ scrollView: UIScrollView) { centerCanvasIfNeeded() }
+    func scrollViewDidZoom(_ scrollView: UIScrollView) { autoExpandIfNeeded() }
+    func scrollViewDidScroll(_ scrollView: UIScrollView) { autoExpandIfNeeded() }
 
     // MARK: - undo redo
-    func undo() {
-        pageView.undo()
-    }
-
-    func redo() {
-        pageView.redo()
-    }
-    
+    func undo() { pageView.undo() }
+    func redo() { pageView.redo() }
 }

@@ -217,7 +217,7 @@ struct ContentView: View {
                 }
                 .padding(10)
                 .onAppear { loadFromManager() }
-                // .onChange(of: lockedID) { _ in loadFromManager() }
+                .onChange(of: lockedID) { _ in loadFromManager() }
                 // .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
                 // .onChange(of: toolManager.currentTool) { _ in loadFromManager() }
                 .onDisappear { 
