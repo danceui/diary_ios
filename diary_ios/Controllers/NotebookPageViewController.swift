@@ -28,6 +28,10 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        // 先保证 contentView/pageView 的几何关系是最新的
+        // （通常此处已经正确，但稳妥起见）
+        contentView.frame.size = canvasSize
+        pageView.frame = contentView.bounds
         // 旋转/尺寸变化后，确保最小缩放和居中合理
         updateMinZoomToFitIfNeeded()
         centerToMiddleIfWanted()
@@ -141,7 +145,7 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - UIScrollViewDelegate（缩放）
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? { pageView }
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? { contentView }
     func scrollViewDidZoom(_ scrollView: UIScrollView) { autoExpandIfNeeded() }
     func scrollViewDidScroll(_ scrollView: UIScrollView) { autoExpandIfNeeded() }
 
