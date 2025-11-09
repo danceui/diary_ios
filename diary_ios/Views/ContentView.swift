@@ -28,27 +28,34 @@ struct ContentView: View {
     @StateObject private var toolManager = ToolManager.shared
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            NotebookPageViewContainer(notebookPageViewController: notebookPageViewController).ignoresSafeArea()
-            // 左侧工具栏
+        ZStack {
+            NotebookPageViewContainer(notebookPageViewController: notebookPageViewController)
+                .ignoresSafeArea()
+                // .onAppear {
+                //     // 预热画布，避免第一笔延迟（需在 VC 里实现 prewarmCanvas()）
+                //     DispatchQueue.main.async {
+                //         notebookPageViewController.prewarmCanvas()
+                //     }
+                // }
+        }
+        // 左侧工具栏（垂直居中；只有面板区域参与命中）
+        .overlay(alignment: .leading) {
             VStack {
                 Spacer()
                 DrawingToolbar(notebookPageViewController: notebookPageViewController)
-                    .environmentObject(toolManager) // 这会把 toolManager 放进环境中，所有后代都能访问，但谁不声明就不会订阅，因此不会被动重算。
+                    .environmentObject(toolManager)
                     .padding(.leading, leadingPadding)
+                    .allowsHitTesting(true)
                 Spacer()
             }
-            .frame(maxWidth: .infinity, alignment: .leading) 
-            // 右上角功能按钮栏
-            VStack {
-                FunctionToolbar(notebookPageViewController: notebookPageViewController)
-                    .padding(.top, topPadding)
-                    .padding(.trailing, trailingPadding)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .ignoresSafeArea(.keyboard, edges: .bottom) // 避免键盘顶起
+        // 右上角功能按钮栏
+        .overlay(alignment: .topTrailing) {
+            FunctionToolbar(notebookPageViewController: notebookPageViewController)
+                .padding(.top, topPadding)
+                .padding(.trailing, trailingPadding)
+        }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     // MARK: - Drawing Toolbar

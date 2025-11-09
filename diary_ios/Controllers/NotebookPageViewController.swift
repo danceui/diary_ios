@@ -41,6 +41,9 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
         scrollView.maximumZoomScale = 4.0
         scrollView.minimumZoomScale = 0.05 // 为了能看清画布，min 要允许很小
 
+        scrollView.delaysContentTouches = false
+        scrollView.canCancelContentTouches = false
+
         view.addSubview(scrollView)
         scrollView.frame = view.bounds
         scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
