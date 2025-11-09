@@ -153,10 +153,8 @@ struct ContentView: View {
                                 isSelected: selectedID == preset.id,
                                 style: preset.style
                             ) {
-                                print("Tool \(tool) has preset id \(preset.id)")
                                 if selectedID == preset.id {
                                     if !showDetails {
-                                        print("New lockedID set = \(selectedID)")
                                         lockedID = selectedID
                                         showDetails = true
                                     } else {
@@ -219,7 +217,7 @@ struct ContentView: View {
                 }
                 .padding(10)
                 .onAppear { loadFromManager() }
-                .onChange(of: lockedID) { _ in loadFromManager() }
+                // .onChange(of: lockedID) { _ in loadFromManager() }
                 // .onChange(of: toolManager.selectedPresetID[tool]) { _ in loadFromManager() }
                 // .onChange(of: toolManager.currentTool) { _ in loadFromManager() }
                 .onDisappear { 
@@ -239,7 +237,6 @@ struct ContentView: View {
         private func loadFromManager() {
             guard tool.isBrush else { return }
             let effectiveID = lockedID ?? toolManager.selectedPresetID[tool]
-            print("Load toolstyle for \(tool) \(effectiveID)")
             guard let id = effectiveID,
                 let style = toolManager.getBrushStyle(for: tool, id: id) else { return }
             apply(style)
