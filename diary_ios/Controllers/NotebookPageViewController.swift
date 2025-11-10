@@ -18,9 +18,24 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    private var _link: CADisplayLink?
+    private var _lastTS: CFTimeInterval = 0
+
+
+    @objc private func _tick(_ dl: CADisplayLink) {
+        if _lastTS != 0 {
+            let gap = dl.timestamp - _lastTS
+            if gap > 0.10 { // >100ms 认为卡住
+                print(String(format: "🚨 Main gap %.0f ms", gap*1000))
+            }
+        }
+        _lastTS = dl.timestamp
+    }
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        _link = CADisplayLink(target: self, selector: #selector(_tick))
+        _link?.add(to: .main, forMode: .common)   // 只监控
         view.backgroundColor = .clear
         setupScrollView()
         setupCanvas()

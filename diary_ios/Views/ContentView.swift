@@ -31,12 +31,6 @@ struct ContentView: View {
         ZStack {
             NotebookPageViewContainer(notebookPageViewController: notebookPageViewController)
                 .ignoresSafeArea()
-                // .onAppear {
-                //     // 预热画布，避免第一笔延迟（需在 VC 里实现 prewarmCanvas()）
-                //     DispatchQueue.main.async {
-                //         notebookPageViewController.prewarmCanvas()
-                //     }
-                // }
         }
         // 左侧工具栏（垂直居中；只有面板区域参与命中）
         .overlay(alignment: .leading) {

@@ -26,7 +26,9 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     // MARK: - 初始化
     init(initialData: Data? = nil) {
         super.init(frame: CGRect(origin: .zero, size: CGSize(width: 595, height: 842)))
-        setupView()
+        backgroundColor = normalBackgroundColor
+        layer.masksToBounds = true
+        addSubview(containerView)
     }
 
     required init?(coder: NSCoder) { 
@@ -36,12 +38,6 @@ class NotebookPageView: UIView, PKCanvasViewDelegate {
     override func layoutSubviews() {
         super.layoutSubviews()
         containerView.frame = bounds
-    }
-    
-    private func setupView() {
-        backgroundColor = normalBackgroundColor
-        layer.masksToBounds = true
-        addSubview(containerView)
     }
 
     // MARK: - 切换工具
@@ -165,6 +161,7 @@ extension NotebookPageView {
 
     @objc func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         guard let handwritingLayer = currentHandwritingLayer, handwritingLayer.touchFinished else { return }
+        print("✏️ drawingDidChange")
         if let newStroke = handwritingLayer.drawing.strokes.last {
             let cmd = AddStrokeCommand(stroke: newStroke, strokesAppearedOnce: false, layer: handwritingLayer)
             executeAndSave(command: cmd)
