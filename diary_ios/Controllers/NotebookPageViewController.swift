@@ -18,24 +18,9 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    private var _link: CADisplayLink?
-    private var _lastTS: CFTimeInterval = 0
-
-
-    @objc private func _tick(_ dl: CADisplayLink) {
-        if _lastTS != 0 {
-            let gap = dl.timestamp - _lastTS
-            if gap > 0.10 { // >100ms 认为卡住
-                print(String(format: "🚨 Main gap %.0f ms", gap*1000))
-            }
-        }
-        _lastTS = dl.timestamp
-    }
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        _link = CADisplayLink(target: self, selector: #selector(_tick))
-        _link?.add(to: .main, forMode: .common)   // 只监控
         view.backgroundColor = .clear
         setupScrollView()
         setupCanvas()
@@ -43,10 +28,6 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // 先保证 contentView/pageView 的几何关系是最新的
-        // （通常此处已经正确，但稳妥起见）
-        contentView.frame.size = canvasSize
-        pageView.frame = contentView.bounds
         // 旋转/尺寸变化后，确保最小缩放和居中合理
         updateMinZoomToFitIfNeeded()
         centerToMiddleIfWanted()
@@ -59,9 +40,6 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.maximumZoomScale = 4.0
         scrollView.minimumZoomScale = 0.05 // 为了能看清画布，min 要允许很小
-
-        scrollView.delaysContentTouches = false
-        scrollView.canCancelContentTouches = false
 
         view.addSubview(scrollView)
         scrollView.frame = view.bounds
@@ -160,7 +138,7 @@ class NotebookPageViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - UIScrollViewDelegate（缩放）
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? { contentView }
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? { pageView }
     func scrollViewDidZoom(_ scrollView: UIScrollView) { autoExpandIfNeeded() }
     func scrollViewDidScroll(_ scrollView: UIScrollView) { autoExpandIfNeeded() }
 
